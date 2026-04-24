@@ -3,14 +3,12 @@ package com.skillmatch.backend.controller;
 import com.skillmatch.backend.dto.CompanyRequest;
 import com.skillmatch.backend.dto.CompanyResponse;
 import com.skillmatch.backend.dto.MessageResponse;
-import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.service.CompanyService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -79,27 +77,16 @@ public class CompanyController {
      * Ahora se verifica que el usuario sea el dueño o tenga rol ADMIN.
      */
     @PatchMapping("/{id}/description")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('ADMIN') or @companyService.isOwner(#id, authentication.principal.id)")
     public ResponseEntity<?> updateCompanyDescription(
             @PathVariable Long id,
-            @RequestBody Map<String, String> request,
-            @AuthenticationPrincipal User currentUser) {
+            @RequestBody Map<String, String> request) {
         try {
             String description = request.get("description");
             if (description == null || description.trim().isEmpty()) {
                 return ResponseEntity.badRequest()
                         .body(new MessageResponse("La descripción no puede estar vacía"));
             }
-
-            boolean isAdmin = hasRole(currentUser, "ADMIN");
-            boolean isOwner = companyService.isOwner(id, currentUser.getId());
-
-            if (!isOwner && !isAdmin) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                        .body(new MessageResponse(
-                                "No tienes permiso para modificar esta empresa"));
-            }
-
             CompanyResponse response = companyService.updateCompanyDescription(id, description);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
@@ -153,12 +140,4 @@ public class CompanyController {
         }
     }
 
-    // ─── Helper ──────────────────────────────────────────────────────────────
-
-    private boolean hasRole(User user, String roleName) {
-        if (user == null) return false;
-        String expected = "ROLE_" + roleName.toUpperCase();
-        return user.getAuthorities().stream()
-                .anyMatch(a -> expected.equals(a.getAuthority()));
-    }
 }

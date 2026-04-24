@@ -2,7 +2,6 @@ package com.skillmatch.backend.controller;
 
 import com.skillmatch.backend.dto.CertificationRequest;
 import com.skillmatch.backend.dto.MessageResponse;
-import com.skillmatch.backend.model.Certification;
 import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.service.CertificationService;
 import jakarta.validation.Valid;
@@ -52,14 +51,10 @@ public class CertificationController {
         }
         
         try {
-            Certification certification = certificationService.addCertification(targetUserId, request);
+            Map<String, Object> certification = certificationService.addCertification(targetUserId, request);
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                 "message", "Certificación agregada exitosamente",
-                "certification", certificationService.getUserCertifications(targetUserId)
-                        .stream()
-                        .filter(c -> c.get("id").equals(certification.getId()))
-                        .findFirst()
-                        .orElse(null)
+                "certification", certification
             ));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));

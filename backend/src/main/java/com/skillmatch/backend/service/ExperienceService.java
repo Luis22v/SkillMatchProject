@@ -30,13 +30,13 @@ public class ExperienceService {
     }
     
     @Transactional
-    public Experience addExperience(Long userId, ExperienceRequest request) {
+    public Map<String, Object> addExperience(Long userId, ExperienceRequest request) {
         if (userId == null) {
             throw new IllegalArgumentException("El ID de usuario no puede ser nulo");
         }
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
-        
+
         Experience experience = new Experience();
         experience.setUser(user);
         experience.setCompany(request.getCompany());
@@ -46,8 +46,8 @@ public class ExperienceService {
         experience.setIsCurrent(request.getIsCurrent() != null ? request.getIsCurrent() : false);
         experience.setDescription(request.getDescription());
         experience.setLocation(request.getLocation());
-        
-        return experienceRepository.save(experience);
+
+        return mapExperienceToResponse(experienceRepository.save(experience));
     }
     
     @Transactional

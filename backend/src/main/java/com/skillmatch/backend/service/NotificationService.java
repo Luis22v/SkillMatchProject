@@ -1,6 +1,8 @@
 package com.skillmatch.backend.service;
 
 import com.skillmatch.backend.dto.NotificationResponse;
+import com.skillmatch.backend.exception.ResourceNotFoundException;
+import com.skillmatch.backend.exception.UnauthorizedException;
 import com.skillmatch.backend.model.Notification;
 import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.repository.NotificationRepository;
@@ -23,7 +25,7 @@ public class NotificationService {
     @Transactional
     public NotificationResponse createNotification(@NonNull Long userId, String type, String content, Long relatedId, String actionUrl) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
         
         Notification notification = new Notification();
         notification.setUser(user);
@@ -41,7 +43,7 @@ public class NotificationService {
     @Transactional
     public void createConnectionRequestNotification(Long userId, @NonNull Long requesterId, Long connectionId) {
         User requester = userRepository.findById(requesterId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
         
         String content = requester.getFirstName() + " " + requester.getLastName() + " te ha enviado una solicitud de conexión";
         String actionUrl = "/pages/conexiones.html?tab=pending";
@@ -52,7 +54,7 @@ public class NotificationService {
     @Transactional
     public void createConnectionAcceptedNotification(Long userId, @NonNull Long accepterId, Long connectionId) {
         User accepter = userRepository.findById(accepterId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
         
         String content = accepter.getFirstName() + " " + accepter.getLastName() + " ha aceptado tu solicitud de conexión";
         String actionUrl = "/pages/conexiones.html";
@@ -63,7 +65,7 @@ public class NotificationService {
     @Transactional
     public void createMessageNotification(Long userId, @NonNull Long senderId, Long messageId) {
         User sender = userRepository.findById(senderId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
         
         String content = sender.getFirstName() + " " + sender.getLastName() + " te ha enviado un mensaje";
         String actionUrl = "/pages/mensajes.html?userId=" + senderId;
@@ -129,11 +131,11 @@ public class NotificationService {
     @Transactional
     public NotificationResponse markAsRead(@NonNull Long notificationId, Long userId) {
         Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new RuntimeException("Notificación no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Notificación no encontrada"));
         
         // Verificar que la notificación pertenece al usuario
         if (!notification.getUser().getId().equals(userId)) {
-            throw new RuntimeException("No tienes permiso para marcar esta notificación");
+            throw new UnauthorizedException("No tienes permiso para marcar esta notificación");
         }
         
         if (!notification.getIsRead()) {
@@ -169,11 +171,11 @@ public class NotificationService {
     @Transactional
     public void deleteNotification(@NonNull Long notificationId, Long userId) {
         Notification notification = notificationRepository.findById(notificationId)
-                .orElseThrow(() -> new RuntimeException("Notificación no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Notificación no encontrada"));
         
         // Verificar que la notificación pertenece al usuario
         if (!notification.getUser().getId().equals(userId)) {
-            throw new RuntimeException("No tienes permiso para eliminar esta notificación");
+            throw new UnauthorizedException("No tienes permiso para eliminar esta notificación");
         }
         
         notificationRepository.delete(notification);

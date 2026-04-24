@@ -2,6 +2,8 @@ package com.skillmatch.backend.service;
 
 import com.skillmatch.backend.dto.SavedJobRequest;
 import com.skillmatch.backend.dto.SavedJobResponse;
+import com.skillmatch.backend.exception.DuplicateResourceException;
+import com.skillmatch.backend.exception.ResourceNotFoundException;
 import com.skillmatch.backend.model.Job;
 import com.skillmatch.backend.model.SavedJob;
 import com.skillmatch.backend.model.User;
@@ -26,14 +28,14 @@ public class SavedJobService {
     @Transactional
     public SavedJobResponse saveJob(Long userId, SavedJobRequest request) {
         User user = userRepository.findById(Objects.requireNonNull(userId))
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
         
         Job job = jobRepository.findById(Objects.requireNonNull(request.getJobId()))
-                .orElseThrow(() -> new RuntimeException("Oferta de trabajo no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Oferta de trabajo no encontrada"));
         
         // Verificar si ya está guardado
         if (savedJobRepository.existsByUserIdAndJobId(userId, request.getJobId())) {
-            throw new RuntimeException("Esta oferta ya está guardada");
+            throw new DuplicateResourceException("Esta oferta ya está guardada");
         }
         
         SavedJob savedJob = new SavedJob();
@@ -49,7 +51,7 @@ public class SavedJobService {
     @Transactional
     public void unsaveJob(Long userId, Long jobId) {
         if (!savedJobRepository.existsByUserIdAndJobId(userId, jobId)) {
-            throw new RuntimeException("Esta oferta no está guardada");
+            throw new ResourceNotFoundException("Esta oferta no está guardada");
         }
         savedJobRepository.deleteByUserIdAndJobId(userId, jobId);
     }
@@ -80,7 +82,7 @@ public class SavedJobService {
     @Transactional
     public SavedJobResponse updateNotes(Long userId, Long jobId, String notes) {
         SavedJob savedJob = savedJobRepository.findByUserIdAndJobId(userId, jobId)
-                .orElseThrow(() -> new RuntimeException("Esta oferta no está guardada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Esta oferta no está guardada"));
         
         savedJob.setNotes(notes);
         savedJob = savedJobRepository.save(savedJob);

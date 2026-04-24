@@ -5,7 +5,6 @@ import com.skillmatch.backend.dto.UpdateProfileRequest;
 import com.skillmatch.backend.exception.ResourceNotFoundException;
 import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.repository.ApplicationRepository;
-import com.skillmatch.backend.repository.CompanyRepository;
 import com.skillmatch.backend.repository.SkillRepository;
 import com.skillmatch.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -13,9 +12,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.data.domain.PageRequest;
+
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -24,7 +26,7 @@ import java.util.Objects;
 public class UserService {
     
     private final UserRepository userRepository;
-    private final CompanyRepository companyRepository;
+    private final CompanyService companyService;
     private final PasswordEncoder passwordEncoder;
     private final ApplicationRepository applicationRepository;
     private final SkillRepository skillRepository;
@@ -61,10 +63,7 @@ public class UserService {
                 throw new IllegalArgumentException("El email ya está en uso");
             }
             user.setEmail(request.getEmail());
-            companyRepository.findByUserId(userId).ifPresent(company -> {
-                company.setEmail(request.getEmail());
-                companyRepository.save(company);
-            });
+            companyService.syncOwnerEmail(userId, request.getEmail());
         }
         if (request.getPhone() != null) {
             user.setPhone(request.getPhone());
@@ -132,6 +131,16 @@ public class UserService {
         return profile;
     }
     
+    @Transactional(readOnly = true)
+    public List<User> findSuggestionsForUser(Long userId) {
+        User user = getUserById(userId);
+        if (user.getLocation() == null) {
+            return List.of();
+        }
+        return userRepository.findSuggestions(userId, user.getLocation(), PageRequest.of(0, 10))
+                .getContent();
+    }
+
     @Transactional(readOnly = true)
     public Map<String, Object> getUserStatistics(Long userId) {
         User user = getUserById(userId);

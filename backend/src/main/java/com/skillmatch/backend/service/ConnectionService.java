@@ -2,10 +2,12 @@ package com.skillmatch.backend.service;
 
 import com.skillmatch.backend.dto.ConnectionRequest;
 import com.skillmatch.backend.dto.ConnectionResponse;
+import com.skillmatch.backend.exception.DuplicateResourceException;
+import com.skillmatch.backend.exception.ResourceNotFoundException;
+import com.skillmatch.backend.exception.UnauthorizedException;
 import com.skillmatch.backend.model.Connection;
 import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.repository.ConnectionRepository;
-import com.skillmatch.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,29 +21,27 @@ import java.util.stream.Collectors;
 public class ConnectionService {
     
     private final ConnectionRepository connectionRepository;
-    private final UserRepository userRepository;
+    private final UserService userService;
     private final NotificationService notificationService;
     
     @Transactional
     public ConnectionResponse sendConnectionRequest(Long userId, ConnectionRequest request) {
         if (userId.equals(request.getConnectedUserId())) {
-            throw new RuntimeException("No puedes enviarte una solicitud a ti mismo");
+            throw new IllegalArgumentException("No puedes enviarte una solicitud a ti mismo");
         }
-        
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        
+
+        User user = userService.getUserById(userId);
+
         Long connectedUserId = request.getConnectedUserId();
         if (connectedUserId == null) {
-            throw new RuntimeException("ID de usuario conectado no puede ser nulo");
+            throw new IllegalArgumentException("ID de usuario conectado no puede ser nulo");
         }
-        
-        User connectedUser = userRepository.findById(connectedUserId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        
+
+        User connectedUser = userService.getUserById(connectedUserId);
+
         // Verificar si ya existe una conexión
         if (connectionRepository.findConnectionBetweenUsers(userId, request.getConnectedUserId()).isPresent()) {
-            throw new RuntimeException("Ya existe una conexión o solicitud pendiente con este usuario");
+            throw new DuplicateResourceException("Ya existe una conexión o solicitud pendiente con este usuario");
         }
         
         Connection connection = new Connection();
@@ -62,14 +62,14 @@ public class ConnectionService {
     @Transactional
     public ConnectionResponse acceptConnection(Long connectionId, Long userId) {
         if (connectionId == null) {
-            throw new RuntimeException("ID de conexión no puede ser nulo");
+            throw new IllegalArgumentException("ID de conexión no puede ser nulo");
         }
         Connection connection = connectionRepository.findById(connectionId)
-                .orElseThrow(() -> new RuntimeException("Solicitud de conexión no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Solicitud de conexión no encontrada"));
         
         // Verificar que el usuario es el receptor de la solicitud
         if (!connection.getConnectedUser().getId().equals(userId)) {
-            throw new RuntimeException("No tienes permiso para aceptar esta solicitud");
+            throw new UnauthorizedException("No tienes permiso para aceptar esta solicitud");
         }
         
         if (!"pending".equals(connection.getStatus())) {
@@ -89,14 +89,14 @@ public class ConnectionService {
     @Transactional
     public ConnectionResponse rejectConnection(Long connectionId, Long userId) {
         if (connectionId == null) {
-            throw new RuntimeException("ID de conexión no puede ser nulo");
+            throw new IllegalArgumentException("ID de conexión no puede ser nulo");
         }
         Connection connection = connectionRepository.findById(connectionId)
-                .orElseThrow(() -> new RuntimeException("Solicitud de conexión no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Solicitud de conexión no encontrada"));
         
         // Verificar que el usuario es el receptor de la solicitud
         if (!connection.getConnectedUser().getId().equals(userId)) {
-            throw new RuntimeException("No tienes permiso para rechazar esta solicitud");
+            throw new UnauthorizedException("No tienes permiso para rechazar esta solicitud");
         }
         
         if (!"pending".equals(connection.getStatus())) {
@@ -113,14 +113,14 @@ public class ConnectionService {
     @Transactional
     public void blockConnection(Long connectionId, Long userId) {
         if (connectionId == null) {
-            throw new RuntimeException("ID de conexión no puede ser nulo");
+            throw new IllegalArgumentException("ID de conexión no puede ser nulo");
         }
         Connection connection = connectionRepository.findById(connectionId)
-                .orElseThrow(() -> new RuntimeException("Conexión no encontrada"));
-        
+                .orElseThrow(() -> new ResourceNotFoundException("Conexión no encontrada"));
+
         // Verificar que el usuario es parte de la conexión
         if (!connection.getUser().getId().equals(userId) && !connection.getConnectedUser().getId().equals(userId)) {
-            throw new RuntimeException("No tienes permiso para bloquear esta conexión");
+            throw new UnauthorizedException("No tienes permiso para bloquear esta conexión");
         }
         
         connection.setStatus("blocked");
@@ -164,40 +164,9 @@ public class ConnectionService {
     @Transactional(readOnly = true)
     public List<User> getSuggestions(Long userId) {
         if (userId == null) {
-            throw new RuntimeException("ID de usuario no puede ser nulo");
+            throw new IllegalArgumentException("ID de usuario no puede ser nulo");
         }
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        
-        // Obtener IDs de usuarios ya conectados o con solicitud pendiente
-        List<Long> connectedUserIds = connectionRepository.findAcceptedConnectionsByUserId(userId).stream()
-                .map(conn -> conn.getUser().getId().equals(userId) 
-                        ? conn.getConnectedUser().getId() 
-                        : conn.getUser().getId())
-                .collect(Collectors.toList());
-        
-        List<Long> pendingUserIds = connectionRepository.findPendingRequestsByUserId(userId).stream()
-                .map(conn -> conn.getUser().getId())
-                .collect(Collectors.toList());
-        
-        List<Long> sentRequestIds = connectionRepository.findSentPendingRequestsByUserId(userId).stream()
-                .map(conn -> conn.getConnectedUser().getId())
-                .collect(Collectors.toList());
-        
-        // Combinar todas las IDs a excluir
-        connectedUserIds.addAll(pendingUserIds);
-        connectedUserIds.addAll(sentRequestIds);
-        connectedUserIds.add(userId); // Excluir al usuario mismo
-        
-        // Buscar usuarios con la misma ubicación o industria
-        List<User> suggestions = userRepository.findAll().stream()
-                .filter(u -> !connectedUserIds.contains(u.getId()))
-                .filter(u -> u.getLocation() != null && user.getLocation() != null 
-                        && u.getLocation().equalsIgnoreCase(user.getLocation()))
-                .limit(10)
-                .collect(Collectors.toList());
-        
-        return suggestions;
+        return userService.findSuggestionsForUser(userId);
     }
     
     private ConnectionResponse mapToResponse(Connection connection) {

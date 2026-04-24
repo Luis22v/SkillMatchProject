@@ -30,10 +30,10 @@ public class CertificationService {
     }
     
     @Transactional
-    public Certification addCertification(@NonNull Long userId, CertificationRequest request) {
+    public Map<String, Object> addCertification(@NonNull Long userId, CertificationRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
-        
+
         Certification certification = new Certification();
         certification.setUser(user);
         certification.setName(request.getName());
@@ -43,8 +43,8 @@ public class CertificationService {
         certification.setCredentialId(request.getCredentialId());
         certification.setCredentialUrl(request.getCredentialUrl());
         certification.setDescription(request.getDescription());
-        
-        return certificationRepository.save(certification);
+
+        return mapCertificationToResponse(certificationRepository.save(certification));
     }
     
     @Transactional

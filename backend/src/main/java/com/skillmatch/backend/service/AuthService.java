@@ -3,6 +3,8 @@ package com.skillmatch.backend.service;
 import com.skillmatch.backend.dto.AuthResponse;
 import com.skillmatch.backend.dto.LoginRequest;
 import com.skillmatch.backend.dto.RegisterRequest;
+import com.skillmatch.backend.exception.DuplicateResourceException;
+import com.skillmatch.backend.exception.ResourceNotFoundException;
 import com.skillmatch.backend.model.Company;
 import com.skillmatch.backend.model.Role;
 import com.skillmatch.backend.model.User;
@@ -57,7 +59,7 @@ public class AuthService {
         String jwt = tokenProvider.generateToken(authentication);
         
         User user = userRepository.findByEmail(loginRequest.getEmail())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
         
         String primaryRole = resolvePrimaryRole(user);
         Long companyId = null;
@@ -74,7 +76,7 @@ public class AuthService {
     @Transactional
     public AuthResponse register(RegisterRequest registerRequest) {
         if (userRepository.existsByEmail(registerRequest.getEmail())) {
-            throw new RuntimeException("El email ya está registrado");
+            throw new DuplicateResourceException("El email ya está registrado");
         }
         
         User user = new User();

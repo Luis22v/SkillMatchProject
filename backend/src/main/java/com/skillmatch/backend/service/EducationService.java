@@ -29,10 +29,10 @@ public class EducationService {
                 .collect(Collectors.toList());
     }
     @Transactional
-    public Education addEducation(@NonNull Long userId, EducationRequest request) {
+    public Map<String, Object> addEducation(@NonNull Long userId, EducationRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
-        
+
         Education education = new Education();
         education.setUser(user);
         education.setSchool(request.getSchool());
@@ -42,8 +42,8 @@ public class EducationService {
         education.setEndDate(request.getEndDate());
         education.setIsCurrent(request.getIsCurrent() != null ? request.getIsCurrent() : false);
         education.setDescription(request.getDescription());
-        
-        return educationRepository.save(education);
+
+        return mapEducationToResponse(educationRepository.save(education));
     }
     
     @Transactional

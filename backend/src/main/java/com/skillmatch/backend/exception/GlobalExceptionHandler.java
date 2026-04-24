@@ -6,6 +6,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import com.skillmatch.backend.exception.DuplicateResourceException;
+import com.skillmatch.backend.exception.UnauthorizedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -89,7 +91,23 @@ public class GlobalExceptionHandler {
                 .body(new MessageResponse(ex.getMessage()));
     }
 
-    // 7. Errores de negocio genéricos — SIEMPRE antes de Exception
+    // 7. Recurso duplicado (409)
+    @ExceptionHandler(DuplicateResourceException.class)
+    public ResponseEntity<?> handleDuplicateResource(DuplicateResourceException ex,
+                                                      WebRequest request) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new MessageResponse(ex.getMessage()));
+    }
+
+    // 8. Acceso no autorizado — dominio (403)
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<?> handleUnauthorized(UnauthorizedException ex,
+                                                 WebRequest request) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(new MessageResponse(ex.getMessage()));
+    }
+
+    // 9. Errores de negocio genéricos — SIEMPRE antes de Exception
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<?> handleRuntime(RuntimeException ex, WebRequest request) {
         return ResponseEntity.badRequest()

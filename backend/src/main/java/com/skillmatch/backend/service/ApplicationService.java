@@ -2,6 +2,8 @@ package com.skillmatch.backend.service;
 
 import com.skillmatch.backend.dto.ApplicationRequest;
 import com.skillmatch.backend.dto.ApplicationResponse;
+import com.skillmatch.backend.exception.DuplicateResourceException;
+import com.skillmatch.backend.exception.ResourceNotFoundException;
 import com.skillmatch.backend.model.Application;
 import com.skillmatch.backend.model.Job;
 import com.skillmatch.backend.model.User;
@@ -35,7 +37,7 @@ public class ApplicationService {
         }
         // Validar que el usuario exista
         User user = userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + userId));
+            .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + userId));
         
         // Validar que el job exista y esté activo
         Long jobId = request.getJobId();
@@ -43,7 +45,7 @@ public class ApplicationService {
             throw new IllegalArgumentException("El ID del job no puede ser nulo");
         }
         Job job = jobRepository.findById(jobId)
-            .orElseThrow(() -> new RuntimeException("Job no encontrado con ID: " + jobId));
+            .orElseThrow(() -> new ResourceNotFoundException("Job no encontrado con ID: " + jobId));
         
         String jobStatus = job.getStatus();
         if (!Boolean.TRUE.equals(job.getActive()) || jobStatus == null || !"abierta".equalsIgnoreCase(jobStatus)) {
@@ -52,7 +54,7 @@ public class ApplicationService {
         
         // Verificar que el usuario no se haya postulado previamente
         if (applicationRepository.existsByUserIdAndJobId(userId, request.getJobId())) {
-            throw new RuntimeException("Ya te has postulado a esta oferta");
+            throw new DuplicateResourceException("Ya te has postulado a esta oferta");
         }
         
         Application application = new Application();
@@ -72,7 +74,7 @@ public class ApplicationService {
             throw new IllegalArgumentException("El ID de la postulación no puede ser nulo");
         }
         Application application = applicationRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Postulación no encontrada con ID: " + id));
+            .orElseThrow(() -> new ResourceNotFoundException("Postulación no encontrada con ID: " + id));
         return mapToResponse(application);
     }
     
@@ -110,10 +112,10 @@ public class ApplicationService {
             throw new IllegalArgumentException("El ID de la postulación no puede ser nulo");
         }
         Application application = applicationRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Postulación no encontrada con ID: " + id));
+            .orElseThrow(() -> new ResourceNotFoundException("Postulación no encontrada con ID: " + id));
         
         if (!List.of("pendiente", "revisada", "aceptada", "rechazada").contains(status)) {
-            throw new RuntimeException("Estado inválido: " + status);
+            throw new IllegalArgumentException("Estado inválido: " + status);
         }
         
         application.setStatus(status);
@@ -135,7 +137,7 @@ public class ApplicationService {
             throw new IllegalArgumentException("El ID de la postulación no puede ser nulo");
         }
         Application application = applicationRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Postulación no encontrada con ID: " + id));
+            .orElseThrow(() -> new ResourceNotFoundException("Postulación no encontrada con ID: " + id));
 
         boolean isOwner = application.getUser().getId().equals(requesterId);
         if (!hasManagementPrivileges && !isOwner) {

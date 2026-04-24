@@ -2,7 +2,6 @@ package com.skillmatch.backend.controller;
 
 import com.skillmatch.backend.dto.EducationRequest;
 import com.skillmatch.backend.dto.MessageResponse;
-import com.skillmatch.backend.model.Education;
 import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.service.EducationService;
 import jakarta.validation.Valid;
@@ -52,14 +51,10 @@ public class EducationController {
         }
         
         try {
-            Education education = educationService.addEducation(targetUserId, request);
+            Map<String, Object> education = educationService.addEducation(targetUserId, request);
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                 "message", "Educación agregada exitosamente",
-                "education", educationService.getUserEducations(targetUserId)
-                        .stream()
-                        .filter(e -> e.get("id").equals(education.getId()))
-                        .findFirst()
-                        .orElse(null)
+                "education", education
             ));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));

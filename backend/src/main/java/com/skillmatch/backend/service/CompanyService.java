@@ -4,9 +4,7 @@ import com.skillmatch.backend.dto.CompanyRequest;
 import com.skillmatch.backend.dto.CompanyResponse;
 import com.skillmatch.backend.model.Company;
 import com.skillmatch.backend.model.User;
-import com.skillmatch.backend.repository.ApplicationRepository;
 import com.skillmatch.backend.repository.CompanyRepository;
-import com.skillmatch.backend.repository.JobRepository;
 import com.skillmatch.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.lang.NonNull;
@@ -27,8 +25,8 @@ public class CompanyService {
 
     private final CompanyRepository companyRepository;
     private final UserRepository userRepository;
-    private final JobRepository jobRepository;
-    private final ApplicationRepository applicationRepository;
+    private final JobService jobService;
+    private final ApplicationService applicationService;
 
     public CompanyResponse createCompany(CompanyRequest request) {
         if (request.getEmail() == null || request.getEmail().isBlank()) {
@@ -148,7 +146,7 @@ public class CompanyService {
     public Map<String, Object> getCompanyStatistics(@NonNull Long companyId) {
         Company company = findCompanyOrThrow(companyId);
 
-        var jobs = jobRepository.findByCompanyId(companyId);
+        var jobs = jobService.getJobsByCompany(companyId);
 
         // ✅ FIX #1: El dominio usa "abierta" (minúsculas), no "ACTIVA".
         // Se usa equalsIgnoreCase como defensa adicional.
@@ -159,7 +157,7 @@ public class CompanyService {
 
         long totalJobs = jobs.size();
 
-        var applications = applicationRepository.findByCompanyId(companyId);
+        var applications = applicationService.getApplicationsByCompany(companyId);
         long totalApplications = applications.size();
 
         // ✅ FIX #1: mismo criterio — el dominio usa "pendiente" (minúsculas)
@@ -190,6 +188,14 @@ public class CompanyService {
         stats.put("pendingApplications", pendingApplications);
         stats.put("responseRate",        Math.round(responseRate));
         return stats;
+    }
+
+    @Transactional
+    public void syncOwnerEmail(Long userId, String newEmail) {
+        companyRepository.findByUserId(userId).ifPresent(company -> {
+            company.setEmail(newEmail);
+            companyRepository.save(company);
+        });
     }
 
     // ─── Helpers privados ────────────────────────────────────────────────────

@@ -2,7 +2,6 @@ package com.skillmatch.backend.controller;
 
 import com.skillmatch.backend.dto.ExperienceRequest;
 import com.skillmatch.backend.dto.MessageResponse;
-import com.skillmatch.backend.model.Experience;
 import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.service.ExperienceService;
 import jakarta.validation.Valid;
@@ -54,14 +53,10 @@ public class ExperienceController {
         }
         
         try {
-            Experience experience = experienceService.addExperience(targetUserId, request);
+            Map<String, Object> experience = experienceService.addExperience(targetUserId, request);
             return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                 "message", "Experiencia agregada exitosamente",
-                "experience", experienceService.getUserExperiences(targetUserId)
-                        .stream()
-                        .filter(e -> e.get("id").equals(experience.getId()))
-                        .findFirst()
-                        .orElse(null)
+                "experience", experience
             ));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));

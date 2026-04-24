@@ -2,10 +2,11 @@ package com.skillmatch.backend.service;
 
 import com.skillmatch.backend.dto.ChatMessageResponse;
 import com.skillmatch.backend.dto.MessageRequest;
+import com.skillmatch.backend.exception.ResourceNotFoundException;
+import com.skillmatch.backend.exception.UnauthorizedException;
 import com.skillmatch.backend.model.Message;
 import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.repository.MessageRepository;
-import com.skillmatch.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,25 +21,23 @@ import java.util.stream.Collectors;
 public class MessageService {
     
     private final MessageRepository messageRepository;
-    private final UserRepository userRepository;
+    private final UserService userService;
     private final NotificationService notificationService;
     
     @Transactional
     public ChatMessageResponse sendMessage(Long senderId, MessageRequest request) {
         if (senderId.equals(request.getReceiverId())) {
-            throw new RuntimeException("No puedes enviarte un mensaje a ti mismo");
+            throw new IllegalArgumentException("No puedes enviarte un mensaje a ti mismo");
         }
-        
-        User sender = userRepository.findById(senderId)
-                .orElseThrow(() -> new RuntimeException("Usuario remitente no encontrado"));
-        
+
+        User sender = userService.getUserById(senderId);
+
         Long receiverId = request.getReceiverId();
         if (receiverId == null) {
-            throw new RuntimeException("El ID del destinatario no puede ser nulo");
+            throw new IllegalArgumentException("El ID del destinatario no puede ser nulo");
         }
-        
-        User receiver = userRepository.findById(receiverId)
-                .orElseThrow(() -> new RuntimeException("Usuario destinatario no encontrado"));
+
+        User receiver = userService.getUserById(receiverId);
         
         Message message = new Message();
         message.setSender(sender);
@@ -68,14 +67,14 @@ public class MessageService {
     @Transactional
     public ChatMessageResponse markAsRead(Long messageId, Long userId) {
         if (messageId == null) {
-            throw new RuntimeException("El ID del mensaje no puede ser nulo");
+            throw new IllegalArgumentException("El ID del mensaje no puede ser nulo");
         }
         Message message = messageRepository.findById(messageId)
-                .orElseThrow(() -> new RuntimeException("Mensaje no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Mensaje no encontrado"));
         
         // Verificar que el usuario es el receptor
         if (!message.getReceiver().getId().equals(userId)) {
-            throw new RuntimeException("No tienes permiso para marcar este mensaje como leído");
+            throw new UnauthorizedException("No tienes permiso para marcar este mensaje como leído");
         }
         
         if (!message.getIsRead()) {
@@ -107,10 +106,10 @@ public class MessageService {
     @Transactional
     public void deleteMessage(Long messageId, Long userId) {
         if (messageId == null) {
-            throw new RuntimeException("El ID del mensaje no puede ser nulo");
+            throw new IllegalArgumentException("El ID del mensaje no puede ser nulo");
         }
         Message message = messageRepository.findById(messageId)
-                .orElseThrow(() -> new RuntimeException("Mensaje no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Mensaje no encontrado"));
         
         // Marcar como eliminado según quién sea el usuario
         if (message.getSender().getId().equals(userId)) {
@@ -118,7 +117,7 @@ public class MessageService {
         } else if (message.getReceiver().getId().equals(userId)) {
             message.setDeletedByReceiver(true);
         } else {
-            throw new RuntimeException("No tienes permiso para eliminar este mensaje");
+            throw new UnauthorizedException("No tienes permiso para eliminar este mensaje");
         }
         
         // Si ambos han eliminado el mensaje, eliminarlo físicamente de la BD
