@@ -1,0 +1,34 @@
+package com.skillmatch.backend.converter;
+
+import jakarta.persistence.AttributeConverter;
+import jakarta.persistence.Converter;
+
+import java.util.Arrays;
+import java.util.List;
+
+/**
+ * Convierte List<String> a una columna TEXT delimitada por ";"
+ * y viceversa. Reutilizable en cualquier entidad.
+ *
+ * Extraído de Job.java (viola SRP tener el converter en la misma clase).
+ */
+@Converter
+public class StringListConverter implements AttributeConverter<List<String>, String> {
+
+    private static final String DELIMITER = ";";
+
+    @Override
+    public String convertToDatabaseColumn(List<String> list) {
+        if (list == null || list.isEmpty()) return null;
+        return String.join(DELIMITER, list);
+    }
+
+    @Override
+    public List<String> convertToEntityAttribute(String joined) {
+        if (joined == null || joined.isBlank()) return List.of();
+        return Arrays.stream(joined.split(DELIMITER))
+                     .map(String::trim)
+                     .filter(s -> !s.isEmpty())
+                     .toList();
+    }
+}
