@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,10 +26,8 @@ public class ExperienceController {
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<Map<String, Object>>> getUserExperiences(@PathVariable(required = false) String userId) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User currentUser = (User) authentication.getPrincipal();
-        Long targetUserId = (userId != null && !userId.equals("undefined")) ? Long.parseLong(userId) : currentUser.getId();
-        
+        Long targetUserId = resolveTargetUserId(userId, extractCurrentUserId());
+
         List<Map<String, Object>> experiences = experienceService.getUserExperiences(targetUserId);
         return ResponseEntity.ok(experiences);
     }
@@ -41,13 +38,12 @@ public class ExperienceController {
             @PathVariable(required = false) String userId,
             @Valid @RequestBody ExperienceRequest request) {
         
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User currentUser = (User) authentication.getPrincipal();
-        
+        Long currentUserId = extractCurrentUserId();
+
         // Si userId es null o "undefined", usar el ID del usuario autenticado
-        Long targetUserId = (userId != null && !userId.equals("undefined")) ? Long.parseLong(userId) : currentUser.getId();
-        
-        if (!currentUser.getId().equals(targetUserId)) {
+        Long targetUserId = resolveTargetUserId(userId, currentUserId);
+
+        if (!currentUserId.equals(targetUserId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new MessageResponse("No tienes permiso para agregar experiencia a este perfil"));
         }
@@ -70,11 +66,10 @@ public class ExperienceController {
             @PathVariable Long experienceId,
             @Valid @RequestBody ExperienceRequest request) {
         
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User currentUser = (User) authentication.getPrincipal();
-        Long targetUserId = (userId != null && !userId.equals("undefined")) ? Long.parseLong(userId) : currentUser.getId();
-        
-        if (!currentUser.getId().equals(targetUserId)) {
+        Long currentUserId = extractCurrentUserId();
+        Long targetUserId = resolveTargetUserId(userId, currentUserId);
+
+        if (!currentUserId.equals(targetUserId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new MessageResponse("No tienes permiso para actualizar esta experiencia"));
         }
@@ -93,11 +88,10 @@ public class ExperienceController {
             @PathVariable(required = false) String userId,
             @PathVariable Long experienceId) {
         
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User currentUser = (User) authentication.getPrincipal();
-        Long targetUserId = (userId != null && !userId.equals("undefined")) ? Long.parseLong(userId) : currentUser.getId();
-        
-        if (!currentUser.getId().equals(targetUserId)) {
+        Long currentUserId = extractCurrentUserId();
+        Long targetUserId = resolveTargetUserId(userId, currentUserId);
+
+        if (!currentUserId.equals(targetUserId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new MessageResponse("No tienes permiso para eliminar esta experiencia"));
         }
@@ -108,5 +102,15 @@ public class ExperienceController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
         }
+    }
+
+    private Long extractCurrentUserId() {
+        return ((User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getId();
+    }
+
+    private Long resolveTargetUserId(String pathUserId, Long fallbackId) {
+        return (pathUserId != null && !pathUserId.equals("undefined"))
+                ? Long.parseLong(pathUserId)
+                : fallbackId;
     }
 }

@@ -32,58 +32,55 @@ public class SkillService {
     
     // Agregar una skill
     @Transactional
-    public Skill addSkill(Long userId, SkillRequest request) {
+    public Map<String, Object> addSkill(Long userId, SkillRequest request) {
         if (userId == null) {
             throw new IllegalArgumentException("El ID de usuario no puede ser nulo");
         }
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
-        
-        // Validar que no exista una skill con el mismo nombre para este usuario
+
         List<Skill> existingSkills = skillRepository.findByUserId(userId);
         boolean skillExists = existingSkills.stream()
                 .anyMatch(s -> s.getName().equalsIgnoreCase(request.getName()));
-        
+
         if (skillExists) {
             throw new IllegalArgumentException("Esta habilidad ya existe en tu perfil");
         }
-        
+
         Skill skill = new Skill();
         skill.setUser(user);
         skill.setName(request.getName());
         skill.setLevel(request.getLevel());
-        
-        return skillRepository.save(skill);
+
+        return mapSkillToResponse(skillRepository.save(skill));
     }
     
     // Actualizar una skill
     @Transactional
-    public Skill updateSkill(Long userId, Long skillId, SkillRequest request) {
+    public Map<String, Object> updateSkill(Long userId, Long skillId, SkillRequest request) {
         if (skillId == null) {
             throw new IllegalArgumentException("El ID de habilidad no puede ser nulo");
         }
         Skill skill = skillRepository.findById(skillId)
                 .orElseThrow(() -> new IllegalArgumentException("Habilidad no encontrada"));
-        
-        // Verificar que la skill pertenece al usuario
+
         if (!skill.getUser().getId().equals(userId)) {
             throw new IllegalArgumentException("Esta habilidad no pertenece a este usuario");
         }
-        
-        // Validar que no exista otra skill con el mismo nombre (excepto la actual)
+
         List<Skill> existingSkills = skillRepository.findByUserId(userId);
         boolean duplicateExists = existingSkills.stream()
-                .anyMatch(s -> !s.getId().equals(skillId) && 
+                .anyMatch(s -> !s.getId().equals(skillId) &&
                               s.getName().equalsIgnoreCase(request.getName()));
-        
+
         if (duplicateExists) {
             throw new IllegalArgumentException("Ya existe otra habilidad con este nombre");
         }
-        
+
         skill.setName(request.getName());
         skill.setLevel(request.getLevel());
-        
-        return skillRepository.save(skill);
+
+        return mapSkillToResponse(skillRepository.save(skill));
     }
     
     // Eliminar una skill

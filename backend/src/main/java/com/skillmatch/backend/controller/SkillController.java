@@ -2,7 +2,6 @@ package com.skillmatch.backend.controller;
 
 import com.skillmatch.backend.dto.MessageResponse;
 import com.skillmatch.backend.dto.SkillRequest;
-import com.skillmatch.backend.model.Skill;
 import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.service.SkillService;
 import jakarta.validation.Valid;
@@ -10,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,10 +27,8 @@ public class SkillController {
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<Map<String, Object>>> getUserSkills(@PathVariable(required = false) String userId) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User currentUser = (User) authentication.getPrincipal();
-        Long targetUserId = (userId != null && !userId.equals("undefined")) ? Long.parseLong(userId) : currentUser.getId();
-        
+        Long targetUserId = resolveTargetUserId(userId, extractCurrentUserId());
+
         List<Map<String, Object>> skills = skillService.getUserSkills(targetUserId);
         return ResponseEntity.ok(skills);
     }
@@ -44,27 +40,21 @@ public class SkillController {
             @PathVariable(required = false) String userId,
             @Valid @RequestBody SkillRequest request) {
         
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User currentUser = (User) authentication.getPrincipal();
-        Long targetUserId = (userId != null && !userId.equals("undefined")) ? Long.parseLong(userId) : currentUser.getId();
-        
+        Long currentUserId = extractCurrentUserId();
+        Long targetUserId = resolveTargetUserId(userId, currentUserId);
+
         // Solo el propio usuario puede agregar skills a su perfil
-        if (!currentUser.getId().equals(targetUserId)) {
+        if (!currentUserId.equals(targetUserId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new MessageResponse("No tienes permiso para agregar skills a este perfil"));
         }
         
         try {
-            Skill skill = skillService.addSkill(targetUserId, request);
-            Map<String, Object> response = Map.of(
+            Map<String, Object> skill = skillService.addSkill(targetUserId, request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
                 "message", "Habilidad agregada exitosamente",
-                "skill", Map.of(
-                    "id", skill.getId(),
-                    "name", skill.getName(),
-                    "level", skill.getLevel()
-                )
-            );
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+                "skill", skill
+            ));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
                     .body(new MessageResponse(e.getMessage()));
@@ -79,26 +69,20 @@ public class SkillController {
             @PathVariable Long skillId,
             @Valid @RequestBody SkillRequest request) {
         
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User currentUser = (User) authentication.getPrincipal();
-        Long targetUserId = (userId != null && !userId.equals("undefined")) ? Long.parseLong(userId) : currentUser.getId();
-        
-        if (!currentUser.getId().equals(targetUserId)) {
+        Long currentUserId = extractCurrentUserId();
+        Long targetUserId = resolveTargetUserId(userId, currentUserId);
+
+        if (!currentUserId.equals(targetUserId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new MessageResponse("No tienes permiso para actualizar esta skill"));
         }
         
         try {
-            Skill skill = skillService.updateSkill(targetUserId, skillId, request);
-            Map<String, Object> response = Map.of(
+            Map<String, Object> skill = skillService.updateSkill(targetUserId, skillId, request);
+            return ResponseEntity.ok(Map.of(
                 "message", "Habilidad actualizada exitosamente",
-                "skill", Map.of(
-                    "id", skill.getId(),
-                    "name", skill.getName(),
-                    "level", skill.getLevel()
-                )
-            );
-            return ResponseEntity.ok(response);
+                "skill", skill
+            ));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
                     .body(new MessageResponse(e.getMessage()));
@@ -112,11 +96,10 @@ public class SkillController {
             @PathVariable(required = false) String userId,
             @PathVariable Long skillId) {
         
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User currentUser = (User) authentication.getPrincipal();
-        Long targetUserId = (userId != null && !userId.equals("undefined")) ? Long.parseLong(userId) : currentUser.getId();
-        
-        if (!currentUser.getId().equals(targetUserId)) {
+        Long currentUserId = extractCurrentUserId();
+        Long targetUserId = resolveTargetUserId(userId, currentUserId);
+
+        if (!currentUserId.equals(targetUserId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new MessageResponse("No tienes permiso para eliminar esta skill"));
         }
@@ -128,5 +111,15 @@ public class SkillController {
             return ResponseEntity.badRequest()
                     .body(new MessageResponse(e.getMessage()));
         }
+    }
+
+    private Long extractCurrentUserId() {
+        return ((User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getId();
+    }
+
+    private Long resolveTargetUserId(String pathUserId, Long fallbackId) {
+        return (pathUserId != null && !pathUserId.equals("undefined"))
+                ? Long.parseLong(pathUserId)
+                : fallbackId;
     }
 }

@@ -9,7 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,10 +26,8 @@ public class CertificationController {
     @GetMapping
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<Map<String, Object>>> getUserCertifications(@PathVariable(required = false) String userId) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User currentUser = (User) authentication.getPrincipal();
-        Long targetUserId = (userId != null && !userId.equals("undefined")) ? Long.parseLong(userId) : currentUser.getId();
-        
+        Long targetUserId = resolveTargetUserId(userId, extractCurrentUserId());
+
         List<Map<String, Object>> certifications = certificationService.getUserCertifications(targetUserId);
         return ResponseEntity.ok(certifications);
     }
@@ -41,11 +38,10 @@ public class CertificationController {
             @PathVariable(required = false) String userId,
             @Valid @RequestBody CertificationRequest request) {
         
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User currentUser = (User) authentication.getPrincipal();
-        Long targetUserId = (userId != null && !userId.equals("undefined")) ? Long.parseLong(userId) : currentUser.getId();
-        
-        if (!currentUser.getId().equals(targetUserId)) {
+        Long currentUserId = extractCurrentUserId();
+        Long targetUserId = resolveTargetUserId(userId, currentUserId);
+
+        if (!currentUserId.equals(targetUserId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new MessageResponse("No tienes permiso para agregar certificación a este perfil"));
         }
@@ -68,11 +64,10 @@ public class CertificationController {
             @PathVariable Long certificationId,
             @Valid @RequestBody CertificationRequest request) {
         
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User currentUser = (User) authentication.getPrincipal();
-        Long targetUserId = (userId != null && !userId.equals("undefined")) ? Long.parseLong(userId) : currentUser.getId();
-        
-        if (!currentUser.getId().equals(targetUserId)) {
+        Long currentUserId = extractCurrentUserId();
+        Long targetUserId = resolveTargetUserId(userId, currentUserId);
+
+        if (!currentUserId.equals(targetUserId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new MessageResponse("No tienes permiso para actualizar esta certificación"));
         }
@@ -91,11 +86,10 @@ public class CertificationController {
             @PathVariable(required = false) String userId,
             @PathVariable Long certificationId) {
         
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User currentUser = (User) authentication.getPrincipal();
-        Long targetUserId = (userId != null && !userId.equals("undefined")) ? Long.parseLong(userId) : currentUser.getId();
-        
-        if (!currentUser.getId().equals(targetUserId)) {
+        Long currentUserId = extractCurrentUserId();
+        Long targetUserId = resolveTargetUserId(userId, currentUserId);
+
+        if (!currentUserId.equals(targetUserId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new MessageResponse("No tienes permiso para eliminar esta certificación"));
         }
@@ -106,5 +100,15 @@ public class CertificationController {
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
         }
+    }
+
+    private Long extractCurrentUserId() {
+        return ((User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getId();
+    }
+
+    private Long resolveTargetUserId(String pathUserId, Long fallbackId) {
+        return (pathUserId != null && !pathUserId.equals("undefined"))
+                ? Long.parseLong(pathUserId)
+                : fallbackId;
     }
 }
