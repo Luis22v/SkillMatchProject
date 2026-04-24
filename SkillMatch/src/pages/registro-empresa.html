@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Empresa - SkillMatch Cartagena</title>
+    <link rel="stylesheet" href="../assets/css/app.css">
+    <link rel="icon" href="../assets/img/logo.png" type="image/png">
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <div class="nav-left">
+                <div class="logo">
+                    <a href="index.html">
+                        <img src="../assets/img/logo.png" alt="SkillMatch Logo" width="300" height="100">
+                    </a>
+                </div>
+                <ul class="nav-links">
+                    <li><a href="index.html">Inicio</a></li>
+                    <li><a href="index.html#innovacion">Innovación</a></li>
+                </ul>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html#usuarios-empresas">Usuarios</a></li>
+                <li><a href="index.html#usuarios-empresas">Empresas</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section class="registro-section">
+        <div class="container">
+            <h2>Registro de Empresas</h2>
+            <form id="form-registro-empresa" class="registro-form" novalidate>
+                <div class="stepper" aria-label="Progreso de registro" role="tablist">
+                    <div class="step active" data-step="1" role="tab" id="stepper-tab-1" aria-controls="step-panel-1" aria-selected="true" tabindex="0"><span class="step-index">1</span><span class="step-label">Cuenta</span></div>
+                    <div class="step" data-step="2" role="tab" id="stepper-tab-2" aria-controls="step-panel-2" aria-selected="false" tabindex="-1"><span class="step-index">2</span><span class="step-label">Detalles</span></div>
+                    <div class="step" data-step="3" role="tab" id="stepper-tab-3" aria-controls="step-panel-3" aria-selected="false" tabindex="-1"><span class="step-index">3</span><span class="step-label">Confirmación</span></div>
+                </div>
+
+                <div class="form-step active" data-step="1" id="step-panel-1" role="tabpanel" aria-labelledby="stepper-tab-1" aria-hidden="false">
+                  <div class="form-section">
+                    <h3 class="section-title">Cuenta</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="empresa-email">Correo corporativo</label>
+                            <input type="email" id="empresa-email" name="email" autocomplete="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="empresa-pass">Contraseña</label>
+                            <input type="password" id="empresa-pass" name="pass" minlength="8" required>
+                            <small class="input-help">Mínimo 8 caracteres.</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="empresa-pass2">Confirmar contraseña</label>
+                            <input type="password" id="empresa-pass2" name="pass2" minlength="8" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="empresa-telefono">Teléfono</label>
+                            <input type="tel" id="empresa-telefono" name="telefono" autocomplete="tel" required>
+                        </div>
+                    </div>
+                  </div>
+
+                  <div class="form-section">
+                    <h3 class="section-title">Datos de la empresa</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="empresa-nombre">Razón social</label>
+                            <input type="text" id="empresa-nombre" name="nombre" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="empresa-nit">NIT</label>
+                            <input type="text" id="empresa-nit" name="nit" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="empresa-sector">Sector</label>
+                            <select id="empresa-sector" name="sector" required>
+                                <option value="">Selecciona el sector</option>
+                                <option value="tecnologia">Tecnología</option>
+                                <option value="diseno_creativo">Diseño / Creativo</option>
+                                <option value="marketing_publicidad">Marketing / Publicidad</option>
+                                <option value="finanzas">Finanzas / Banca</option>
+                                <option value="contabilidad">Contabilidad</option>
+                                <option value="rrhh">Recursos Humanos</option>
+                                <option value="logistica">Logística / Operaciones</option>
+                                <option value="turismo">Turismo / Hotelería</option>
+                                <option value="salud">Salud / Bienestar</option>
+                                <option value="educacion">Educación / Formación</option>
+                                <option value="legal">Legal / Compliance</option>
+                                <option value="comercio">Comercio / Retail</option>
+                                <option value="industria">Industria / Manufactura</option>
+                                <option value="servicios">Servicios Profesionales</option>
+                                <option value="otro">Otro</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="empresa-tamano">Tamaño</label>
+                            <select id="empresa-tamano" name="tamano">
+                                <option value="">Selecciona el tamaño</option>
+                                <option value="micro">Micro (1-10)</option>
+                                <option value="pequena">Pequeña (11-50)</option>
+                                <option value="mediana">Mediana (51-250)</option>
+                                <option value="grande">Grande (250+)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="empresa-web">Sitio web (opcional)</label>
+                            <input type="url" id="empresa-web" name="web" placeholder="https://">
+                        </div>
+                        <div class="form-group">
+                            <label for="empresa-logo">Logo (opcional)</label>
+                            <input type="file" id="empresa-logo" name="logo" accept="image/png, image/jpeg">
+                        </div>
+                        <div class="form-group span-full">
+                            <label for="empresa-descripcion">Descripción</label>
+                            <textarea id="empresa-descripcion" name="descripcion" rows="4" required></textarea>
+                        </div>
+                    </div>
+                  </div>
+                  <div class="step-actions">
+                    <button type="button" class="btn btn-primary" id="next-step-emp-1">Siguiente</button>
+                  </div>
+                </div>
+
+                <div class="form-step" data-step="2" id="step-panel-2" role="tabpanel" aria-labelledby="stepper-tab-2" aria-hidden="true">
+                                    <div class="form-section">
+                                        <h3 class="section-title">Contacto principal</h3>
+                                        <div class="form-grid">
+                        <div class="form-group">
+                            <label for="contacto-nombre">Nombre</label>
+                            <input type="text" id="contacto-nombre" name="contacto_nombre" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="contacto-cargo">Cargo</label>
+                            <input type="text" id="contacto-cargo" name="contacto_cargo" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="contacto-email">Correo</label>
+                            <input type="email" id="contacto-email" name="contacto_email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="contacto-telefono">Teléfono</label>
+                            <input type="tel" id="contacto-telefono" name="contacto_telefono" required>
+                        </div>
+                    </div>
+                  </div>
+
+                  <div class="form-section">
+                    <h3 class="section-title">Ubicación</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="empresa-ciudad">Ciudad</label>
+                            <input type="text" id="empresa-ciudad" name="ciudad" placeholder="Cartagena" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="empresa-departamento">Departamento</label>
+                            <input type="text" id="empresa-departamento" name="departamento" placeholder="Bolívar" required>
+                        </div>
+                        <div class="form-group span-full">
+                            <label for="empresa-direccion">Dirección</label>
+                            <input type="text" id="empresa-direccion" name="direccion" required>
+                        </div>
+                    </div>
+                  </div>
+
+                  <div class="form-section">
+                    <h3 class="section-title">Preferencias de contratación</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="empresa-perfiles">Perfiles buscados</label>
+                            <input type="text" id="empresa-perfiles" name="perfiles" placeholder="Ej. Diseñador UX, Analista Financiero, Especialista Marketing" required>
+                        </div>
+                        <div class="form-group span-full">
+                            <label>Roles más demandados (selección rápida)</label>
+                            <div class="roles-input" id="roles-tags">
+                                <div class="role-tag" data-value="diseño_ux" onclick="toggleRoleTag(this)">Diseño UX/UI</div>
+                                <div class="role-tag" data-value="frontend" onclick="toggleRoleTag(this)">Frontend</div>
+                                <div class="role-tag" data-value="backend" onclick="toggleRoleTag(this)">Backend</div>
+                                <div class="role-tag" data-value="analista_datos" onclick="toggleRoleTag(this)">Analista de Datos</div>
+                                <div class="role-tag" data-value="marketing_digital" onclick="toggleRoleTag(this)">Marketing Digital</div>
+                                <div class="role-tag" data-value="ventas_comercial" onclick="toggleRoleTag(this)">Ventas / Comercial</div>
+                                <div class="role-tag" data-value="atencion_cliente" onclick="toggleRoleTag(this)">Atención al Cliente</div>
+                                <div class="role-tag" data-value="rrhh" onclick="toggleRoleTag(this)">Recursos Humanos</div>
+                                <div class="role-tag" data-value="logistica" onclick="toggleRoleTag(this)">Logística / Operaciones</div>
+                                <div class="role-tag" data-value="finanzas" onclick="toggleRoleTag(this)">Finanzas</div>
+                                <div class="role-tag" data-value="contabilidad" onclick="toggleRoleTag(this)">Contabilidad</div>
+                                <div class="role-tag" data-value="proyectos" onclick="toggleRoleTag(this)">Gestión de Proyectos</div>
+                                <div class="role-tag" data-value="legal" onclick="toggleRoleTag(this)">Legal / Compliance</div>
+                                <div class="role-tag" data-value="salud" onclick="toggleRoleTag(this)">Salud / Bienestar</div>
+                            </div>
+                            <small class="input-help">Haz clic para añadir; se agregan a "Perfiles buscados".</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="empresa-modalidad">Modalidad</label>
+                            <select id="empresa-modalidad" name="modalidad">
+                                <option value="">Selecciona modalidad</option>
+                                <option value="presencial">Presencial</option>
+                                <option value="hibrido">Híbrido</option>
+                                <option value="remoto">Remoto</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="empresa-seniority">Seniority</label>
+                            <select id="empresa-seniority" name="seniority">
+                                <option value="">Selecciona nivel</option>
+                                <option value="practicas">Prácticas</option>
+                                <option value="junior">Junior</option>
+                                <option value="semi-senior">Semi Senior</option>
+                                <option value="senior">Senior</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="empresa-rango">Rango salarial (opcional)</label>
+                            <input type="text" id="empresa-rango" name="rango" placeholder="$1.5M - $2M / mes">
+                        </div>
+                    </div>
+                  </div>
+                  <div class="step-actions">
+                    <button type="button" class="btn btn-return" id="prev-step-emp-2">Volver</button>
+                    <button type="button" class="btn btn-primary" id="next-step-emp-2">Siguiente</button>
+                  </div>
+                </div>
+
+                <div class="form-step" data-step="3" id="step-panel-3" role="tabpanel" aria-labelledby="stepper-tab-3" aria-hidden="true">
+                  <div class="form-section">
+                    <h3 class="section-title">Verificación (opcional)</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="empresa-rut">RUT / Cámara de comercio (PDF)</label>
+                            <input type="file" id="empresa-rut" name="rut" accept="application/pdf">
+                        </div>
+                    </div>
+                  </div>
+
+                  <div class="form-section">
+                    <label class="checkbox">
+                        <input type="checkbox" id="empresa-terminos" required>
+                        <span>Acepto los <a href="#">Términos y condiciones</a> y el <a href="#">tratamiento de datos</a>.</span>
+                    </label>
+                  </div>
+
+                  <div class="step-actions">
+                    <button type="button" class="btn btn-return" id="prev-step-emp-3">Volver</button>
+                    <button type="submit" class="btn btn-primary">Crear cuenta</button>
+                  </div>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 SkillMatch Cartagena. Desarrollado para conectar el talento local.</p>
+            <p>Una iniciativa para potenciar el ecosistema empresarial y educativo de Cartagena de Indias.</p>
+        </div>
+    </footer>
+
+    <script>
+        function toggleRoleTag(el){
+            el.classList.toggle('active');
+            const input = document.getElementById('empresa-perfiles');
+            const value = el.getAttribute('data-value');
+            let current = input.value.split(',').map(v=>v.trim()).filter(v=>v);
+            if (el.classList.contains('active')) {
+                if (!current.includes(el.textContent.trim())) current.push(el.textContent.trim());
+            } else {
+                current = current.filter(v=> v !== el.textContent.trim());
+            }
+            input.value = current.join(', ');
+        }
+                // Navegación del wizard
+                (function(){
+                    const form = document.getElementById('form-registro-empresa');
+                    const steps = Array.from(form.querySelectorAll('.form-step'));
+                    const stepTabs = Array.from(form.querySelectorAll('.stepper .step'));
+                    let current = 0;
+
+                    const show = (index) => {
+                        steps.forEach((panel,i)=> {
+                            const isActive = i===index;
+                            panel.classList.toggle('active', isActive);
+                            panel.setAttribute('aria-hidden', String(!isActive));
+                        });
+                        stepTabs.forEach((tab,i)=>{
+                            const isActive = i===index;
+                            tab.classList.toggle('active', isActive);
+                            tab.classList.toggle('completed', i<index);
+                            tab.setAttribute('aria-selected', String(isActive));
+                            tab.setAttribute('tabindex', isActive ? '0' : '-1');
+                        });
+                        current = index;
+                    };
+
+                    const validateStep = (index) => {
+                        const container = steps[index];
+                        console.log('Validando paso:', index + 1);
+                        console.log('Container:', container);
+                        
+                        const required = Array.from(container.querySelectorAll('[required]'));
+                        console.log('Campos requeridos encontrados:', required.length);
+                        
+                        const invalidFields = [];
+                        
+                        for (const field of required){
+                            const fieldName = field.getAttribute('name') || field.id;
+                            const label = field.closest('.form-group')?.querySelector('label')?.textContent || fieldName;
+                            
+                            console.log(`Validando campo: ${label} (${fieldName}), valor: "${field.value}"`);
+                            
+                            if (field.type==='checkbox' && !field.checked) {
+                                invalidFields.push(label);
+                                field.style.border = '2px solid #e74c3c';
+                                continue;
+                            }
+                            
+                            if (field.tagName === 'SELECT') {
+                                if (!field.value || field.value === '') {
+                                    invalidFields.push(label);
+                                    field.style.border = '2px solid #e74c3c';
+                                    continue;
+                                }
+                            } else if (!field.value || field.value.trim() === '') {
+                                invalidFields.push(label);
+                                field.style.border = '2px solid #e74c3c';
+                                continue;
+                            }
+                            
+                            // Limpiar el borde si el campo está válido
+                            field.style.border = '';
+                        }
+                        
+                        if (invalidFields.length > 0) {
+                            console.log('❌ Campos incompletos:', invalidFields);
+                            alert('Por favor completa los siguientes campos:\n\n' + invalidFields.join('\n'));
+                        } else {
+                            console.log('✅ Todos los campos del paso ' + (index + 1) + ' están completos');
+                        }
+                        
+                        return invalidFields.length === 0;
+                    };
+
+                    form.querySelector('#next-step-emp-1').addEventListener('click', ()=>{
+                        if (!validateStep(0)) { return; }
+                        show(1);
+                    });
+                    form.querySelector('#prev-step-emp-2').addEventListener('click', ()=> show(0));
+                    form.querySelector('#next-step-emp-2').addEventListener('click', ()=>{
+                        if (!validateStep(1)) { alert('Completa los campos requeridos del paso 2.'); return; }
+                        show(2);
+                    });
+                    form.querySelector('#prev-step-emp-3').addEventListener('click', ()=> show(1));
+                    show(0);
+                })();
+
+                document.getElementById('form-registro-empresa').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const email = document.getElementById('empresa-email').value.trim();
+            const pass = document.getElementById('empresa-pass').value;
+            const pass2 = document.getElementById('empresa-pass2').value;
+            const nombre = document.getElementById('empresa-nombre').value.trim();
+            const telefono = document.getElementById('empresa-telefono').value.trim();
+            const descripcion = document.getElementById('empresa-descripcion').value.trim();
+
+            // Validaciones básicas
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) { alert('Correo corporativo no válido.'); return; }
+            if (pass.length < 8) { alert('La contraseña debe tener mínimo 8 caracteres.'); return; }
+            if (pass !== pass2) { alert('Las contraseñas no coinciden.'); return; }
+            if (nombre.length < 3) { alert('Ingresa la razón social válida.'); return; }
+            const telefonoRegex = /^\+?[\d\s-]{7,}$/;
+            if (!telefonoRegex.test(telefono)) { alert('Número de teléfono no válido.'); return; }
+            if (descripcion.length < 20) { alert('Agrega una descripción más completa (20+ caracteres).'); return; }
+
+            // Preparar datos para el backend
+            const registerData = {
+                email: email,
+                password: pass,
+                firstName: nombre, // Usar razón social como firstName
+                lastName: 'Empresa', // Valor por defecto
+                phone: telefono,
+                userType: 'EMPRESA' // Especificar que es una empresa
+            };
+
+            console.log('📤 Enviando datos al backend:', registerData);
+            
+            try {
+                // Enviar registro al backend
+                const response = await fetch('http://localhost:8080/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(registerData)
+                });
+
+                console.log('📥 Respuesta recibida:', response.status, response.statusText);
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ message: 'Error desconocido' }));
+                    console.error('❌ Error del servidor:', errorData);
+                    alert('Error en el registro: ' + (errorData.message || errorData.error || 'Error desconocido'));
+                    return;
+                }
+
+                const data = await response.json();
+                console.log('✅ Registro exitoso:', data);
+
+                // Guardar token
+                if (data.token) {
+                    localStorage.setItem('token', data.token);
+                }
+                
+                // Guardar datos del usuario completos
+                const userData = {
+                    id: data.id,
+                    email: data.email,
+                    firstName: data.firstName,
+                    lastName: data.lastName,
+                    role: data.role,
+                    companyId: data.companyId
+                };
+                localStorage.setItem('userData', JSON.stringify(userData));
+                console.log('💾 Usuario guardado en localStorage:', userData);
+                
+                alert('¡Registro exitoso! Bienvenido a SkillMatch');
+                window.location.href = 'perfil-empresa.html';
+                
+            } catch (error) {
+                console.error('❌ Error de red:', error);
+                console.error('Detalles:', error.message);
+                alert('Error al conectar con el servidor.\n\nDetalles técnicos: ' + error.message + '\n\nVerifica:\n1. Backend corriendo en localhost:8080\n2. CORS habilitado\n3. Consola del navegador (F12) para más detalles');
+            }
+        });
+    </script>
+</body>
+</html>

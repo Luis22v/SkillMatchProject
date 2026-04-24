@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mensajes - SkillMatch</title>
+    <link rel="stylesheet" href="../assets/css/app.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <nav>
+                <div class="nav-left">
+                    <a href="index.html" class="logo">
+                        <img src="../assets/img/skillmatch-logo.png" alt="SkillMatch Logo">
+                    </a>
+                    <div class="nav-links nav-principales">
+                        <a href="index.html">Inicio</a>
+                        <a href="oportunidades.html">Oportunidades</a>
+                        <a href="conexiones.html">Conexiones</a>
+                        <a href="mensajes.html" class="active">Mensajes</a>
+                    </div>
+                </div>
+                <div class="user-nav">
+                    <div class="notifications">
+                        <button class="notifications-btn" id="notificationsBtn">
+                            🔔
+                            <span class="notifications-badge" id="notificationsBadge">0</span>
+                        </button>
+                    </div>
+                    <div class="user-menu">
+                        <button class="user-btn" id="userBtn">
+                            <span class="user-avatar" id="userAvatar">👤</span>
+                            <span class="user-name" id="userName">Usuario</span>
+                        </button>
+                        <div class="user-dropdown" id="userDropdown">
+                            <a href="perfil-usuario.html">Mi Perfil</a>
+                            <a href="#" id="logoutBtn">Cerrar Sesión</a>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            <div class="messages-container">
+                <!-- Lista de conversaciones -->
+                <div class="conversations-sidebar">
+                    <div class="conversations-header">
+                        <h2>💬 Mensajes</h2>
+                        <button class="btn-new-message" id="newMessageBtn">+ Nuevo</button>
+                    </div>
+                    <div class="conversations-search">
+                        <input type="text" id="searchConversations" placeholder="🔍 Buscar conversaciones...">
+                    </div>
+                    <div class="conversations-list" id="conversationsList">
+                        <div class="loading-message">Cargando conversaciones...</div>
+                    </div>
+                </div>
+
+                <!-- Chat actual -->
+                <div class="chat-area">
+                    <div class="chat-empty" id="chatEmpty">
+                        <div class="empty-state">
+                            <h3>💬 Selecciona una conversación</h3>
+                            <p>Elige una conversación de la izquierda para comenzar a chatear</p>
+                        </div>
+                    </div>
+
+                    <div class="chat-active hidden" id="chatActive">
+                        <!-- Header del chat -->
+                        <div class="chat-header">
+                            <div class="chat-user-info">
+                                <div class="chat-avatar" id="chatAvatar">👤</div>
+                                <div class="chat-user-details">
+                                    <h3 id="chatUserName">Usuario</h3>
+                                    <span class="chat-user-status" id="chatUserStatus">En línea</span>
+                                </div>
+                            </div>
+                            <div class="chat-actions">
+                                <button class="btn-icon" id="viewProfileBtn" title="Ver perfil">👤</button>
+                                <button class="btn-icon" id="deleteConversationBtn" title="Eliminar conversación">🗑️</button>
+                            </div>
+                        </div>
+
+                        <!-- Mensajes -->
+                        <div class="chat-messages" id="chatMessages">
+                            <div class="loading-message">Cargando mensajes...</div>
+                        </div>
+
+                        <!-- Input de mensaje -->
+                        <div class="chat-input">
+                            <input type="text" id="messageInput" placeholder="Escribe un mensaje..." />
+                            <button class="btn-send" id="sendMessageBtn">Enviar →</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 SkillMatch. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <script src="../assets/js/notifications.js"></script>
+    <script src="../assets/js/mensajes.js"></script>
+</body>
+</html>
