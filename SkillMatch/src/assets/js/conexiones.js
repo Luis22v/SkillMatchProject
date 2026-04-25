@@ -41,15 +41,10 @@ async function loadMyConnections() {
     const container = document.querySelector('#connections .connections-grid');
     if (!container) return;
 
-    const token = localStorage.getItem('token');
     container.innerHTML = '<div class="loading-message">Cargando conexiones...</div>';
 
     try {
-        const response = await fetch(`${API_BASE_URL}/connections/my-connections`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
+        const response = await fetchWithAuth(`${API_BASE_URL}/connections/my-connections`);
 
         if (response.ok) {
             const connections = await response.json();
@@ -97,15 +92,10 @@ async function loadPendingRequests() {
     const container = document.querySelector('#solicitudes .connections-grid');
     if (!container) return;
 
-    const token = localStorage.getItem('token');
     container.innerHTML = '<div class="loading-message">Cargando solicitudes...</div>';
 
     try {
-        const response = await fetch(`${API_BASE_URL}/connections/pending-requests`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
+        const response = await fetchWithAuth(`${API_BASE_URL}/connections/pending-requests`);
 
         if (response.ok) {
             const requests = await response.json();
@@ -150,15 +140,10 @@ async function loadSuggestions() {
     const container = document.querySelector('#sugerencias .suggestions-grid');
     if (!container) return;
 
-    const token = localStorage.getItem('token');
     container.innerHTML = '<div class="loading-message">Cargando sugerencias...</div>';
 
     try {
-        const response = await fetch(`${API_BASE_URL}/connections/suggestions`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
+        const response = await fetchWithAuth(`${API_BASE_URL}/connections/suggestions`);
 
         if (response.ok) {
             const suggestions = await response.json();
@@ -198,15 +183,9 @@ function displaySuggestions(suggestions) {
 
 // Enviar solicitud de conexión
 async function sendConnectionRequest(userId) {
-    const token = localStorage.getItem('token');
-    
     try {
-        const response = await fetch(`${API_BASE_URL}/connections`, {
+        const response = await fetchWithAuth(`${API_BASE_URL}/connections`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
             body: JSON.stringify({
                 connectedUserId: userId,
                 message: '¡Me gustaría conectar contigo!'
@@ -227,14 +206,9 @@ async function sendConnectionRequest(userId) {
 
 // Aceptar conexión
 async function acceptConnection(connectionId) {
-    const token = localStorage.getItem('token');
-    
     try {
-        const response = await fetch(`${API_BASE_URL}/connections/${connectionId}/accept`, {
-            method: 'PATCH',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+        const response = await fetchWithAuth(`${API_BASE_URL}/connections/${connectionId}/accept`, {
+            method: 'PATCH'
         });
 
         if (response.ok) {
@@ -252,14 +226,9 @@ async function acceptConnection(connectionId) {
 
 // Rechazar conexión
 async function rejectConnection(connectionId) {
-    const token = localStorage.getItem('token');
-    
     try {
-        const response = await fetch(`${API_BASE_URL}/connections/${connectionId}/reject`, {
-            method: 'PATCH',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+        const response = await fetchWithAuth(`${API_BASE_URL}/connections/${connectionId}/reject`, {
+            method: 'PATCH'
         });
 
         if (response.ok) {

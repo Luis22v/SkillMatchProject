@@ -72,7 +72,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 };
                 
                 saveUserData(userData);
-                console.log('💾 Datos guardados:', userData);
                 
                 // Mostrar mensaje de éxito
                 if (successMessage) {

@@ -69,7 +69,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 };
                 
                 saveUserData(userData);
-                console.log('💾 Datos guardados en localStorage:', userData);
                 
                 // Mostrar mensaje de éxito
                 if (successMessage) {

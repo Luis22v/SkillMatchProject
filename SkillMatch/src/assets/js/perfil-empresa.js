@@ -46,13 +46,7 @@ function loadCompanyData() {
     
     // Cargar información completa de la empresa desde el backend
     if (userData.companyId) {
-        fetch(`${API_BASE_URL}/companies/${userData.companyId}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        })
+        fetchWithAuth(`${API_BASE_URL}/companies/${userData.companyId}`)
         .then(response => {
             if (!response.ok) throw new Error('Empresa no encontrada');
             return response.json();
@@ -90,21 +84,14 @@ function loadCompanyData() {
 // Cargar estadísticas de actividad desde backend
 function loadActivityStats() {
     const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-    const token = localStorage.getItem('token');
-    
+
     if (!userData.companyId) {
         console.log('⚠️ No hay ID de usuario para cargar estadísticas');
         return;
     }
-    
+
     // Cargar estadísticas reales desde el endpoint de backend
-    fetch(`${API_BASE_URL}/companies/${userData.companyId}/statistics`, {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        }
-    })
+    fetchWithAuth(`${API_BASE_URL}/companies/${userData.companyId}/statistics`)
     .then(response => {
         if (!response.ok) throw new Error('Error al cargar estadísticas');
         return response.json();
@@ -144,9 +131,8 @@ function loadActivityStats() {
 
 // Cargar ofertas desde backend
 function loadOffers() {
-    const token = localStorage.getItem('token');
     const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-    
+
     if (!userData.companyId) {
         console.log('⚠️ No se encontró companyId, cargando ofertas almacenadas localmente...');
         const savedOffers = JSON.parse(localStorage.getItem('companyOffers') || '[]');
@@ -156,33 +142,21 @@ function loadOffers() {
         }
         return;
     }
-    
+
     // Cargar desde backend
-    fetch(`${API_BASE_URL}/jobs/company/${userData.companyId}`, {
-        method: 'GET',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        }
-    })
+    fetchWithAuth(`${API_BASE_URL}/jobs/company/${userData.companyId}`)
     .then(response => {
         if (!response.ok) throw new Error('Error al cargar ofertas');
         return response.json();
     })
     .then(async data => {
         // Transformar datos del backend al formato del frontend
-        const token = localStorage.getItem('token');
-        
+
         // Obtener el conteo de candidatos para cada oferta
         const offersWithCandidates = await Promise.all(data.map(async job => {
             let candidateCount = 0;
             try {
-                const countResponse = await fetch(`${API_BASE_URL}/applications/job/${job.id}/count`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
+                const countResponse = await fetchWithAuth(`${API_BASE_URL}/applications/job/${job.id}/count`);
                 if (countResponse.ok) {
                     candidateCount = await countResponse.json();
                 }
@@ -345,16 +319,9 @@ function showOfferMenu(offerId) {
 
 function deleteOffer(offerId) {
     console.log('🗑️ Eliminando oferta:', offerId);
-    const token = localStorage.getItem('token');
-    
+
     // Eliminar en backend
-    fetch(`${API_BASE_URL}/jobs/${offerId}`, {
-        method: 'DELETE',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        }
-    })
+    fetchWithAuth(`${API_BASE_URL}/jobs/${offerId}`, { method: 'DELETE' })
     .then(response => {
         if (!response.ok) throw new Error('Error al eliminar oferta');
         return response.json();
@@ -398,16 +365,9 @@ function toggleOfferStatus(offerId) {
     if (offerIndex === -1) return;
     
     const newStatus = currentOffers[offerIndex].status === 'active' ? 'archived' : 'active';
-    const token = localStorage.getItem('token');
-    
+
     // Actualizar en backend
-    fetch(`${API_BASE_URL}/jobs/${offerId}/status?status=${newStatus.toUpperCase()}`, {
-        method: 'PATCH',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        }
-    })
+    fetchWithAuth(`${API_BASE_URL}/jobs/${offerId}/status?status=${newStatus.toUpperCase()}`, { method: 'PATCH' })
     .then(response => {
         if (!response.ok) throw new Error('Error al cambiar estado');
         return response.json();
@@ -545,12 +505,8 @@ function openEditAboutModal() {
         }
         
         // Actualizar en el backend con PATCH para actualización parcial
-        fetch(`${API_BASE_URL}/companies/${userData.companyId}/description`, {
+        fetchWithAuth(`${API_BASE_URL}/companies/${userData.companyId}/description`, {
             method: 'PATCH',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify({
                 description: newText
             })
@@ -672,12 +628,8 @@ function openNewOfferModal(existingOffer = null, offerId = null) {
         console.log('🏢 Company ID:', userData.companyId);
         
         // Guardar en backend
-        fetch(url, {
+        fetchWithAuth(url, {
             method: method,
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify(backendData)
         })
         .then(async response => {
@@ -731,8 +683,7 @@ function openNewOfferModal(existingOffer = null, offerId = null) {
 
 async function showCandidatesModal(offer) {
     console.log('👥 Abriendo modal candidatos para oferta:', offer.id);
-    const token = localStorage.getItem('token');
-    
+
     // Mostrar modal con loading
     const modal = createModal(`Candidatos para: ${offer.title}`, `
         <div style="text-align:center;padding:2rem;">
@@ -746,12 +697,7 @@ async function showCandidatesModal(offer) {
     
     try {
         // Obtener aplicaciones para esta oferta
-        const response = await fetch(`${API_BASE_URL}/applications/job/${offer.id}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
+        const response = await fetchWithAuth(`${API_BASE_URL}/applications/job/${offer.id}`);
         
         if (!response.ok) {
             throw new Error('Error al cargar candidatos');
@@ -907,15 +853,9 @@ function contactCandidateByEmail(email, candidateName) {
 }
 
 async function updateCandidateStatus(applicationId, newStatus, offerId) {
-    const token = localStorage.getItem('token');
-    
     try {
-        const response = await fetch(`${API_BASE_URL}/applications/${applicationId}/status`, {
+        const response = await fetchWithAuth(`${API_BASE_URL}/applications/${applicationId}/status`, {
             method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify({ status: newStatus })
         });
         
@@ -1065,12 +1005,7 @@ async function loadApplications() {
     try {
         console.log('📥 Cargando aplicaciones para companyId:', userData.companyId);
         
-        const response = await fetch(`${API_BASE_URL}/applications/company/${userData.companyId}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
+        const response = await fetchWithAuth(`${API_BASE_URL}/applications/company/${userData.companyId}`);
         
         if (response.ok) {
             const applications = await response.json();
@@ -1221,15 +1156,9 @@ function createApplicationCard(application) {
 
 // Actualizar estado de aplicación
 async function updateApplicationStatus(applicationId, newStatus) {
-    const token = localStorage.getItem('token');
-    
     try {
-        const response = await fetch(`${API_BASE_URL}/applications/${applicationId}/status`, {
+        const response = await fetchWithAuth(`${API_BASE_URL}/applications/${applicationId}/status`, {
             method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify({ status: newStatus })
         });
         

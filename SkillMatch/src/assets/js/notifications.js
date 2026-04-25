@@ -100,23 +100,15 @@ async function loadNotifications() {
     
     try {
         // Cargar contador de no leídas
-        const countResponse = await fetch(`${API_BASE_URL}/notifications/count`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
-        
+        const countResponse = await fetchWithAuth(`${API_BASE_URL}/notifications/count`);
+
         if (countResponse.ok) {
             const count = await countResponse.json();
             updateNotificationBadge(count);
         }
-        
+
         // Cargar notificaciones no leídas
-        const response = await fetch(`${API_BASE_URL}/notifications/unread`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
+        const response = await fetchWithAuth(`${API_BASE_URL}/notifications/unread`);
         
         if (response.ok) {
             const notifications = await response.json();
@@ -196,15 +188,10 @@ function formatNotificationTime(dateString) {
 
 // Manejar clic en notificación
 async function handleNotificationClick(notificationId, actionUrl) {
-    const token = localStorage.getItem('token');
-    
     // Marcar como leída
     try {
-        await fetch(`${API_BASE_URL}/notifications/${notificationId}/read`, {
-            method: 'PATCH',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+        await fetchWithAuth(`${API_BASE_URL}/notifications/${notificationId}/read`, {
+            method: 'PATCH'
         });
         
         // Actualizar UI
@@ -221,14 +208,9 @@ async function handleNotificationClick(notificationId, actionUrl) {
 
 // Marcar todas como leídas
 async function markAllAsRead() {
-    const token = localStorage.getItem('token');
-    
     try {
-        const response = await fetch(`${API_BASE_URL}/notifications/read-all`, {
-            method: 'PATCH',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+        const response = await fetchWithAuth(`${API_BASE_URL}/notifications/read-all`, {
+            method: 'PATCH'
         });
         
         if (response.ok) {

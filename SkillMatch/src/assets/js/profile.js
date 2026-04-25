@@ -46,18 +46,11 @@ async function loadUserProfile() {
     const user = getUserData();
     if (!user) return;
 
-    const token = localStorage.getItem('token');
-
     console.log('📋 Cargando perfil del usuario ID:', user.id);
 
     try {
         // Cargar información del perfil
-        const response = await fetch(`${API_BASE_URL}/users/${user.id}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
+        const response = await fetchWithAuth(`${API_BASE_URL}/users/${user.id}`);
 
         if (response.ok) {
             const profileData = await response.json();
@@ -115,15 +108,8 @@ function displayUserProfile(user) {
 
 // Cargar estadísticas reales del usuario
 async function loadUserStatistics(userId) {
-    const token = localStorage.getItem('token');
-    
     try {
-        const response = await fetch(`${API_BASE_URL}/users/${userId}/statistics`, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
+        const response = await fetchWithAuth(`${API_BASE_URL}/users/${userId}/statistics`);
 
         if (response.ok) {
             const stats = await response.json();
@@ -199,15 +185,10 @@ async function loadUserSkills() {
     const user = getUserData();
     if (!user) return;
 
-    const token = localStorage.getItem('token');
     const skillsContainer = document.getElementById('userSkills');
 
     try {
-        const response = await fetch(`${API_BASE_URL}/users/${user.id}/skills`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
+        const response = await fetchWithAuth(`${API_BASE_URL}/users/${user.id}/skills`);
 
         if (response.ok) {
             const skills = await response.json();
@@ -273,19 +254,14 @@ async function addSkill(event) {
     const user = getUserData();
     if (!user) return;
     
-    const token = localStorage.getItem('token');
     const skillName = document.getElementById('skillName').value.trim();
     const skillLevel = document.getElementById('skillLevel').value;
-    
+
     console.log('📤 Agregando skill:', { name: skillName, level: skillLevel });
-    
+
     try {
-        const response = await fetch(`${API_BASE_URL}/users/${user.id}/skills`, {
+        const response = await fetchWithAuth(`${API_BASE_URL}/users/${user.id}/skills`, {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify({
                 name: skillName,
                 level: skillLevel
@@ -318,16 +294,11 @@ async function deleteSkill(skillId) {
         return;
     }
     
-    const token = localStorage.getItem('token');
-    
     console.log('🗑️ Eliminando skill ID:', skillId);
-    
+
     try {
-        const response = await fetch(`${API_BASE_URL}/users/${user.id}/skills/${skillId}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+        const response = await fetchWithAuth(`${API_BASE_URL}/users/${user.id}/skills/${skillId}`, {
+            method: 'DELETE'
         });
         
         if (response.ok) {
@@ -352,15 +323,10 @@ async function loadUserExperiences() {
     const user = getUserData();
     if (!user) return;
 
-    const token = localStorage.getItem('token');
     const container = document.getElementById('experienceContainer');
 
     try {
-        const response = await fetch(`${API_BASE_URL}/users/${user.id}/experiences`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
+        const response = await fetchWithAuth(`${API_BASE_URL}/users/${user.id}/experiences`);
 
         if (response.ok) {
             const experiences = await response.json();
@@ -425,9 +391,8 @@ async function addExperience(event) {
     const user = getUserData();
     if (!user) return;
     
-    const token = localStorage.getItem('token');
     const isCurrent = document.getElementById('expIsCurrent').checked;
-    
+
     const data = {
         company: document.getElementById('expCompany').value,
         position: document.getElementById('expPosition').value,
@@ -441,15 +406,11 @@ async function addExperience(event) {
     console.log('📤 Agregando experiencia:', data);
     
     try {
-        const response = await fetch(`${API_BASE_URL}/users/${user.id}/experiences`, {
+        const response = await fetchWithAuth(`${API_BASE_URL}/users/${user.id}/experiences`, {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify(data)
         });
-        
+
         if (response.ok) {
             console.log('✅ Experiencia agregada');
             alert('¡Experiencia agregada exitosamente!');

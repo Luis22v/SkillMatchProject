@@ -82,14 +82,9 @@ function setupEventListeners() {
 // Cargar conversaciones
 async function loadConversations() {
     const container = document.getElementById('conversationsList');
-    const token = localStorage.getItem('token');
-    
+
     try {
-        const response = await fetch(`${API_BASE_URL}/messages/conversations`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
+        const response = await fetchWithAuth(`${API_BASE_URL}/messages/conversations`);
 
         if (response.ok) {
             conversations = await response.json();
@@ -168,16 +163,11 @@ async function loadMessages(otherUserId) {
     }
     
     const container = document.getElementById('chatMessages');
-    const token = localStorage.getItem('token');
-    
+
     container.innerHTML = '<div class="loading-message">Cargando mensajes...</div>';
-    
+
     try {
-        const response = await fetch(`${API_BASE_URL}/messages/conversation/${otherUserId}`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
+        const response = await fetchWithAuth(`${API_BASE_URL}/messages/conversation/${otherUserId}`);
 
         if (response.ok) {
             currentMessages = await response.json();
@@ -241,15 +231,9 @@ async function sendMessage() {
     
     if (!content) return;
     
-    const token = localStorage.getItem('token');
-    
     try {
-        const response = await fetch(`${API_BASE_URL}/messages`, {
+        const response = await fetchWithAuth(`${API_BASE_URL}/messages`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
             body: JSON.stringify({
                 receiverId: currentConversationUserId,
                 content: content
@@ -275,14 +259,9 @@ async function markConversationAsRead(otherUserId) {
         return;
     }
     
-    const token = localStorage.getItem('token');
-    
     try {
-        await fetch(`${API_BASE_URL}/messages/conversation/${otherUserId}/read-all`, {
-            method: 'PATCH',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+        await fetchWithAuth(`${API_BASE_URL}/messages/conversation/${otherUserId}/read-all`, {
+            method: 'PATCH'
         });
         
         // Actualizar contador de no leídos

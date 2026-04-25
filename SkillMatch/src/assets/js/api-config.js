@@ -40,15 +40,24 @@ function getUserData() {
     return data ? JSON.parse(data) : null;
 }
 
-// Función para verificar si el usuario está autenticado
+// Función para verificar si el usuario está autenticado y su token no ha expirado
 function isAuthenticated() {
-    return getToken() !== null;
+    const token = getToken();
+    if (!token) return false;
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.exp * 1000 > Date.now();
+    } catch (e) {
+        return false;
+    }
 }
 
 // Función para cerrar sesión
 function logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('userData');
+    localStorage.removeItem('companyOffers');
+    localStorage.removeItem('skillmatch_saved_opportunities');
     window.location.href = '../pages/index.html';
 }
 

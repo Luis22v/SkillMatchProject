@@ -25,7 +25,7 @@ async function loadJobs() {
         container.innerHTML = '<div class="loading-message">Cargando oportunidades...</div>';
         
         console.log('🔍 Intentando cargar desde:', `${API_BASE_URL}/jobs`);
-        const response = await fetch(`${API_BASE_URL}/jobs`);
+        const response = await fetchWithAuth(`${API_BASE_URL}/jobs`);
         
         console.log('📡 Respuesta recibida:', response.status);
         
@@ -233,13 +233,9 @@ async function applyToJob(jobId) {
         try {
             console.log('📤 Enviando aplicación al trabajo:', jobId);
             
-            const response = await fetch(`${API_BASE_URL}/applications`, {
+            const response = await fetchWithAuth(`${API_BASE_URL}/applications`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     jobId: parseInt(jobId),
                     coverLetter: `Estimado equipo, estoy muy interesado en la posición de ${job.title} y creo que mi perfil se alinea perfectamente con los requisitos.`
                 })
@@ -460,11 +456,7 @@ async function loadSavedJobs() {
     if (!token) return;
 
     try {
-        const response = await fetch(`${API_BASE_URL}/saved-jobs/job-ids`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
+        const response = await fetchWithAuth(`${API_BASE_URL}/saved-jobs/job-ids`);
 
         if (response.ok) {
             const ids = await response.json();
@@ -492,11 +484,8 @@ async function toggleSaveJob(jobId, buttonElement) {
     try {
         if (isSaved) {
             // Quitar de guardados
-            const response = await fetch(`${API_BASE_URL}/saved-jobs/job/${jobId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+            const response = await fetchWithAuth(`${API_BASE_URL}/saved-jobs/job/${jobId}`, {
+                method: 'DELETE'
             });
 
             if (response.ok) {
@@ -507,12 +496,8 @@ async function toggleSaveJob(jobId, buttonElement) {
             }
         } else {
             // Agregar a guardados
-            const response = await fetch(`${API_BASE_URL}/saved-jobs`, {
+            const response = await fetchWithAuth(`${API_BASE_URL}/saved-jobs`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
                 body: JSON.stringify({ jobId: parseInt(jobId) })
             });
 
