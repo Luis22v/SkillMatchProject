@@ -158,13 +158,6 @@ function formatSalaryRange(minValue, maxValue) {
     return `Desde ${formatCurrency(value)}`;
 }
 
-function formatCurrency(value) {
-    if (typeof value !== 'number' || Number.isNaN(value)) {
-        return '$0';
-    }
-    return '$' + Math.round(value).toLocaleString('es-CO');
-}
-
 function resolveMatchScore(apiOpp) {
     if (typeof apiOpp.matchScore === 'number') return Math.round(apiOpp.matchScore);
     if (typeof apiOpp.match === 'number') return Math.round(apiOpp.match);

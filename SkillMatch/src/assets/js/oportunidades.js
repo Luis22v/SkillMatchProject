@@ -409,28 +409,6 @@ function updateResultsCount(count) {
     }
 }
 
-function formatCurrency(value) {
-    return '$' + parseInt(value).toLocaleString('es-CO');
-}
-
-function formatDate(dateString) {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now - date);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) return 'Hoy';
-    if (diffDays === 1) return 'Ayer';
-    if (diffDays < 7) return `Hace ${diffDays} días`;
-    if (diffDays < 30) return `Hace ${Math.floor(diffDays / 7)} semanas`;
-    return date.toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' });
-}
-
-function truncateText(text, maxLength) {
-    if (!text) return '';
-    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
-}
-
 function translateJobType(type) {
     const types = {
         'empleo': 'Tiempo Completo',

@@ -124,7 +124,7 @@ function displayConversations(conversationsList) {
                 <div class="conversation-info">
                     <div class="conversation-header">
                         <h4>${conv.otherUserName || 'Usuario'}</h4>
-                        <span class="conversation-time">${formatMessageTime(conv.lastMessageDate)}</span>
+                        <span class="conversation-time">${formatDate(conv.lastMessageDate, true)}</span>
                     </div>
                     <p class="conversation-preview">${truncateText(conv.lastMessageContent, 50)}</p>
                 </div>
@@ -214,7 +214,7 @@ function displayMessages(messages) {
                     ${msg.attachmentUrl ? `<a href="${msg.attachmentUrl}" target="_blank" class="message-attachment">📎 Adjunto</a>` : ''}
                 </div>
                 <div class="message-info">
-                    <span class="message-time">${formatMessageTime(msg.sentAt)}</span>
+                    <span class="message-time">${formatDate(msg.sentAt, true)}</span>
                     ${isMyMessage && msg.isRead ? '<span class="message-read">✓✓</span>' : ''}
                 </div>
             </div>
@@ -312,23 +312,3 @@ function scrollToBottom() {
     container.scrollTop = container.scrollHeight;
 }
 
-function formatMessageTime(dateString) {
-    if (!dateString) return '';
-    
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now - date);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) {
-        return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-    }
-    if (diffDays === 1) return 'Ayer';
-    if (diffDays < 7) return `Hace ${diffDays} días`;
-    return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
-}
-
-function truncateText(text, maxLength) {
-    if (!text) return '';
-    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
-}
