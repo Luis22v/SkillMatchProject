@@ -407,7 +407,8 @@ function openChangeCoverModal() {
         if (newUrl) {
             document.getElementById('companyCover').src = newUrl;
             currentCompanyData.coverUrl = newUrl;
-            localStorage.setItem('userData', JSON.stringify(currentCompanyData));
+            const existing = JSON.parse(localStorage.getItem('userData') || '{}');
+            localStorage.setItem('userData', JSON.stringify({...existing, ...currentCompanyData}));
             showNotification('Portada actualizada correctamente');
             closeModal();
         }
@@ -428,7 +429,8 @@ function openChangeLogoModal() {
         if (newUrl) {
             document.getElementById('companyLogo').src = newUrl;
             currentCompanyData.logoUrl = newUrl;
-            localStorage.setItem('userData', JSON.stringify(currentCompanyData));
+            const existing = JSON.parse(localStorage.getItem('userData') || '{}');
+            localStorage.setItem('userData', JSON.stringify({...existing, ...currentCompanyData}));
             showNotification('Logo actualizado correctamente');
             closeModal();
         }
@@ -470,8 +472,9 @@ function openEditProfileModal() {
             currentCompanyData.firstName = newName;
             currentCompanyData.email = newEmail;
             currentCompanyData.phone = newPhone;
-            
-            localStorage.setItem('userData', JSON.stringify(currentCompanyData));
+
+            const existing = JSON.parse(localStorage.getItem('userData') || '{}');
+            localStorage.setItem('userData', JSON.stringify({...existing, ...currentCompanyData}));
             showNotification('Perfil actualizado correctamente');
             closeModal();
         }

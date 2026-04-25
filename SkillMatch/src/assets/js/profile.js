@@ -810,8 +810,9 @@ async function updateProfile(formData) {
             const data = await response.json();
             
             // Actualizar localStorage
+            const existing = JSON.parse(localStorage.getItem('userData') || '{}');
             const updatedUser = {
-                ...user,
+                ...existing,
                 firstName: data.user.firstName,
                 lastName: data.user.lastName,
                 email: data.user.email

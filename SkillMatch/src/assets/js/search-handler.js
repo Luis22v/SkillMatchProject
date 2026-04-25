@@ -6,37 +6,26 @@ const API_URL = typeof API_CONFIG !== 'undefined'
     ? `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.JOBS}`
     : 'http://localhost:8080/api/jobs';
 let savedOpportunityIds = new Set();
+const API_BASE_URL = typeof API_CONFIG !== 'undefined' ? API_CONFIG.BASE_URL : 'http://localhost:8080/api';
 
-// Claves de almacenamiento
-const LOCAL_STORAGE_KEY = 'skillmatch_saved_opportunities';
+async function loadSavedOpportunities() {
+    const token = localStorage.getItem('token');
+    if (!token) return;
 
-// Cargar favoritos desde localStorage
-function loadSavedOpportunities() {
     try {
-        const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
-        if (!raw) return;
-        const ids = JSON.parse(raw);
-        if (Array.isArray(ids)) {
+        const response = await fetchWithAuth(`${API_BASE_URL}/saved-jobs/job-ids`);
+        if (response.ok) {
+            const ids = await response.json();
             savedOpportunityIds = new Set(ids);
         }
     } catch (e) {
-        console.warn('No se pudieron cargar favoritos desde localStorage', e);
-    }
-}
-
-// Guardar favoritos en localStorage
-function persistSavedOpportunities() {
-    try {
-        const ids = Array.from(savedOpportunityIds);
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(ids));
-    } catch (e) {
-        console.warn('No se pudieron guardar favoritos en localStorage', e);
+        console.warn('No se pudieron cargar favoritos desde la API', e);
     }
 }
 
 // Cargar datos mock
 async function loadOportunidades() {
-    loadSavedOpportunities();
+    await loadSavedOpportunities();
 
     try {
         const response = await fetch(API_URL, { headers: { 'Accept': 'application/json' } });
@@ -384,19 +373,41 @@ function renderResults(oportunidades, criteria) {
     });
 
     document.querySelectorAll('.btn-save').forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', async function() {
             const id = Number(this.getAttribute('data-id'));
-            if (savedOpportunityIds.has(id)) {
-                savedOpportunityIds.delete(id);
-            } else {
-                savedOpportunityIds.add(id);
+            const token = localStorage.getItem('token');
+
+            if (!token) {
+                if (confirm('Debes iniciar sesión para guardar oportunidades.\n¿Deseas ir a la página de inicio de sesión?')) {
+                    window.location.href = 'login-usuario.html';
+                }
+                return;
             }
 
-            persistSavedOpportunities();
+            const isSaved = savedOpportunityIds.has(id);
 
-            this.classList.toggle('saved');
-            const text = this.classList.contains('saved') ? '❤️ Guardado' : 'Guardar';
-            this.textContent = text;
+            try {
+                if (isSaved) {
+                    const response = await fetchWithAuth(`${API_BASE_URL}/saved-jobs/job/${id}`, { method: 'DELETE' });
+                    if (response.ok) {
+                        savedOpportunityIds.delete(id);
+                        this.classList.remove('saved');
+                        this.textContent = 'Guardar';
+                    }
+                } else {
+                    const response = await fetchWithAuth(`${API_BASE_URL}/saved-jobs`, {
+                        method: 'POST',
+                        body: JSON.stringify({ jobId: id })
+                    });
+                    if (response.ok) {
+                        savedOpportunityIds.add(id);
+                        this.classList.add('saved');
+                        this.textContent = '❤️ Guardado';
+                    }
+                }
+            } catch (e) {
+                console.error('❌ Error actualizando guardado:', e);
+            }
         });
     });
 }
