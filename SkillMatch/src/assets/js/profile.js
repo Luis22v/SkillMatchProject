@@ -436,14 +436,9 @@ async function deleteExperience(expId) {
         return;
     }
     
-    const token = localStorage.getItem('token');
-    
     try {
-        const response = await fetch(`${API_BASE_URL}/users/${user.id}/experiences/${expId}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+        const response = await fetchWithAuth(`${API_BASE_URL}/users/${user.id}/experiences/${expId}`, {
+            method: 'DELETE'
         });
         
         if (response.ok) {
@@ -466,15 +461,10 @@ async function loadUserEducations() {
     const user = getUserData();
     if (!user) return;
 
-    const token = localStorage.getItem('token');
     const container = document.getElementById('educationContainer');
 
     try {
-        const response = await fetch(`${API_BASE_URL}/users/${user.id}/educations`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
+        const response = await fetchWithAuth(`${API_BASE_URL}/users/${user.id}/educations`);
 
         if (response.ok) {
             const educations = await response.json();
@@ -539,9 +529,8 @@ async function addEducation(event) {
     const user = getUserData();
     if (!user) return;
     
-    const token = localStorage.getItem('token');
     const isCurrent = document.getElementById('eduIsCurrent').checked;
-    
+
     const data = {
         school: document.getElementById('eduSchool').value,
         degree: document.getElementById('eduDegree').value,
@@ -551,16 +540,12 @@ async function addEducation(event) {
         isCurrent: isCurrent,
         description: document.getElementById('eduDescription').value
     };
-    
+
     console.log('📤 Agregando educación:', data);
-    
+
     try {
-        const response = await fetch(`${API_BASE_URL}/users/${user.id}/educations`, {
+        const response = await fetchWithAuth(`${API_BASE_URL}/users/${user.id}/educations`, {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify(data)
         });
         
@@ -589,14 +574,9 @@ async function deleteEducation(eduId) {
         return;
     }
     
-    const token = localStorage.getItem('token');
-    
     try {
-        const response = await fetch(`${API_BASE_URL}/users/${user.id}/educations/${eduId}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+        const response = await fetchWithAuth(`${API_BASE_URL}/users/${user.id}/educations/${eduId}`, {
+            method: 'DELETE'
         });
         
         if (response.ok) {
@@ -617,17 +597,11 @@ async function loadRecommendedJobs() {
     const user = getUserData();
     if (!user) return;
 
-    const token = localStorage.getItem('token');
     const jobsContainer = document.getElementById('recommendedJobs');
 
     try {
         // Obtener trabajos recientes del backend
-        const response = await fetch(`${API_BASE_URL}/jobs/recent`, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
+        const response = await fetchWithAuth(`${API_BASE_URL}/jobs/recent`);
 
         if (response.ok) {
             let jobs = await response.json();
@@ -687,15 +661,9 @@ async function applyToJob(jobId) {
         return;
     }
 
-    const token = localStorage.getItem('token');
-
     try {
-        const response = await fetch(`${API_BASE_URL}/applications`, {
+        const response = await fetchWithAuth(`${API_BASE_URL}/applications`, {
             method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify({
                 jobId: jobId,
                 coverLetter: 'Aplicación desde el perfil de usuario'
@@ -721,17 +689,11 @@ async function loadInterestedCompanies() {
     const user = getUserData();
     if (!user) return;
     
-    const token = localStorage.getItem('token');
     const companiesContainer = document.getElementById('interestedCompanies');
-    
+
     try {
         // Obtener aplicaciones del usuario
-        const response = await fetch(`${API_BASE_URL}/applications/my-applications`, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
+        const response = await fetchWithAuth(`${API_BASE_URL}/applications/my-applications`);
 
         if (response.ok) {
             const applications = await response.json();
@@ -794,14 +756,8 @@ function openEditModal() {
     const user = getUserData();
     if (!user) return;
 
-    const token = localStorage.getItem('token');
-    
     // Cargar datos actuales
-    fetch(`${API_BASE_URL}/users/${user.id}`, {
-        headers: {
-            'Authorization': `Bearer ${token}`
-        }
-    })
+    fetchWithAuth(`${API_BASE_URL}/users/${user.id}`)
     .then(response => response.json())
     .then(data => {
         document.getElementById('editFirstName').value = data.firstName || '';
@@ -843,15 +799,10 @@ function closeCoverModal() {
 // Actualizar perfil
 async function updateProfile(formData) {
     const user = getUserData();
-    const token = localStorage.getItem('token');
 
     try {
-        const response = await fetch(`${API_BASE_URL}/users/${user.id}`, {
+        const response = await fetchWithAuth(`${API_BASE_URL}/users/${user.id}`, {
             method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify(formData)
         });
 
@@ -883,15 +834,10 @@ async function updateProfile(formData) {
 // Actualizar foto de perfil
 async function updateProfileImage(imageUrl) {
     const user = getUserData();
-    const token = localStorage.getItem('token');
 
     try {
-        const response = await fetch(`${API_BASE_URL}/users/${user.id}/profile-image`, {
+        const response = await fetchWithAuth(`${API_BASE_URL}/users/${user.id}/profile-image`, {
             method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify({ imageUrl })
         });
 
@@ -913,15 +859,10 @@ async function updateProfileImage(imageUrl) {
 // Actualizar portada
 async function updateCoverImage(imageUrl) {
     const user = getUserData();
-    const token = localStorage.getItem('token');
 
     try {
-        const response = await fetch(`${API_BASE_URL}/users/${user.id}/cover-image`, {
+        const response = await fetchWithAuth(`${API_BASE_URL}/users/${user.id}/cover-image`, {
             method: 'PUT',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify({ imageUrl })
         });
 
