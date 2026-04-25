@@ -11,37 +11,32 @@ import java.util.Optional;
 
 @Repository
 public interface ApplicationRepository extends JpaRepository<Application, Long> {
-    
-    // Buscar postulaciones por usuario
-    List<Application> findByUserId(Long userId);
-    
-    // Buscar postulaciones por job
-    List<Application> findByJobId(Long jobId);
-    
-    // Buscar postulaciones por estado
-    List<Application> findByStatus(String status);
-    
-    // Buscar postulaciones de un usuario con un estado específico
-    List<Application> findByUserIdAndStatus(Long userId, String status);
-    
-    // Buscar postulaciones de un job con un estado específico
-    List<Application> findByJobIdAndStatus(Long jobId, String status);
-    
-    // Verificar si un usuario ya se postuló a un job (evitar duplicados)
+
+    @Query("SELECT a FROM Application a JOIN FETCH a.user JOIN FETCH a.job j JOIN FETCH j.company WHERE a.user.id = :userId")
+    List<Application> findByUserId(@Param("userId") Long userId);
+
+    @Query("SELECT a FROM Application a JOIN FETCH a.user JOIN FETCH a.job j JOIN FETCH j.company WHERE a.job.id = :jobId")
+    List<Application> findByJobId(@Param("jobId") Long jobId);
+
+    @Query("SELECT a FROM Application a JOIN FETCH a.user JOIN FETCH a.job j JOIN FETCH j.company WHERE a.status = :status")
+    List<Application> findByStatus(@Param("status") String status);
+
+    @Query("SELECT a FROM Application a JOIN FETCH a.user JOIN FETCH a.job j JOIN FETCH j.company WHERE a.user.id = :userId AND a.status = :status")
+    List<Application> findByUserIdAndStatus(@Param("userId") Long userId, @Param("status") String status);
+
+    @Query("SELECT a FROM Application a JOIN FETCH a.user JOIN FETCH a.job j JOIN FETCH j.company WHERE a.job.id = :jobId AND a.status = :status")
+    List<Application> findByJobIdAndStatus(@Param("jobId") Long jobId, @Param("status") String status);
+
     boolean existsByUserIdAndJobId(Long userId, Long jobId);
-    
-    // Obtener una postulación específica de un usuario a un job
+
     Optional<Application> findByUserIdAndJobId(Long userId, Long jobId);
-    
-    // Obtener postulaciones de jobs de una compañía específica
-    @Query("SELECT a FROM Application a WHERE a.job.company.id = :companyId")
+
+    @Query("SELECT a FROM Application a JOIN FETCH a.user JOIN FETCH a.job j JOIN FETCH j.company WHERE a.job.company.id = :companyId")
     List<Application> findByCompanyId(@Param("companyId") Long companyId);
-    
-    // Contar postulaciones por job
+
     @Query("SELECT COUNT(a) FROM Application a WHERE a.job.id = :jobId")
     Long countByJobId(@Param("jobId") Long jobId);
-    
-    // Obtener postulaciones recientes de un usuario
-    @Query("SELECT a FROM Application a WHERE a.user.id = :userId ORDER BY a.appliedDate DESC")
+
+    @Query("SELECT a FROM Application a JOIN FETCH a.user JOIN FETCH a.job j JOIN FETCH j.company WHERE a.user.id = :userId ORDER BY a.appliedDate DESC")
     List<Application> findRecentByUserId(@Param("userId") Long userId);
 }

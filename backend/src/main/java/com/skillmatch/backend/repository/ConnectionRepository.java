@@ -18,16 +18,16 @@ public interface ConnectionRepository extends JpaRepository<Connection, Long> {
     Optional<Connection> findConnectionBetweenUsers(Long userId1, Long userId2);
     
     // Conexiones aceptadas de un usuario
-    @Query("SELECT c FROM Connection c WHERE " +
+    @Query("SELECT c FROM Connection c JOIN FETCH c.user JOIN FETCH c.connectedUser WHERE " +
            "(c.user.id = ?1 OR c.connectedUser.id = ?1) AND c.status = 'accepted'")
     List<Connection> findAcceptedConnectionsByUserId(Long userId);
-    
+
     // Solicitudes pendientes recibidas
-    @Query("SELECT c FROM Connection c WHERE c.connectedUser.id = ?1 AND c.status = 'pending'")
+    @Query("SELECT c FROM Connection c JOIN FETCH c.user JOIN FETCH c.connectedUser WHERE c.connectedUser.id = ?1 AND c.status = 'pending'")
     List<Connection> findPendingRequestsByUserId(Long userId);
-    
+
     // Solicitudes pendientes enviadas
-    @Query("SELECT c FROM Connection c WHERE c.user.id = ?1 AND c.status = 'pending'")
+    @Query("SELECT c FROM Connection c JOIN FETCH c.user JOIN FETCH c.connectedUser WHERE c.user.id = ?1 AND c.status = 'pending'")
     List<Connection> findSentPendingRequestsByUserId(Long userId);
     
     // Verificar si existe conexión

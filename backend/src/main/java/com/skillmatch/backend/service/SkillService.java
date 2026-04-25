@@ -6,6 +6,7 @@ import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.repository.SkillRepository;
 import com.skillmatch.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,14 +15,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SkillService {
-    
+
     private final SkillRepository skillRepository;
     private final UserRepository userRepository;
-    
-    // Obtener todas las skills de un usuario
+
     @Transactional(readOnly = true)
     public List<Map<String, Object>> getUserSkills(Long userId) {
         List<Skill> skills = skillRepository.findByUserId(userId);
@@ -29,8 +30,7 @@ public class SkillService {
                 .map(this::mapSkillToResponse)
                 .collect(Collectors.toList());
     }
-    
-    // Agregar una skill
+
     @Transactional
     public Map<String, Object> addSkill(Long userId, SkillRequest request) {
         if (userId == null) {
@@ -52,10 +52,11 @@ public class SkillService {
         skill.setName(request.getName());
         skill.setLevel(request.getLevel());
 
-        return mapSkillToResponse(skillRepository.save(skill));
+        Map<String, Object> result = mapSkillToResponse(skillRepository.save(skill));
+        log.info("Habilidad '{}' agregada para usuario {}", request.getName(), userId);
+        return result;
     }
-    
-    // Actualizar una skill
+
     @Transactional
     public Map<String, Object> updateSkill(Long userId, Long skillId, SkillRequest request) {
         if (skillId == null) {
@@ -80,10 +81,11 @@ public class SkillService {
         skill.setName(request.getName());
         skill.setLevel(request.getLevel());
 
-        return mapSkillToResponse(skillRepository.save(skill));
+        Map<String, Object> result = mapSkillToResponse(skillRepository.save(skill));
+        log.info("Habilidad {} actualizada para usuario {}", skillId, userId);
+        return result;
     }
-    
-    // Eliminar una skill
+
     @Transactional
     public void deleteSkill(Long userId, Long skillId) {
         if (skillId == null) {
@@ -91,16 +93,15 @@ public class SkillService {
         }
         Skill skill = skillRepository.findById(skillId)
                 .orElseThrow(() -> new IllegalArgumentException("Habilidad no encontrada"));
-        
-        // Verificar que la skill pertenece al usuario
+
         if (!skill.getUser().getId().equals(userId)) {
             throw new IllegalArgumentException("Esta habilidad no pertenece a este usuario");
         }
-        
+
         skillRepository.delete(skill);
+        log.info("Habilidad {} eliminada para usuario {}", skillId, userId);
     }
-    
-    // Mapear Skill a respuesta
+
     private Map<String, Object> mapSkillToResponse(Skill skill) {
         Map<String, Object> response = new HashMap<>();
         response.put("id", skill.getId());

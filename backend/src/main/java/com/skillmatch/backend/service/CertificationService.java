@@ -7,6 +7,7 @@ import com.skillmatch.backend.repository.CertificationRepository;
 import com.skillmatch.backend.repository.UserRepository;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,20 +16,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CertificationService {
-    
+
     private final CertificationRepository certificationRepository;
     private final UserRepository userRepository;
-    
+
+    @Transactional(readOnly = true)
     public List<Map<String, Object>> getUserCertifications(Long userId) {
         List<Certification> certifications = certificationRepository.findByUserIdOrderByIssueDateDesc(userId);
         return certifications.stream()
                 .map(this::mapCertificationToResponse)
                 .collect(Collectors.toList());
     }
-    
+
     @Transactional
     public Map<String, Object> addCertification(@NonNull Long userId, CertificationRequest request) {
         User user = userRepository.findById(userId)
@@ -44,18 +47,20 @@ public class CertificationService {
         certification.setCredentialUrl(request.getCredentialUrl());
         certification.setDescription(request.getDescription());
 
-        return mapCertificationToResponse(certificationRepository.save(certification));
+        Map<String, Object> result = mapCertificationToResponse(certificationRepository.save(certification));
+        log.info("Certificación '{}' agregada para usuario {}", request.getName(), userId);
+        return result;
     }
-    
+
     @Transactional
     public Certification updateCertification(Long userId, @NonNull Long certificationId, CertificationRequest request) {
         Certification certification = certificationRepository.findById(certificationId)
                 .orElseThrow(() -> new IllegalArgumentException("Certificación no encontrada"));
-        
+
         if (!certification.getUser().getId().equals(userId)) {
             throw new IllegalArgumentException("Esta certificación no pertenece a este usuario");
         }
-        
+
         certification.setName(request.getName());
         certification.setIssuer(request.getIssuer());
         certification.setIssueDate(request.getIssueDate());
@@ -63,22 +68,25 @@ public class CertificationService {
         certification.setCredentialId(request.getCredentialId());
         certification.setCredentialUrl(request.getCredentialUrl());
         certification.setDescription(request.getDescription());
-        
-        return certificationRepository.save(certification);
+
+        Certification updated = certificationRepository.save(certification);
+        log.info("Certificación {} actualizada para usuario {}", certificationId, userId);
+        return updated;
     }
-    
+
     @Transactional
     public void deleteCertification(Long userId, @NonNull Long certificationId) {
         Certification certification = certificationRepository.findById(certificationId)
                 .orElseThrow(() -> new IllegalArgumentException("Certificación no encontrada"));
-        
+
         if (!certification.getUser().getId().equals(userId)) {
             throw new IllegalArgumentException("Esta certificación no pertenece a este usuario");
         }
-        
+
         certificationRepository.delete(certification);
+        log.info("Certificación {} eliminada para usuario {}", certificationId, userId);
     }
-    
+
     private Map<String, Object> mapCertificationToResponse(Certification certification) {
         Map<String, Object> response = new HashMap<>();
         response.put("id", certification.getId());

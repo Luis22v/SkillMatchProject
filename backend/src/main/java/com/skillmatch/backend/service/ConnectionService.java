@@ -9,6 +9,7 @@ import com.skillmatch.backend.model.Connection;
 import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.repository.ConnectionRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,14 +17,15 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ConnectionService {
-    
+
     private final ConnectionRepository connectionRepository;
     private final UserService userService;
     private final NotificationService notificationService;
-    
+
     @Transactional
     public ConnectionResponse sendConnectionRequest(Long userId, ConnectionRequest request) {
         if (userId.equals(request.getConnectedUserId())) {
@@ -39,26 +41,25 @@ public class ConnectionService {
 
         User connectedUser = userService.getUserById(connectedUserId);
 
-        // Verificar si ya existe una conexión
         if (connectionRepository.findConnectionBetweenUsers(userId, request.getConnectedUserId()).isPresent()) {
             throw new DuplicateResourceException("Ya existe una conexión o solicitud pendiente con este usuario");
         }
-        
+
         Connection connection = new Connection();
         connection.setUser(user);
         connection.setConnectedUser(connectedUser);
         connection.setStatus("pending");
         connection.setMessage(request.getMessage());
         connection.setRequestedAt(LocalDateTime.now());
-        
+
         connection = connectionRepository.save(connection);
-        
-        // Crear notificación para el usuario receptor
+
         notificationService.createConnectionRequestNotification(connectedUser.getId(), user.getId(), connection.getId());
-        
+
+        log.info("Solicitud de conexión enviada: userId={} → connectedUserId={}", userId, connectedUserId);
         return mapToResponse(connection);
     }
-    
+
     @Transactional
     public ConnectionResponse acceptConnection(Long connectionId, Long userId) {
         if (connectionId == null) {
@@ -66,26 +67,25 @@ public class ConnectionService {
         }
         Connection connection = connectionRepository.findById(connectionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Solicitud de conexión no encontrada"));
-        
-        // Verificar que el usuario es el receptor de la solicitud
+
         if (!connection.getConnectedUser().getId().equals(userId)) {
             throw new UnauthorizedException("No tienes permiso para aceptar esta solicitud");
         }
-        
+
         if (!"pending".equals(connection.getStatus())) {
             throw new RuntimeException("Esta solicitud ya fue procesada");
         }
-        
+
         connection.setStatus("accepted");
         connection.setRespondedAt(LocalDateTime.now());
         connection = connectionRepository.save(connection);
-        
-        // Crear notificación para el usuario que envió la solicitud
+
         notificationService.createConnectionAcceptedNotification(connection.getUser().getId(), userId, connectionId);
-        
+
+        log.info("Conexión {} aceptada por usuario {}", connectionId, userId);
         return mapToResponse(connection);
     }
-    
+
     @Transactional
     public ConnectionResponse rejectConnection(Long connectionId, Long userId) {
         if (connectionId == null) {
@@ -93,23 +93,23 @@ public class ConnectionService {
         }
         Connection connection = connectionRepository.findById(connectionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Solicitud de conexión no encontrada"));
-        
-        // Verificar que el usuario es el receptor de la solicitud
+
         if (!connection.getConnectedUser().getId().equals(userId)) {
             throw new UnauthorizedException("No tienes permiso para rechazar esta solicitud");
         }
-        
+
         if (!"pending".equals(connection.getStatus())) {
             throw new RuntimeException("Esta solicitud ya fue procesada");
         }
-        
+
         connection.setStatus("rejected");
         connection.setRespondedAt(LocalDateTime.now());
         connection = connectionRepository.save(connection);
-        
+
+        log.info("Conexión {} rechazada por usuario {}", connectionId, userId);
         return mapToResponse(connection);
     }
-    
+
     @Transactional
     public void blockConnection(Long connectionId, Long userId) {
         if (connectionId == null) {
@@ -118,15 +118,15 @@ public class ConnectionService {
         Connection connection = connectionRepository.findById(connectionId)
                 .orElseThrow(() -> new ResourceNotFoundException("Conexión no encontrada"));
 
-        // Verificar que el usuario es parte de la conexión
         if (!connection.getUser().getId().equals(userId) && !connection.getConnectedUser().getId().equals(userId)) {
             throw new UnauthorizedException("No tienes permiso para bloquear esta conexión");
         }
-        
+
         connection.setStatus("blocked");
         connectionRepository.save(connection);
+        log.warn("Conexión {} bloqueada por usuario {}", connectionId, userId);
     }
-    
+
     @Transactional(readOnly = true)
     public List<ConnectionResponse> getMyConnections(Long userId) {
         List<Connection> connections = connectionRepository.findAcceptedConnectionsByUserId(userId);
@@ -134,7 +134,7 @@ public class ConnectionService {
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
-    
+
     @Transactional(readOnly = true)
     public List<ConnectionResponse> getPendingRequests(Long userId) {
         List<Connection> pendingRequests = connectionRepository.findPendingRequestsByUserId(userId);
@@ -142,7 +142,7 @@ public class ConnectionService {
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
-    
+
     @Transactional(readOnly = true)
     public List<ConnectionResponse> getSentRequests(Long userId) {
         List<Connection> sentRequests = connectionRepository.findSentPendingRequestsByUserId(userId);
@@ -150,17 +150,17 @@ public class ConnectionService {
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
-    
+
     @Transactional(readOnly = true)
     public boolean areUsersConnected(Long userId1, Long userId2) {
         return connectionRepository.areUsersConnected(userId1, userId2);
     }
-    
+
     @Transactional(readOnly = true)
     public Long getConnectionsCount(Long userId) {
         return connectionRepository.countConnectionsByUserId(userId);
     }
-    
+
     @Transactional(readOnly = true)
     public List<User> getSuggestions(Long userId) {
         if (userId == null) {
@@ -168,11 +168,11 @@ public class ConnectionService {
         }
         return userService.findSuggestionsForUser(userId);
     }
-    
+
     private ConnectionResponse mapToResponse(Connection connection) {
         User user = connection.getUser();
         User connectedUser = connection.getConnectedUser();
-        
+
         ConnectionResponse response = new ConnectionResponse();
         response.setId(connection.getId());
         response.setUserId(user.getId());
@@ -189,7 +189,7 @@ public class ConnectionService {
         response.setMessage(connection.getMessage());
         response.setRequestedAt(connection.getRequestedAt());
         response.setRespondedAt(connection.getRespondedAt());
-        
+
         return response;
     }
 }

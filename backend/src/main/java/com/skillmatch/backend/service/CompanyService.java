@@ -7,6 +7,7 @@ import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.repository.CompanyRepository;
 import com.skillmatch.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -33,6 +35,7 @@ public class CompanyService {
             throw new RuntimeException("El email de la empresa es obligatorio");
         }
         if (companyRepository.findByEmail(request.getEmail()).isPresent()) {
+            log.warn("Intento de crear empresa con email duplicado: {}", request.getEmail());
             throw new RuntimeException("Ya existe una empresa con este email");
         }
 
@@ -43,7 +46,9 @@ public class CompanyService {
         Company company = buildCompanyFromRequest(new Company(), request);
         company.setUser(owner);
 
-        return mapToResponse(companyRepository.save(company));
+        Company saved = companyRepository.save(company);
+        log.info("Empresa creada: '{}' (id={})", saved.getName(), saved.getId());
+        return mapToResponse(saved);
     }
 
     public CompanyResponse updateCompany(@NonNull Long id, CompanyRequest request) {
@@ -60,7 +65,6 @@ public class CompanyService {
             }
         });
 
-        // Sincronizar email del usuario dueño si cambió
         if (!company.getEmail().equals(requestedEmail)) {
             if (userRepository.existsByEmail(requestedEmail)) {
                 throw new RuntimeException("El email ya está en uso por otro usuario");
@@ -75,7 +79,9 @@ public class CompanyService {
         if (request.getIsVerified() != null) company.setIsVerified(request.getIsVerified());
         if (request.getActive() != null)     company.setActive(request.getActive());
 
-        return mapToResponse(companyRepository.save(company));
+        Company updated = companyRepository.save(company);
+        log.info("Empresa actualizada: id={}", id);
+        return mapToResponse(updated);
     }
 
     @Transactional(readOnly = true)
@@ -117,24 +123,24 @@ public class CompanyService {
         Company company = findCompanyOrThrow(id);
         company.setActive(false);
         companyRepository.save(company);
+        log.info("Empresa desactivada: id={}", id);
     }
 
     public void verifyCompany(@NonNull Long id) {
         Company company = findCompanyOrThrow(id);
         company.setIsVerified(true);
         companyRepository.save(company);
+        log.info("Empresa verificada: id={}", id);
     }
 
     public CompanyResponse updateCompanyDescription(@NonNull Long id, String description) {
         Company company = findCompanyOrThrow(id);
         company.setDescription(description);
-        return mapToResponse(companyRepository.save(company));
+        Company updated = companyRepository.save(company);
+        log.info("Descripción actualizada para empresa id={}", id);
+        return mapToResponse(updated);
     }
 
-    /**
-     * Verifica que el usuario dado sea el dueño de la empresa.
-     * Usado en el controlador para autorización de operaciones de empresa.
-     */
     @Transactional(readOnly = true)
     public boolean isOwner(@NonNull Long companyId, @NonNull Long userId) {
         return companyRepository.findById(companyId)
@@ -148,8 +154,6 @@ public class CompanyService {
 
         var jobs = jobService.getJobsByCompany(companyId);
 
-        // ✅ FIX #1: El dominio usa "abierta" (minúsculas), no "ACTIVA".
-        // Se usa equalsIgnoreCase como defensa adicional.
         long activeJobs = jobs.stream()
                 .filter(j -> "abierta".equalsIgnoreCase(j.getStatus())
                           && Boolean.TRUE.equals(j.getActive()))
@@ -160,7 +164,6 @@ public class CompanyService {
         var applications = applicationService.getApplicationsByCompany(companyId);
         long totalApplications = applications.size();
 
-        // ✅ FIX #1: mismo criterio — el dominio usa "pendiente" (minúsculas)
         long pendingApplications = applications.stream()
                 .filter(a -> "pendiente".equalsIgnoreCase(a.getStatus()))
                 .count();
@@ -205,7 +208,6 @@ public class CompanyService {
                 .orElseThrow(() -> new RuntimeException("Empresa no encontrada con ID: " + id));
     }
 
-    /** Rellena un objeto Company con los datos del request. Reutilizable en create y update. */
     private Company buildCompanyFromRequest(Company company, CompanyRequest request) {
         company.setName(request.getName());
         company.setDescription(request.getDescription());

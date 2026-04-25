@@ -11,14 +11,14 @@ import java.util.List;
 public interface MessageRepository extends JpaRepository<Message, Long> {
     
     // Conversación entre dos usuarios (ordenada por fecha)
-    @Query("SELECT m FROM Message m WHERE " +
+    @Query("SELECT m FROM Message m JOIN FETCH m.sender JOIN FETCH m.receiver WHERE " +
            "((m.sender.id = ?1 AND m.receiver.id = ?2 AND m.deletedBySender = false) OR " +
            "(m.sender.id = ?2 AND m.receiver.id = ?1 AND m.deletedByReceiver = false)) " +
            "ORDER BY m.sentAt DESC")
     List<Message> findConversationBetweenUsers(Long userId1, Long userId2);
-    
+
     // Últimos mensajes de cada conversación
-    @Query("SELECT m FROM Message m WHERE m.id IN (" +
+    @Query("SELECT m FROM Message m JOIN FETCH m.sender JOIN FETCH m.receiver WHERE m.id IN (" +
            "SELECT MAX(m2.id) FROM Message m2 WHERE " +
            "(m2.sender.id = ?1 OR m2.receiver.id = ?1) " +
            "GROUP BY CASE WHEN m2.sender.id = ?1 THEN m2.receiver.id ELSE m2.sender.id END) " +

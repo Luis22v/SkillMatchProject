@@ -8,11 +8,11 @@ import com.skillmatch.backend.repository.ApplicationRepository;
 import com.skillmatch.backend.repository.SkillRepository;
 import com.skillmatch.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import org.springframework.data.domain.PageRequest;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -21,16 +21,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserService {
-    
+
     private final UserRepository userRepository;
     private final CompanyService companyService;
     private final PasswordEncoder passwordEncoder;
     private final ApplicationRepository applicationRepository;
     private final SkillRepository skillRepository;
-    
+
     @Transactional(readOnly = true)
     public User getUserById(Long id) {
         if (id == null) {
@@ -39,7 +40,7 @@ public class UserService {
         return userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con id: " + id));
     }
-    
+
     @Transactional(readOnly = true)
     public User getUserByEmail(String email) {
         if (email == null || email.isBlank()) {
@@ -48,10 +49,11 @@ public class UserService {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con email: " + email));
     }
+
     @Transactional
     public User updateProfile(Long userId, UpdateProfileRequest request) {
         User user = getUserById(userId);
-        
+
         if (request.getFirstName() != null) {
             user.setFirstName(request.getFirstName());
         }
@@ -77,8 +79,12 @@ public class UserService {
         if (request.getBio() != null) {
             user.setBio(request.getBio());
         }
-        return Objects.requireNonNull(userRepository.save(user));
+
+        User saved = Objects.requireNonNull(userRepository.save(user));
+        log.info("Perfil actualizado para usuario {}", userId);
+        return saved;
     }
+
     @Transactional
     public User updateProfileImage(Long userId, String imageUrl) {
         if (imageUrl == null || imageUrl.trim().isEmpty()) {
@@ -86,9 +92,11 @@ public class UserService {
         }
         User user = getUserById(userId);
         user.setProfileImageUrl(imageUrl);
-        return Objects.requireNonNull(userRepository.save(user));
+        User saved = Objects.requireNonNull(userRepository.save(user));
+        log.info("Imagen de perfil actualizada para usuario {}", userId);
+        return saved;
     }
-    
+
     @Transactional
     public User updateCoverImage(Long userId, String imageUrl) {
         if (imageUrl == null || imageUrl.trim().isEmpty()) {
@@ -96,25 +104,29 @@ public class UserService {
         }
         User user = getUserById(userId);
         user.setCoverImageUrl(imageUrl);
-        return Objects.requireNonNull(userRepository.save(user));
+        User saved = Objects.requireNonNull(userRepository.save(user));
+        log.info("Imagen de portada actualizada para usuario {}", userId);
+        return saved;
     }
-    
+
     @Transactional
     public void updatePassword(Long userId, UpdatePasswordRequest request) {
         User user = getUserById(userId);
-        
+
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            log.warn("Contraseña incorrecta al intentar cambio para usuario {}", userId);
             throw new IllegalArgumentException("La contraseña actual es incorrecta");
         }
-        
+
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         Objects.requireNonNull(userRepository.save(user));
+        log.info("Contraseña actualizada para usuario {}", userId);
     }
-    
+
     @Transactional(readOnly = true)
     public Map<String, Object> getUserProfile(Long userId) {
         User user = getUserById(userId);
-        
+
         Map<String, Object> profile = new HashMap<>();
         profile.put("id", user.getId());
         profile.put("email", user.getEmail());
@@ -127,10 +139,10 @@ public class UserService {
         profile.put("profileImageUrl", user.getProfileImageUrl());
         profile.put("coverImageUrl", user.getCoverImageUrl());
         profile.put("createdAt", user.getCreatedAt());
-        
+
         return profile;
     }
-    
+
     @Transactional(readOnly = true)
     public List<User> findSuggestionsForUser(Long userId) {
         User user = getUserById(userId);
@@ -144,20 +156,14 @@ public class UserService {
     @Transactional(readOnly = true)
     public Map<String, Object> getUserStatistics(Long userId) {
         User user = getUserById(userId);
-        
-        // Obtener número real de aplicaciones
+
         long applicationsCount = applicationRepository.findByUserId(userId).size();
-        
-        // Obtener número real de skills
         long skillsCount = skillRepository.findByUserId(userId).size();
-        
-        // Calcular vistas del perfil basadas en la actividad del usuario
-        // Simulación realista: base + aplicaciones * 5 + días desde creación
+
         LocalDateTime createdAt = user.getCreatedAt();
         long daysSinceCreation = createdAt != null ? ChronoUnit.DAYS.between(createdAt, LocalDateTime.now()) : 0;
         long profileViews = 50 + (applicationsCount * 5) + (daysSinceCreation * 2);
-        
-        // Calcular tasa de coincidencia basada en completitud del perfil
+
         int completionScore = 0;
         if (user.getFirstName() != null && !user.getFirstName().isEmpty()) completionScore += 15;
         if (user.getLastName() != null && !user.getLastName().isEmpty()) completionScore += 15;
@@ -166,14 +172,14 @@ public class UserService {
         if (user.getBio() != null && !user.getBio().isEmpty()) completionScore += 10;
         if (skillsCount > 0) completionScore += 20;
         if (applicationsCount > 0) completionScore += 15;
-        
+
         Map<String, Object> statistics = new HashMap<>();
         statistics.put("profileViews", profileViews);
         statistics.put("applicationsCount", applicationsCount);
         statistics.put("matchRate", completionScore);
         statistics.put("skillsCount", skillsCount);
         statistics.put("profileCompleteness", completionScore);
-        
+
         return statistics;
     }
 }

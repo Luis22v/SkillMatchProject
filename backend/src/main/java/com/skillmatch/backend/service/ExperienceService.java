@@ -6,6 +6,7 @@ import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.repository.ExperienceRepository;
 import com.skillmatch.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,13 +15,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ExperienceService {
-    
+
     private final ExperienceRepository experienceRepository;
     private final UserRepository userRepository;
-    
+
     @Transactional(readOnly = true)
     public List<Map<String, Object>> getUserExperiences(Long userId) {
         List<Experience> experiences = experienceRepository.findByUserIdOrderByStartDateDesc(userId);
@@ -28,7 +30,7 @@ public class ExperienceService {
                 .map(this::mapExperienceToResponse)
                 .collect(Collectors.toList());
     }
-    
+
     @Transactional
     public Map<String, Object> addExperience(Long userId, ExperienceRequest request) {
         if (userId == null) {
@@ -47,9 +49,11 @@ public class ExperienceService {
         experience.setDescription(request.getDescription());
         experience.setLocation(request.getLocation());
 
-        return mapExperienceToResponse(experienceRepository.save(experience));
+        Map<String, Object> result = mapExperienceToResponse(experienceRepository.save(experience));
+        log.info("Experiencia en '{}' agregada para usuario {}", request.getCompany(), userId);
+        return result;
     }
-    
+
     @Transactional
     public Experience updateExperience(Long userId, Long experienceId, ExperienceRequest request) {
         if (experienceId == null) {
@@ -57,11 +61,11 @@ public class ExperienceService {
         }
         Experience experience = experienceRepository.findById(experienceId)
                 .orElseThrow(() -> new IllegalArgumentException("Experiencia no encontrada"));
-        
+
         if (!experience.getUser().getId().equals(userId)) {
             throw new IllegalArgumentException("Esta experiencia no pertenece a este usuario");
         }
-        
+
         experience.setCompany(request.getCompany());
         experience.setPosition(request.getPosition());
         experience.setStartDate(request.getStartDate());
@@ -69,10 +73,12 @@ public class ExperienceService {
         experience.setIsCurrent(request.getIsCurrent() != null ? request.getIsCurrent() : false);
         experience.setDescription(request.getDescription());
         experience.setLocation(request.getLocation());
-        
-        return experienceRepository.save(experience);
+
+        Experience updated = experienceRepository.save(experience);
+        log.info("Experiencia {} actualizada para usuario {}", experienceId, userId);
+        return updated;
     }
-    
+
     @Transactional
     public void deleteExperience(Long userId, Long experienceId) {
         if (experienceId == null) {
@@ -80,14 +86,15 @@ public class ExperienceService {
         }
         Experience experience = experienceRepository.findById(experienceId)
                 .orElseThrow(() -> new IllegalArgumentException("Experiencia no encontrada"));
-        
+
         if (!experience.getUser().getId().equals(userId)) {
             throw new IllegalArgumentException("Esta experiencia no pertenece a este usuario");
         }
-        
+
         experienceRepository.delete(experience);
+        log.info("Experiencia {} eliminada para usuario {}", experienceId, userId);
     }
-    
+
     private Map<String, Object> mapExperienceToResponse(Experience experience) {
         Map<String, Object> response = new HashMap<>();
         response.put("id", experience.getId());
