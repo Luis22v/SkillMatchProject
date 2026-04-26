@@ -89,9 +89,7 @@ public class MessageService {
 
     @Transactional
     public void markConversationAsRead(Long userId, Long otherUserId) {
-        List<Message> unreadMessages = messageRepository.findUnreadMessagesByUserId(userId).stream()
-                .filter(msg -> msg.getSender().getId().equals(otherUserId))
-                .collect(Collectors.toList());
+        List<Message> unreadMessages = messageRepository.findUnreadMessagesFromUser(userId, otherUserId);
 
         if (!unreadMessages.isEmpty()) {
             LocalDateTime now = LocalDateTime.now();

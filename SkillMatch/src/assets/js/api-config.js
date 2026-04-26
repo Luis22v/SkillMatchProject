@@ -19,6 +19,8 @@ const API_CONFIG = {
     }
 };
 
+const API_BASE_URL = 'http://localhost:8080/api';
+
 // Función para obtener el token del localStorage
 function getToken() {
     return localStorage.getItem('token');

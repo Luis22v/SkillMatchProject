@@ -19,25 +19,25 @@ public interface ConnectionRepository extends JpaRepository<Connection, Long> {
     
     // Conexiones aceptadas de un usuario
     @Query("SELECT c FROM Connection c JOIN FETCH c.user JOIN FETCH c.connectedUser WHERE " +
-           "(c.user.id = ?1 OR c.connectedUser.id = ?1) AND c.status = 'accepted'")
+           "(c.user.id = ?1 OR c.connectedUser.id = ?1) AND c.status = 'ACCEPTED'")
     List<Connection> findAcceptedConnectionsByUserId(Long userId);
 
     // Solicitudes pendientes recibidas
-    @Query("SELECT c FROM Connection c JOIN FETCH c.user JOIN FETCH c.connectedUser WHERE c.connectedUser.id = ?1 AND c.status = 'pending'")
+    @Query("SELECT c FROM Connection c JOIN FETCH c.user JOIN FETCH c.connectedUser WHERE c.connectedUser.id = ?1 AND c.status = 'PENDING'")
     List<Connection> findPendingRequestsByUserId(Long userId);
 
     // Solicitudes pendientes enviadas
-    @Query("SELECT c FROM Connection c JOIN FETCH c.user JOIN FETCH c.connectedUser WHERE c.user.id = ?1 AND c.status = 'pending'")
+    @Query("SELECT c FROM Connection c JOIN FETCH c.user JOIN FETCH c.connectedUser WHERE c.user.id = ?1 AND c.status = 'PENDING'")
     List<Connection> findSentPendingRequestsByUserId(Long userId);
-    
+
     // Verificar si existe conexión
     @Query("SELECT CASE WHEN COUNT(c) > 0 THEN true ELSE false END FROM Connection c WHERE " +
            "((c.user.id = ?1 AND c.connectedUser.id = ?2) OR " +
-           "(c.user.id = ?2 AND c.connectedUser.id = ?1)) AND c.status = 'accepted'")
+           "(c.user.id = ?2 AND c.connectedUser.id = ?1)) AND c.status = 'ACCEPTED'")
     boolean areUsersConnected(Long userId1, Long userId2);
-    
+
     // Contar conexiones de un usuario
     @Query("SELECT COUNT(c) FROM Connection c WHERE " +
-           "(c.user.id = ?1 OR c.connectedUser.id = ?1) AND c.status = 'accepted'")
+           "(c.user.id = ?1 OR c.connectedUser.id = ?1) AND c.status = 'ACCEPTED'")
     long countConnectionsByUserId(Long userId);
 }

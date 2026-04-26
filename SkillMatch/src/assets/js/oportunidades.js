@@ -1,6 +1,5 @@
 // Script para la página de oportunidades con backend integration
 
-const API_BASE_URL = 'http://localhost:8080/api';
 let allJobs = [];
 let currentFilters = {};
 let savedJobIds = new Set();
@@ -30,7 +29,8 @@ async function loadJobs() {
         console.log('📡 Respuesta recibida:', response.status);
         
         if (response.ok) {
-            allJobs = await response.json();
+            const data = await response.json();
+            allJobs = Array.isArray(data) ? data : (data.content || []);
             console.log('✅ Oportunidades cargadas:', allJobs.length);
             if (allJobs.length > 0) {
                 console.log('📋 Primera oportunidad:', allJobs[0]);
@@ -303,7 +303,7 @@ async function performSearch() {
     console.log('🔍 Buscando:', query);
 
     try {
-        const response = await fetch(`${API_BASE_URL}/jobs/search?keyword=${encodeURIComponent(query)}`);
+        const response = await fetchWithAuth(`${API_BASE_URL}/jobs/search?keyword=${encodeURIComponent(query)}`);
         
         if (response.ok) {
             const jobs = await response.json();
@@ -339,7 +339,7 @@ async function applyFilters() {
 
     try {
         const url = `${API_BASE_URL}/jobs/filter?${params.toString()}`;
-        const response = await fetch(url);
+        const response = await fetchWithAuth(url);
         
         if (response.ok) {
             const jobs = await response.json();

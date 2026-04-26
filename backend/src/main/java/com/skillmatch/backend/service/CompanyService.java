@@ -2,6 +2,8 @@ package com.skillmatch.backend.service;
 
 import com.skillmatch.backend.dto.CompanyRequest;
 import com.skillmatch.backend.dto.CompanyResponse;
+import com.skillmatch.backend.exception.DuplicateResourceException;
+import com.skillmatch.backend.exception.ResourceNotFoundException;
 import com.skillmatch.backend.model.Company;
 import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.repository.CompanyRepository;
@@ -36,7 +38,7 @@ public class CompanyService {
         }
         if (companyRepository.findByEmail(request.getEmail()).isPresent()) {
             log.warn("Intento de crear empresa con email duplicado: {}", request.getEmail());
-            throw new RuntimeException("Ya existe una empresa con este email");
+            throw new DuplicateResourceException("Ya existe una empresa con este email");
         }
 
         User owner = userRepository.findByEmail(request.getEmail())
@@ -61,7 +63,7 @@ public class CompanyService {
 
         companyRepository.findByEmail(requestedEmail).ifPresent(existing -> {
             if (!existing.getId().equals(id)) {
-                throw new RuntimeException("Ya existe una empresa con este email");
+                throw new DuplicateResourceException("Ya existe una empresa con este email");
             }
         });
 
@@ -205,7 +207,7 @@ public class CompanyService {
 
     private Company findCompanyOrThrow(Long id) {
         return companyRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Empresa no encontrada con ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Empresa no encontrada con ID: " + id));
     }
 
     private Company buildCompanyFromRequest(Company company, CompanyRequest request) {

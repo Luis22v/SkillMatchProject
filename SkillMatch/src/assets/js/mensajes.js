@@ -1,6 +1,5 @@
 // Script para la página de mensajes
 
-const API_BASE_URL = 'http://localhost:8080/api';
 let conversations = [];
 let currentConversationUserId = null;
 let currentMessages = [];

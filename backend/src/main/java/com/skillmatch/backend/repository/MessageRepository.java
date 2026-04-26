@@ -36,4 +36,8 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     // Contar mensajes no leídos de un usuario específico
     @Query("SELECT COUNT(m) FROM Message m WHERE m.receiver.id = ?1 AND m.sender.id = ?2 AND m.isRead = false AND m.deletedByReceiver = false")
     long countUnreadMessagesFromUser(Long receiverId, Long senderId);
+
+    // Mensajes no leídos de un remitente específico (evita filtro en memoria)
+    @Query("SELECT m FROM Message m WHERE m.receiver.id = ?1 AND m.sender.id = ?2 AND m.isRead = false AND m.deletedByReceiver = false")
+    List<Message> findUnreadMessagesFromUser(Long receiverId, Long senderId);
 }

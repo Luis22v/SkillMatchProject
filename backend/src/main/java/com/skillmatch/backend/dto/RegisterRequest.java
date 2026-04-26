@@ -32,5 +32,6 @@ public class RegisterRequest {
     private String phone;
     
     // Tipo de usuario: USER o EMPRESA
+    @NotBlank(message = "userType is required")
     private String userType;
 }

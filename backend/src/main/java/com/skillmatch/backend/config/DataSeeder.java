@@ -147,6 +147,7 @@ public class DataSeeder implements CommandLineRunner {
 
     private List<User> createUsers(int count) {
         List<User> users = new ArrayList<>();
+        List<User> allSaved = new ArrayList<>();
         Role userRole = roleRepository.findByName("USER").orElseThrow();
         int batchSize = 50;
 
@@ -168,15 +169,14 @@ public class DataSeeder implements CommandLineRunner {
 
             // Guardar en lotes
             if ((i + 1) % batchSize == 0 || i == count - 1) {
-                userRepository.saveAll(users);
+                allSaved.addAll(userRepository.saveAll(users));
                 userRepository.flush();
                 log.info("   - Usuarios creados: {}/{}", i + 1, count);
-                users.clear(); // Limpiar lista para siguiente lote
+                users.clear();
             }
         }
 
-        // Retornar todos los usuarios guardados
-        return userRepository.findAll();
+        return allSaved;
     }
 
     private List<Company> createCompanies(int count) {
@@ -237,6 +237,7 @@ public class DataSeeder implements CommandLineRunner {
 
     private List<Job> createJobs(List<Company> companies, int count) {
         List<Job> jobs = new ArrayList<>();
+        List<Job> allSaved = new ArrayList<>();
         int batchSize = 50;
 
         for (int i = 0; i < count; i++) {
@@ -290,15 +291,14 @@ public class DataSeeder implements CommandLineRunner {
 
             // Guardar en lotes
             if ((i + 1) % batchSize == 0 || i == count - 1) {
-                jobRepository.saveAll(jobs);
+                allSaved.addAll(jobRepository.saveAll(jobs));
                 jobRepository.flush();
                 log.info("   - Ofertas creadas: {}/{}", i + 1, count);
                 jobs.clear();
             }
         }
 
-        // Retornar todos los jobs guardados
-        return jobRepository.findAll();
+        return allSaved;
     }
 
     private void createApplications(List<User> users, List<Job> jobs, int count) {

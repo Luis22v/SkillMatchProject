@@ -44,6 +44,8 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
     
+    // Public profiles: any authenticated user can view any profile (networking feature)
+    // Ownership check only applies to PUT (edit)
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> getUserById(@PathVariable Long id, @AuthenticationPrincipal User currentUser) {
@@ -166,11 +168,4 @@ public class UserController {
         }
     }
     
-    @GetMapping("/test")
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> testUserAccess() {
-        return ResponseEntity.ok(new HashMap<String, String>() {{
-            put("message", "Acceso de usuario autorizado");
-        }});
-    }
 }

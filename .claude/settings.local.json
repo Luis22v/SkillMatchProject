@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/xampp/mysql/**)",
+      "Read(//c/xampp/**)",
+      "Read(//c/xampp/mysql/data//**)",
+      "PowerShell(netstat -ano)",
+      "PowerShell(Get-WinEvent -LogName Application -MaxEvents 200 | Where-Object { $_.TimeCreated -gt \\(Get-Date\\).AddHours\\(-3\\) -and $_.Id -in @\\(1000, 1001, 1002\\) } | Select-Object TimeCreated, Id, LevelDisplayName, @{N='Msg';E={$_.Message.Substring\\(0,[Math]::Min\\(400,$_.Message.Length\\)\\)}} | Format-List)",
+      "Bash(\"/c/xampp/mysql/bin/myisamchk\" --recover --force /c/xampp/mysql/data/mysql/*)",
+      "Bash(\"/c/xampp/mysql/bin/aria_chk\" --recover --force /c/xampp/mysql/data/mysql/db.MAI)",
+      "Bash(\"/c/xampp/mysql/bin/aria_chk\" --recover --force /c/xampp/mysql/data/mysql/*.MAI)",
+      "Bash(\"/c/xampp/mysql/bin/aria_chk\" --safe-recover --force /c/xampp/mysql/data/mysql/columns_priv.MAI /c/xampp/mysql/data/mysql/help_topic.MAI /c/xampp/mysql/data/mysql/proxies_priv.MAI)",
+      "PowerShell([System.Environment]::GetEnvironmentVariable\\(\"DB_PASSWORD\", \"User\"\\); [System.Environment]::GetEnvironmentVariable\\(\"DB_PASSWORD\", \"Machine\"\\))",
+      "PowerShell(& \"C:\\\\xampp\\\\mysql\\\\bin\\\\mysql.exe\" -u root --password=\"\" -e \"SELECT 'conectado' AS estado;\" 2>&1)",
+      "PowerShell(& \"C:\\\\xampp\\\\mysql\\\\bin\\\\mysql.exe\" -u root --password=\"\" -e \"SELECT User, Host, plugin, authentication_string FROM mysql.user WHERE User='root';\" 2>&1)",
+      "PowerShell(& \"C:\\\\xampp\\\\mysql\\\\bin\\\\mysql.exe\" -u root --password=\"\" -e \"SELECT User, Host, JSON_EXTRACT\\(Priv, '$.plugin'\\) AS plugin, JSON_EXTRACT\\(Priv, '$.authentication_string'\\) AS auth_string FROM mysql.global_priv WHERE User='root';\" 2>&1)",
+      "PowerShell(Get-ChildItem env: | Where-Object { $_.Name -match \"\\(?i\\)\\(password|DB_|JWT|spring|datasource\\)\" } | Select-Object Name, Value)",
+      "PowerShell(& \"C:\\\\xampp\\\\mysql\\\\bin\\\\mysql.exe\" -u root --password=\"\" --protocol=TCP -h 127.0.0.1 -e \"SELECT 'TCP OK' AS resultado;\" 2>&1)",
+      "Bash(grep -v \"//.*fetch\")"
+    ]
+  }
+}

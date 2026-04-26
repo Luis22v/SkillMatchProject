@@ -6,6 +6,7 @@ import com.skillmatch.backend.exception.DuplicateResourceException;
 import com.skillmatch.backend.exception.ResourceNotFoundException;
 import com.skillmatch.backend.exception.UnauthorizedException;
 import com.skillmatch.backend.model.Connection;
+import com.skillmatch.backend.model.ConnectionStatus;
 import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.repository.ConnectionRepository;
 import lombok.RequiredArgsConstructor;
@@ -48,7 +49,7 @@ public class ConnectionService {
         Connection connection = new Connection();
         connection.setUser(user);
         connection.setConnectedUser(connectedUser);
-        connection.setStatus("pending");
+        connection.setStatus(ConnectionStatus.PENDING);
         connection.setMessage(request.getMessage());
         connection.setRequestedAt(LocalDateTime.now());
 
@@ -72,11 +73,11 @@ public class ConnectionService {
             throw new UnauthorizedException("No tienes permiso para aceptar esta solicitud");
         }
 
-        if (!"pending".equals(connection.getStatus())) {
-            throw new RuntimeException("Esta solicitud ya fue procesada");
+        if (ConnectionStatus.PENDING != connection.getStatus()) {
+            throw new IllegalArgumentException("Esta solicitud ya fue procesada");
         }
 
-        connection.setStatus("accepted");
+        connection.setStatus(ConnectionStatus.ACCEPTED);
         connection.setRespondedAt(LocalDateTime.now());
         connection = connectionRepository.save(connection);
 
@@ -98,11 +99,11 @@ public class ConnectionService {
             throw new UnauthorizedException("No tienes permiso para rechazar esta solicitud");
         }
 
-        if (!"pending".equals(connection.getStatus())) {
-            throw new RuntimeException("Esta solicitud ya fue procesada");
+        if (ConnectionStatus.PENDING != connection.getStatus()) {
+            throw new IllegalArgumentException("Esta solicitud ya fue procesada");
         }
 
-        connection.setStatus("rejected");
+        connection.setStatus(ConnectionStatus.REJECTED);
         connection.setRespondedAt(LocalDateTime.now());
         connection = connectionRepository.save(connection);
 
@@ -122,7 +123,7 @@ public class ConnectionService {
             throw new UnauthorizedException("No tienes permiso para bloquear esta conexión");
         }
 
-        connection.setStatus("blocked");
+        connection.setStatus(ConnectionStatus.BLOCKED);
         connectionRepository.save(connection);
         log.warn("Conexión {} bloqueada por usuario {}", connectionId, userId);
     }
@@ -185,7 +186,7 @@ public class ConnectionService {
         response.setConnectedUserEmail(connectedUser.getEmail());
         response.setConnectedUserHeadline(connectedUser.getHeadline());
         response.setConnectedUserProfileImage(connectedUser.getProfileImageUrl());
-        response.setStatus(connection.getStatus());
+        response.setStatus(connection.getStatus().name().toLowerCase());
         response.setMessage(connection.getMessage());
         response.setRequestedAt(connection.getRequestedAt());
         response.setRespondedAt(connection.getRespondedAt());

@@ -1,7 +1,6 @@
 // SkillMatch - Perfil de Empresa
 // Script para funcionalidad completa de la página
 
-const API_BASE_URL = typeof API_CONFIG !== 'undefined' ? API_CONFIG.BASE_URL : 'http://localhost:8080/api';
 let currentOffers = [];
 let currentCompanyData = {};
 

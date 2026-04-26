@@ -4,43 +4,28 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mensajes - SkillMatch</title>
+    <link rel="icon" href="../assets/img/logo.png" type="image/png">
     <link rel="stylesheet" href="../assets/css/app.css">
 </head>
 <body>
     <header>
-        <div class="container">
-            <nav>
-                <div class="nav-left">
-                    <a href="index.html" class="logo">
-                        <img src="../assets/img/skillmatch-logo.png" alt="SkillMatch Logo">
-                    </a>
-                    <div class="nav-links nav-principales">
-                        <a href="index.html">Inicio</a>
-                        <a href="oportunidades.html">Oportunidades</a>
-                        <a href="conexiones.html">Conexiones</a>
-                        <a href="mensajes.html" class="active">Mensajes</a>
-                    </div>
+        <nav class="container">
+            <div class="nav-left">
+                <div class="logo">
+                    <img src="../assets/img/logo.png" alt="SkillMatch Logo" width="300" height="100">
                 </div>
-                <div class="user-nav">
-                    <div class="notifications">
-                        <button class="notifications-btn" id="notificationsBtn">
-                            🔔
-                            <span class="notifications-badge" id="notificationsBadge">0</span>
-                        </button>
-                    </div>
-                    <div class="user-menu">
-                        <button class="user-btn" id="userBtn">
-                            <span class="user-avatar" id="userAvatar">👤</span>
-                            <span class="user-name" id="userName">Usuario</span>
-                        </button>
-                        <div class="user-dropdown" id="userDropdown">
-                            <a href="perfil-usuario.html">Mi Perfil</a>
-                            <a href="#" id="logoutBtn">Cerrar Sesión</a>
-                        </div>
-                    </div>
-                </div>
-            </nav>
-        </div>
+                <ul class="nav-links">
+                    <li><a href="index.html">Inicio</a></li>
+                    <li><a href="oportunidades.html">Oportunidades</a></li>
+                    <li><a href="conexiones.html">Conexiones</a></li>
+                    <li><a href="mensajes.html" class="active-nav">Mensajes</a></li>
+                </ul>
+            </div>
+            <ul class="nav-links">
+                <li><a href="perfil-usuario.html">Mi Perfil</a></li>
+                <li><a href="#" onclick="logout(); return false;" class="btn-login">Cerrar Sesión</a></li>
+            </ul>
+        </nav>
     </header>
 
     <main>
@@ -107,6 +92,7 @@
         </div>
     </footer>
 
+    <script src="../assets/js/api-config.js"></script>
     <script src="../assets/js/notifications.js"></script>
     <script src="../assets/js/utils.js"></script>
     <script src="../assets/js/mensajes.js"></script>

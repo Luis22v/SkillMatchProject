@@ -1,6 +1,5 @@
 // Script para la página de perfil de usuario con conexión al backend
 
-const API_BASE_URL = 'http://localhost:8080/api';
 let currentUserProfile = {};
 
 // Obtener datos del usuario desde localStorage o URL
@@ -31,7 +30,18 @@ function getUserData() {
         return null;
     }
     
-    return { ...JSON.parse(userData), isOtherUser: false };
+    const parsed = JSON.parse(userData);
+    let id = parsed?.id || parsed?.userId;
+    if (!id) {
+        try {
+            const token = localStorage.getItem('token');
+            if (token) {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                id = payload.userId || null;
+            }
+        } catch (e) { /* token malformed */ }
+    }
+    return { ...parsed, id, isOtherUser: false };
 }
 
 // Función para cerrar sesión
@@ -638,7 +648,7 @@ function displayRecommendedJobs(jobs) {
                 <h4>${job.title}</h4>
                 <span class="match-badge-small ${getMatchClass(job.matchScore)}">${job.matchScore}%</span>
             </div>
-            <p class="opportunity-company-compact">${job.company.name}</p>
+            <p class="opportunity-company-compact">${job.company?.name || job.companyName || ''}</p>
             <p class="opportunity-location-compact">📍 ${job.location}</p>
             <button class="btn-apply-compact" onclick="applyToJob(${job.id})">Aplicar Ahora</button>
         </div>

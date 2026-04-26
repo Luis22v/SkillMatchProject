@@ -37,235 +37,49 @@
     <section class="connections-container">
         <div class="container">
             <div class="connections-tabs">
-                <button class="tab-btn active" data-tab="mis-conexiones">Mis Conexiones (45)</button>
-                <button class="tab-btn" data-tab="sugerencias">Sugerencias (12)</button>
-                <button class="tab-btn" data-tab="empresas-interesadas">Empresas Interesadas (8)</button>
-                <button class="tab-btn" data-tab="mensajes">Mensajes (3)</button>
+                <button class="tab-btn active" data-tab="mis-conexiones">
+                    Mis Conexiones<span id="connections-count"></span>
+                </button>
+                <button class="tab-btn" data-tab="solicitudes">
+                    Solicitudes<span id="requests-count"></span>
+                </button>
+                <button class="tab-btn" data-tab="sugerencias">Sugerencias</button>
+                <button class="tab-btn" data-tab="mensajes">Mensajes</button>
             </div>
 
             <!-- Tab: Mis Conexiones -->
             <div id="mis-conexiones" class="tab-content active">
-                <div class="connections-list">
-                    <!-- Conexión 1 -->
-                    <div class="connection-card">
-                        <div class="connection-header">
-                            <img src="../assets/img/company1.png" alt="Empresa" class="connection-logo">
-                            <div class="connection-info">
-                                <h3>Soluciones Tech Cartagena</h3>
-                                <p class="connection-type">Empresa | Sector: Tecnología</p>
-                                <p class="connection-time">Conectado hace 2 meses</p>
-                            </div>
-                            <div class="connection-actions">
-                                <button class="btn btn-primary btn-small">Mensaje</button>
-                                <button class="btn btn-secondary btn-small">Ver Perfil</button>
-                            </div>
-                        </div>
-                        <div class="connection-body">
-                            <p class="connection-note">Tu oficial: "Excelente trabajar con esta empresa. Muy profesionales y comprometidos."</p>
-                        </div>
-                    </div>
-
-                    <!-- Conexión 2 -->
-                    <div class="connection-card">
-                        <div class="connection-header">
-                            <img src="../assets/img/company2.png" alt="Empresa" class="connection-logo">
-                            <div class="connection-info">
-                                <h3>Digital Innovators</h3>
-                                <p class="connection-type">Empresa | Sector: Consultoría IT</p>
-                                <p class="connection-time">Conectado hace 1 mes</p>
-                            </div>
-                            <div class="connection-actions">
-                                <button class="btn btn-primary btn-small">Mensaje</button>
-                                <button class="btn btn-secondary btn-small">Ver Perfil</button>
-                            </div>
-                        </div>
-                        <div class="connection-body">
-                            <p class="connection-note">Empresa destacada por sus beneficios y ambiente laboral. ¡Abierta a nuevas pasantías!</p>
-                        </div>
-                    </div>
-
-                    <!-- Conexión 3 -->
-                    <div class="connection-card">
-                        <div class="connection-header">
-                            <div class="connection-logo">👨‍💼</div>
-                            <div class="connection-info">
-                                <h3>Carlos López García</h3>
-                                <p class="connection-type">Reclutador | Digital Innovators</p>
-                                <p class="connection-time">Conectado hace 3 semanas</p>
-                            </div>
-                            <div class="connection-actions">
-                                <button class="btn btn-primary btn-small">Mensaje</button>
-                                <button class="btn btn-secondary btn-small">Ver Perfil</button>
-                            </div>
-                        </div>
-                        <div class="connection-body">
-                            <p class="connection-note">Especialista en talento tech. Te contactó sobre una oportunidad disponible.</p>
-                        </div>
-                    </div>
+                <div id="connections-container" class="connections-list">
+                    <div class="loading-message">Cargando conexiones...</div>
                 </div>
             </div>
 
-            <!-- Tab: Sugerencias de Conexiones -->
+            <!-- Tab: Solicitudes Pendientes -->
+            <div id="solicitudes" class="tab-content">
+                <div id="requests-container" class="connections-list">
+                    <div class="loading-message">Cargando solicitudes...</div>
+                </div>
+            </div>
+
+            <!-- Tab: Sugerencias -->
             <div id="sugerencias" class="tab-content">
-                <div class="suggestions-list">
-                    <!-- Sugerencia 1 -->
-                    <div class="suggestion-card">
-                        <div class="suggestion-header">
-                            <img src="../assets/img/company3.png" alt="Empresa" class="suggestion-logo">
-                            <div class="suggestion-info">
-                                <h3>StartUp Digital Cartagena</h3>
-                                <p class="suggestion-category">Startup | Sector: Desarrollo Web</p>
-                                <p class="suggestion-reason">💡 Se conecta con gente interesada en React y JavaScript</p>
-                            </div>
-                        </div>
-                        <div class="match-indicators">
-                            <span class="match-indicator">✓ React</span>
-                            <span class="match-indicator">✓ JavaScript</span>
-                            <span class="match-indicator">✓ Node.js</span>
-                        </div>
-                        <div class="suggestion-actions">
-                            <button class="btn btn-primary btn-small">Conectar</button>
-                            <button class="btn btn-secondary btn-small">Rechazar</button>
-                        </div>
-                    </div>
-
-                    <!-- Sugerencia 2 -->
-                    <div class="suggestion-card">
-                        <div class="suggestion-header">
-                            <div class="suggestion-logo">👩‍💼</div>
-                            <div class="suggestion-info">
-                                <h3>Daniela Martínez</h3>
-                                <p class="suggestion-category">HR Manager | Tech Solutions</p>
-                                <p class="suggestion-reason">💡 También está en la Universidad de Cartagena</p>
-                            </div>
-                        </div>
-                        <div class="match-indicators">
-                            <span class="match-indicator">🎓 Universidad de Cartagena</span>
-                            <span class="match-indicator">💼 Tech Solutions</span>
-                        </div>
-                        <div class="suggestion-actions">
-                            <button class="btn btn-primary btn-small">Conectar</button>
-                            <button class="btn btn-secondary btn-small">Rechazar</button>
-                        </div>
-                    </div>
-
-                    <!-- Sugerencia 3 -->
-                    <div class="suggestion-card">
-                        <div class="suggestion-header">
-                            <img src="../assets/img/company4.png" alt="Empresa" class="suggestion-logo">
-                            <div class="suggestion-info">
-                                <h3>Fintech Cartagena</h3>
-                                <p class="suggestion-category">Fintech | Sector: Servicios Financieros</p>
-                                <p class="suggestion-reason">💡 Contrata frecuentemente desarrolladores junior</p>
-                            </div>
-                        </div>
-                        <div class="match-indicators">
-                            <span class="match-indicator">✓ Python</span>
-                            <span class="match-indicator">✓ SQL</span>
-                            <span class="match-indicator">✓ APIs</span>
-                        </div>
-                        <div class="suggestion-actions">
-                            <button class="btn btn-primary btn-small">Conectar</button>
-                            <button class="btn btn-secondary btn-small">Rechazar</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tab: Empresas Interesadas -->
-            <div id="empresas-interesadas" class="tab-content">
-                <div class="interested-companies">
-                    <!-- Empresa Interesada 1 -->
-                    <div class="interested-card">
-                        <div class="interested-header">
-                            <img src="../assets/img/company5.png" alt="Empresa" class="interested-logo">
-                            <div class="interested-info">
-                                <h3>Tech Solutions Cartagena</h3>
-                                <p class="interested-action">👁️ Vio tu perfil hace 1 día</p>
-                                <p class="interested-match">Match Score: 92%</p>
-                            </div>
-                        </div>
-                        <div class="interested-body">
-                            <p class="interested-note">Están buscando desarrolladores Frontend con experiencia en React. Tu perfil coincide con sus necesidades.</p>
-                        </div>
-                        <div class="interested-actions">
-                            <button class="btn btn-primary btn-small">Ver Oportunidades</button>
-                            <button class="btn btn-secondary btn-small">Contactar</button>
-                        </div>
-                    </div>
-
-                    <!-- Empresa Interesada 2 -->
-                    <div class="interested-card">
-                        <div class="interested-header">
-                            <img src="../assets/img/company6.png" alt="Empresa" class="interested-logo">
-                            <div class="interested-info">
-                                <h3>Digital Innovation Labs</h3>
-                                <p class="interested-action">👁️ Vio tu perfil hace 3 días</p>
-                                <p class="interested-match">Match Score: 87%</p>
-                            </div>
-                        </div>
-                        <div class="interested-body">
-                            <p class="interested-note">Tienen una oportunidad de pasantía en desarrollo web que podría ser perfecta para ti. ¡Interesados en conocerte!</p>
-                        </div>
-                        <div class="interested-actions">
-                            <button class="btn btn-primary btn-small">Ver Oportunidades</button>
-                            <button class="btn btn-secondary btn-small">Contactar</button>
-                        </div>
-                    </div>
+                <div id="suggestions-container" class="suggestions-list">
+                    <div class="loading-message">Cargando sugerencias...</div>
                 </div>
             </div>
 
             <!-- Tab: Mensajes -->
             <div id="mensajes" class="tab-content">
-                <div class="messages-list">
-                    <!-- Mensaje 1 -->
-                    <div class="message-card">
-                        <div class="message-header">
-                            <img src="../assets/img/company1.png" alt="Empresa" class="message-avatar">
-                            <div class="message-info">
-                                <h3>Soluciones Tech Cartagena</h3>
-                                <p class="message-time">Hace 2 horas</p>
-                            </div>
-                            <button class="btn btn-primary btn-small">Responder</button>
-                        </div>
-                        <div class="message-body">
-                            <p>"¡Hola Juan! Vimos tu perfil y nos encantó. Tenemos una oportunidad de pasantía que creemos sería perfecta para ti. ¿Te gustaría conocer más detalles? 🚀"</p>
-                        </div>
-                    </div>
-
-                    <!-- Mensaje 2 -->
-                    <div class="message-card">
-                        <div class="message-header">
-                            <div class="message-avatar">👨‍💼</div>
-                            <div class="message-info">
-                                <h3>Carlos López - Digital Innovators</h3>
-                                <p class="message-time">Hace 1 día</p>
-                            </div>
-                            <button class="btn btn-primary btn-small">Responder</button>
-                        </div>
-                        <div class="message-body">
-                            <p>"Te felicitamos por tus logros académicos. Estamos interesados en hablar sobre oportunidades en nuestra empresa. ¿Disponible para una videollamada esta semana?"</p>
-                        </div>
-                    </div>
-
-                    <!-- Mensaje 3 -->
-                    <div class="message-card">
-                        <div class="message-header">
-                            <img src="../assets/img/company3.png" alt="Empresa" class="message-avatar">
-                            <div class="message-info">
-                                <h3>StartUp Digital Cartagena</h3>
-                                <p class="message-time">Hace 3 días</p>
-                            </div>
-                            <button class="btn btn-primary btn-small">Responder</button>
-                        </div>
-                        <div class="message-body">
-                            <p>"¿Te interesaría hacer un proyecto freelance con nosotros? Es una API REST, 3-4 semanas de trabajo. Revisamos tu portfolio y nos gustó. Honorarios competitivos."</p>
-                        </div>
-                    </div>
+                <div class="messages-redirect">
+                    <p>Gestiona tus conversaciones en la sección de mensajes.</p>
+                    <a href="mensajes.html" class="btn btn-primary">Ir a Mensajes</a>
                 </div>
             </div>
         </div>
     </section>
+
+    <!-- Toast de notificaciones -->
+    <div id="toast-container"></div>
 
     <footer>
         <div class="container">
@@ -274,6 +88,7 @@
         </div>
     </footer>
 
+    <script src="../assets/js/api-config.js"></script>
     <script src="../assets/js/notifications.js"></script>
     <script src="../assets/js/conexiones.js"></script>
 </body>

@@ -6,7 +6,6 @@ const API_URL = typeof API_CONFIG !== 'undefined'
     ? `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.JOBS}`
     : 'http://localhost:8080/api/jobs';
 let savedOpportunityIds = new Set();
-const API_BASE_URL = typeof API_CONFIG !== 'undefined' ? API_CONFIG.BASE_URL : 'http://localhost:8080/api';
 
 async function loadSavedOpportunities() {
     const token = localStorage.getItem('token');
@@ -28,7 +27,7 @@ async function loadOportunidades() {
     await loadSavedOpportunities();
 
     try {
-        const response = await fetch(API_URL, { headers: { 'Accept': 'application/json' } });
+        const response = await fetchWithAuth(API_URL, { headers: { 'Accept': 'application/json' } });
         if (!response.ok) throw new Error(`API respondió ${response.status}`);
         const apiData = await response.json();
         const normalized = apiData

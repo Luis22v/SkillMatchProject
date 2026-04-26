@@ -27,9 +27,9 @@ public class Connection {
     @JoinColumn(name = "connected_user_id", nullable = false)
     private User connectedUser; // Usuario conectado (puede ser empresa)
     
-    // Estado: "pending", "accepted", "rejected", "blocked"
+    @Enumerated(EnumType.STRING)
     @Column(length = 50, nullable = false)
-    private String status = "pending";
+    private ConnectionStatus status = ConnectionStatus.PENDING;
     
     @Column(name = "requested_at", nullable = false, columnDefinition = "DATETIME")
     private LocalDateTime requestedAt;

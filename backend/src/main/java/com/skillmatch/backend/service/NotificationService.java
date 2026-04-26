@@ -78,9 +78,12 @@ public class NotificationService {
 
     @Transactional
     public void createApplicationUpdateNotification(Long userId, String status, Long applicationId, String jobTitle) {
-        String content = "Tu aplicación para " + jobTitle + " ha sido " +
-                (status.equals("accepted") ? "aceptada" :
-                 status.equals("rejected") ? "rechazada" : "actualizada");
+        String label = switch (status) {
+            case "accepted" -> "aceptada";
+            case "rejected" -> "rechazada";
+            default         -> "actualizada";
+        };
+        String content = "Tu aplicación para " + jobTitle + " ha sido " + label;
         String actionUrl = "/pages/perfil-usuario.html?tab=applications";
 
         createNotification(userId, "application_update", content, applicationId, actionUrl);

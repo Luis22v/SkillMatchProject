@@ -1,6 +1,5 @@
 // Sistema de notificaciones global
 
-const API_BASE_URL = 'http://localhost:8080/api';
 let notificationsInterval = null;
 
 // Inicializar sistema de notificaciones
@@ -27,29 +26,31 @@ function createNotificationsDropdown() {
     if (document.getElementById('notificationsDropdown')) return;
     
     // Buscar el botón de usuario
-    const userNav = document.querySelector('.user-nav, nav .nav-links');
+    const userNav = document.querySelector('.user-nav, nav > ul.nav-links');
     if (!userNav) return;
     
     // Crear estructura de notificaciones
     const notificationsHTML = `
-        <div class="notifications-container">
-            <button class="notifications-btn" id="notificationsBtn">
-                🔔
-                <span class="notifications-badge" id="notificationsBadge" style="display: none;">0</span>
-            </button>
-            <div class="notifications-dropdown" id="notificationsDropdown" style="display: none;">
-                <div class="notifications-header">
-                    <h3>🔔 Notificaciones</h3>
-                    <button class="btn-mark-all-read" id="markAllReadBtn">Marcar todas como leídas</button>
-                </div>
-                <div class="notifications-list" id="notificationsList">
-                    <div class="loading-message">Cargando...</div>
-                </div>
-                <div class="notifications-footer">
-                    <a href="#" id="viewAllNotificationsBtn">Ver todas</a>
+        <li class="nav-notification-item">
+            <div class="notifications-container">
+                <button class="notifications-btn" id="notificationsBtn">
+                    🔔
+                    <span class="notifications-badge" id="notificationsBadge" style="display: none;">0</span>
+                </button>
+                <div class="notifications-dropdown" id="notificationsDropdown" style="display: none;">
+                    <div class="notifications-header">
+                        <h3>🔔 Notificaciones</h3>
+                        <button class="btn-mark-all-read" id="markAllReadBtn">Marcar todas como leídas</button>
+                    </div>
+                    <div class="notifications-list" id="notificationsList">
+                        <div class="loading-message">Cargando...</div>
+                    </div>
+                    <div class="notifications-footer">
+                        <a href="#" id="viewAllNotificationsBtn">Ver todas</a>
+                    </div>
                 </div>
             </div>
-        </div>
+        </li>
     `;
     
     // Insertar antes del menú de usuario
