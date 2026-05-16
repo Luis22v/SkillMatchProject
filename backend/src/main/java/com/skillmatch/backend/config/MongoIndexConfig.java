@@ -28,51 +28,51 @@ public class MongoIndexConfig implements ApplicationRunner {
 
         // users
         mongoTemplate.indexOps("users")
-                .ensureIndex(new Index("email", Sort.Direction.ASC).unique());
+                .createIndex(new Index("email", Sort.Direction.ASC).unique());
 
         // companies
         mongoTemplate.indexOps("companies")
-                .ensureIndex(new Index("userId", Sort.Direction.ASC));
+                .createIndex(new Index("userId", Sort.Direction.ASC));
         mongoTemplate.indexOps("companies")
-                .ensureIndex(new CompoundIndexDefinition(new Document("industry", 1).append("active", 1)));
+                .createIndex(new CompoundIndexDefinition(new Document("industry", 1).append("active", 1)));
 
         // jobs
         mongoTemplate.indexOps("jobs")
-                .ensureIndex(new Index("companyId", Sort.Direction.ASC));
+                .createIndex(new Index("companyId", Sort.Direction.ASC));
         mongoTemplate.indexOps("jobs")
-                .ensureIndex(new CompoundIndexDefinition(new Document("status", 1).append("active", 1)));
+                .createIndex(new CompoundIndexDefinition(new Document("status", 1).append("active", 1)));
         mongoTemplate.indexOps("jobs")
-                .ensureIndex(TextIndexDefinition.builder().onField("title").build());
+                .createIndex(TextIndexDefinition.builder().onField("title").build());
 
         // applications
         mongoTemplate.indexOps("applications")
-                .ensureIndex(new Index("userId", Sort.Direction.ASC));
+                .createIndex(new Index("userId", Sort.Direction.ASC));
         mongoTemplate.indexOps("applications")
-                .ensureIndex(new Index("jobId", Sort.Direction.ASC));
+                .createIndex(new Index("jobId", Sort.Direction.ASC));
         mongoTemplate.indexOps("applications")
-                .ensureIndex(new CompoundIndexDefinition(new Document("userId", 1).append("jobId", 1)).unique());
+                .createIndex(new CompoundIndexDefinition(new Document("userId", 1).append("jobId", 1)).unique());
 
         // messages
         mongoTemplate.indexOps("messages")
-                .ensureIndex(new CompoundIndexDefinition(new Document("senderId", 1).append("receiverId", 1)));
+                .createIndex(new CompoundIndexDefinition(new Document("senderId", 1).append("receiverId", 1)));
 
         // connections
         mongoTemplate.indexOps("connections")
-                .ensureIndex(new Index("userId", Sort.Direction.ASC));
+                .createIndex(new Index("userId", Sort.Direction.ASC));
         mongoTemplate.indexOps("connections")
-                .ensureIndex(new Index("connectedUserId", Sort.Direction.ASC));
+                .createIndex(new Index("connectedUserId", Sort.Direction.ASC));
         mongoTemplate.indexOps("connections")
-                .ensureIndex(new CompoundIndexDefinition(new Document("userId", 1).append("connectedUserId", 1)).unique());
+                .createIndex(new CompoundIndexDefinition(new Document("userId", 1).append("connectedUserId", 1)).unique());
 
         // saved_jobs
         mongoTemplate.indexOps("saved_jobs")
-                .ensureIndex(new Index("userId", Sort.Direction.ASC));
+                .createIndex(new Index("userId", Sort.Direction.ASC));
         mongoTemplate.indexOps("saved_jobs")
-                .ensureIndex(new CompoundIndexDefinition(new Document("userId", 1).append("jobId", 1)).unique());
+                .createIndex(new CompoundIndexDefinition(new Document("userId", 1).append("jobId", 1)).unique());
 
         // notifications
         mongoTemplate.indexOps("notifications")
-                .ensureIndex(new CompoundIndexDefinition(new Document("userId", 1).append("isRead", 1)));
+                .createIndex(new CompoundIndexDefinition(new Document("userId", 1).append("isRead", 1)));
 
         log.info("MongoDB indexes created successfully");
     }

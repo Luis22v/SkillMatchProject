@@ -51,7 +51,8 @@
       "Bash(Remove-Item \"c:\\\\Users\\\\amaya\\\\Desktop\\\\SkillMatchProject\\\\backend\\\\src\\\\main\\\\java\\\\com\\\\skillmatch\\\\backend\\\\converter\\\\JobStatusConverter.java\" -Force)",
       "Bash(Write-Host \"Converter files deleted\")",
       "PowerShell(cd \"c:\\\\Users\\\\amaya\\\\Desktop\\\\SkillMatchProject\\\\backend\"; $env:JWT_SECRET = \"skillmatch-dev-secret-key-for-local-development-only-do-not-use-in-production-2024\"; $env:DB_PASSWORD = \"\"; .\\\\mvnw.cmd clean package -DskipTests 2>&1 | Select-String -Pattern \"ERROR|error:|BUILD|WARNING: An illegal|WARN\" | Select-Object -First 80)",
-      "PowerShell(cd \"c:\\\\Users\\\\amaya\\\\Desktop\\\\SkillMatchProject\\\\backend\"; $env:JWT_SECRET = \"skillmatch-dev-secret-key-for-local-development-only-do-not-use-in-production-2024\"; $env:DB_PASSWORD = \"\"; .\\\\mvnw.cmd clean package -DskipTests 2>&1 | Select-String -Pattern \"ERROR|BUILD SUCCESS|BUILD FAILURE|COMPILATION ERROR\")"
+      "PowerShell(cd \"c:\\\\Users\\\\amaya\\\\Desktop\\\\SkillMatchProject\\\\backend\"; $env:JWT_SECRET = \"skillmatch-dev-secret-key-for-local-development-only-do-not-use-in-production-2024\"; $env:DB_PASSWORD = \"\"; .\\\\mvnw.cmd clean package -DskipTests 2>&1 | Select-String -Pattern \"ERROR|BUILD SUCCESS|BUILD FAILURE|COMPILATION ERROR\")",
+      "Bash(JWT_SECRET=\"skillmatch-dev-secret-key-for-local-development-only-do-not-use-in-production-2024\" DB_PASSWORD=\"\" ./mvnw.cmd clean package -DskipTests)"
     ]
   }
 }
