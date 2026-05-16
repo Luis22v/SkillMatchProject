@@ -158,7 +158,7 @@ function displayNotifications(notifications) {
         const time = formatNotificationTime(notif.createdAt);
         
         return `
-            <div class="notification-item ${notif.isRead ? 'read' : 'unread'}" data-id="${notif.id}" onclick="handleNotificationClick(${notif.id}, '${notif.actionUrl || ''}')">
+            <div class="notification-item ${notif.isRead ? 'read' : 'unread'}" data-id="${notif.id}" onclick="handleNotificationClick('${notif.id}', '${notif.actionUrl || ''}')">
                 <div class="notification-icon">${icon}</div>
                 <div class="notification-content">
                     <p class="notification-message">${notif.message}</p>

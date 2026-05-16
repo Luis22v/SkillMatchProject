@@ -209,7 +209,7 @@ function renderOffers(offers) {
                     <h3>${offer.title}</h3>
                     <span class="offer-type-badge ${offer.type}">${offer.typeLabel}</span>
                 </div>
-                <button class="offer-menu-btn" onclick="showOfferMenu(${offerId})" title="Opciones">⋮</button>
+                <button class="offer-menu-btn" onclick="showOfferMenu('${offerId}')" title="Opciones">⋮</button>
             </div>
             <div class="offer-card-info">
                 <div class="offer-info-row">
@@ -226,9 +226,9 @@ function renderOffers(offers) {
                 </div>
             </div>
             <div class="offer-card-actions">
-                <button class="btn-offer-action primary" onclick="viewOfferCandidates(${offerId})">Ver Candidatos</button>
-                <button class="btn-offer-action" onclick="editOffer(${offerId})">Editar</button>
-                <button class="btn-offer-action ${offer.status === 'active' ? '' : 'success'}" onclick="toggleOfferStatus(${offerId})">
+                <button class="btn-offer-action primary" onclick="viewOfferCandidates('${offerId}')">Ver Candidatos</button>
+                <button class="btn-offer-action" onclick="editOffer('${offerId}')">Editar</button>
+                <button class="btn-offer-action ${offer.status === 'active' ? '' : 'success'}" onclick="toggleOfferStatus('${offerId}')">
                     ${offer.status === 'active' ? 'Archivar' : 'Reabrir'}
                 </button>
             </div>
@@ -778,7 +778,7 @@ function createCandidateCard(application, offerId) {
                 </div>
             ` : ''}
             <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1.5rem;padding-top:1rem;border-top:1px solid #e4e6e9;">
-                <button onclick="viewCandidateProfile(${application.userId})" 
+                <button onclick="viewCandidateProfile('${application.userId}')"
                         style="padding:0.6rem 1.2rem;background:#003d82;color:white;border:none;border-radius:8px;cursor:pointer;font-size:0.9rem;font-weight:500;display:flex;align-items:center;gap:0.5rem;">
                     👤 Ver Perfil Completo
                 </button>
@@ -787,11 +787,11 @@ function createCandidateCard(application, offerId) {
                     ✉️ Contactar
                 </button>
                 ${status === 'pendiente' ? `
-                    <button onclick="updateCandidateStatus(${application.id}, 'aceptada', ${offerId})" 
+                    <button onclick="updateCandidateStatus('${application.id}', 'aceptada', '${offerId}')"
                             style="padding:0.6rem 1.2rem;background:#28a745;color:white;border:none;border-radius:8px;cursor:pointer;font-size:0.9rem;font-weight:500;">
                         ✓ Aceptar
                     </button>
-                    <button onclick="updateCandidateStatus(${application.id}, 'rechazada', ${offerId})" 
+                    <button onclick="updateCandidateStatus('${application.id}', 'rechazada', '${offerId}')"
                             style="padding:0.6rem 1.2rem;background:#dc3545;color:white;border:none;border-radius:8px;cursor:pointer;font-size:0.9rem;font-weight:500;">
                         ✗ Rechazar
                     </button>
@@ -1090,10 +1090,10 @@ function createApplicationCard(application) {
                 <p class="cover-letter-preview">${application.coverLetter.substring(0, 150)}${application.coverLetter.length > 150 ? '...' : ''}</p>
             ` : ''}
             <div class="application-actions">
-                <button class="btn-view-profile" onclick="viewCandidateProfile(${application.userId})">Ver Perfil</button>
+                <button class="btn-view-profile" onclick="viewCandidateProfile('${application.userId}')">Ver Perfil</button>
                 ${normalizedStatus === 'pending' ? `
-                    <button class="btn-accept" onclick="updateApplicationStatus(${application.id}, 'aceptada')">✓ Aceptar</button>
-                    <button class="btn-reject" onclick="updateApplicationStatus(${application.id}, 'rechazada')">✗ Rechazar</button>
+                    <button class="btn-accept" onclick="updateApplicationStatus('${application.id}', 'aceptada')">✓ Aceptar</button>
+                    <button class="btn-reject" onclick="updateApplicationStatus('${application.id}', 'rechazada')">✗ Rechazar</button>
                 ` : ''}
             </div>
         </div>

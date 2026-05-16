@@ -18,7 +18,7 @@ function getUserData() {
     
     // Si hay un ID en la URL, devolver un objeto con ese ID (cargar desde backend)
     if (userIdFromUrl) {
-        return { id: parseInt(userIdFromUrl), isOtherUser: true };
+        return { id: userIdFromUrl, isOtherUser: true };
     }
     
     // Si no hay ID en URL, usar el usuario actual
@@ -211,7 +211,7 @@ function displaySkills(skills) {
         `<span class="skill-tag">
             ${skill.name} 
             <span class="skill-level">${formatSkillLevel(skill.level)}</span>
-            <button class="btn-remove-skill" onclick="deleteSkill(${skill.id})" title="Eliminar">✕</button>
+            <button class="btn-remove-skill" onclick="deleteSkill('${skill.id}')" title="Eliminar">✕</button>
         </span>`
     ).join('');
     
@@ -344,7 +344,7 @@ function displayExperiences(experiences) {
                 <div class="experience-content">
                     <div class="experience-header">
                         <h3>${exp.position}</h3>
-                        <button class="btn-delete-item" onclick="deleteExperience(${exp.id})" title="Eliminar">🗑️</button>
+                        <button class="btn-delete-item" onclick="deleteExperience('${exp.id}')" title="Eliminar">🗑️</button>
                     </div>
                     <p class="company">${exp.company}</p>
                     <p class="timeline">${startDate} - ${endDate}${exp.location ? ' | ' + exp.location : ''}</p>
@@ -476,7 +476,7 @@ function displayEducations(educations) {
                 <div class="education-content">
                     <div class="education-header">
                         <h3>${edu.degree}</h3>
-                        <button class="btn-delete-item" onclick="deleteEducation(${edu.id})" title="Eliminar">🗑️</button>
+                        <button class="btn-delete-item" onclick="deleteEducation('${edu.id}')" title="Eliminar">🗑️</button>
                     </div>
                     <p class="school">${edu.school}</p>
                     <p class="timeline">${startDate} - ${endDate}${edu.fieldOfStudy ? ' | ' + edu.fieldOfStudy : ''}</p>
@@ -611,7 +611,7 @@ function displayRecommendedJobs(jobs) {
             </div>
             <p class="opportunity-company-compact">${job.company?.name || job.companyName || ''}</p>
             <p class="opportunity-location-compact">📍 ${job.location}</p>
-            <button class="btn-apply-compact" onclick="applyToJob(${job.id})">Aplicar Ahora</button>
+            <button class="btn-apply-compact" onclick="applyToJob('${job.id}')">Aplicar Ahora</button>
         </div>
     `).join('');
 }
@@ -671,11 +671,10 @@ async function loadInterestedCompanies() {
             // Extraer empresas únicas de las aplicaciones
             const companiesMap = new Map();
             applications.forEach(app => {
-                if (app.job && app.job.company) {
-                    const companyId = app.job.company.id;
-                    if (!companiesMap.has(companyId)) {
-                        companiesMap.set(companyId, {
-                            name: app.job.company.name,
+                if (app.companyName && app.jobId) {
+                    if (!companiesMap.has(app.jobId)) {
+                        companiesMap.set(app.jobId, {
+                            name: app.companyName,
                             appliedDate: new Date(app.appliedDate),
                             status: app.status
                         });

@@ -114,7 +114,7 @@ function displayConversations(conversationsList) {
         const unreadBadge = isUnread ? `<span class="unread-badge">${conv.unreadCount}</span>` : '';
         
         return `
-            <div class="conversation-item ${unreadClass}" data-user-id="${conv.otherUserId}" onclick="openConversation(${conv.otherUserId})">
+            <div class="conversation-item ${unreadClass}" data-user-id="${conv.otherUserId}" onclick="openConversation('${conv.otherUserId}')">
                 <div class="conversation-avatar">${conv.otherUserName ? conv.otherUserName.charAt(0) : '👤'}</div>
                 <div class="conversation-info">
                     <div class="conversation-header">

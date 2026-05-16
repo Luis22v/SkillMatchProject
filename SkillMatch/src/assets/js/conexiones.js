@@ -108,8 +108,8 @@ function displayConnections(connections) {
                         <p class="connection-time">${since ? 'Desde ' + since : 'Conectado'}</p>
                     </div>
                     <div class="connection-actions">
-                        <button class="btn btn-primary btn-small" onclick="goToMessages(${otherId})">💬 Mensaje</button>
-                        <button class="btn btn-secondary btn-small" onclick="viewProfile(${otherId})">Ver Perfil</button>
+                        <button class="btn btn-primary btn-small" onclick="goToMessages('${otherId}')">💬 Mensaje</button>
+                        <button class="btn btn-secondary btn-small" onclick="viewProfile('${otherId}')">Ver Perfil</button>
                     </div>
                 </div>
                 ${conn.message ? `<div class="connection-body"><p class="connection-note">${conn.message}</p></div>` : ''}
@@ -160,8 +160,8 @@ function displayRequests(requests) {
                         <p class="connection-time">${date}</p>
                     </div>
                     <div class="connection-actions">
-                        <button class="btn btn-primary btn-small" onclick="acceptConnection(${req.id})">✓ Aceptar</button>
-                        <button class="btn btn-secondary btn-small" onclick="rejectConnection(${req.id})">✗ Rechazar</button>
+                        <button class="btn btn-primary btn-small" onclick="acceptConnection('${req.id}')">✓ Aceptar</button>
+                        <button class="btn btn-secondary btn-small" onclick="rejectConnection('${req.id}')">✗ Rechazar</button>
                     </div>
                 </div>
                 ${req.message ? `<div class="connection-body"><p class="connection-note">"${req.message}"</p></div>` : ''}
@@ -211,8 +211,8 @@ function displaySuggestions(suggestions) {
                     </div>
                 </div>
                 <div class="suggestion-actions">
-                    <button class="btn btn-primary btn-small" onclick="sendConnectionRequest(${user.id})">🤝 Conectar</button>
-                    <button class="btn btn-secondary btn-small" onclick="viewProfile(${user.id})">Ver Perfil</button>
+                    <button class="btn btn-primary btn-small" onclick="sendConnectionRequest('${user.id}')">🤝 Conectar</button>
+                    <button class="btn btn-secondary btn-small" onclick="viewProfile('${user.id}')">Ver Perfil</button>
                 </div>
             </div>`;
     }).join('');

@@ -143,7 +143,7 @@ function formatSalaryRange(minValue, maxValue) {
 function resolveMatchScore(apiOpp) {
     if (typeof apiOpp.matchScore === 'number') return Math.round(apiOpp.matchScore);
     if (typeof apiOpp.match === 'number') return Math.round(apiOpp.match);
-    if (apiOpp.id) return 70 + (apiOpp.id % 21);
+    if (apiOpp.id) { const h = String(apiOpp.id).split('').reduce((a,c) => a + c.charCodeAt(0), 0); return 70 + (h % 21); }
     return 75;
 }
 
@@ -367,7 +367,7 @@ function renderResults(oportunidades, criteria) {
 
     document.querySelectorAll('.btn-save').forEach(btn => {
         btn.addEventListener('click', async function() {
-            const id = Number(this.getAttribute('data-id'));
+            const id = this.getAttribute('data-id');
 
             if (!localStorage.getItem('userData')) {
                 if (confirm('Debes iniciar sesión para guardar oportunidades.\n¿Deseas ir a la página de inicio de sesión?')) {

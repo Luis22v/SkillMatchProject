@@ -223,7 +223,7 @@ async function applyToJob(jobId) {
             const response = await fetchWithAuth(`${API_BASE_URL}/applications`, {
                 method: 'POST',
                 body: JSON.stringify({
-                    jobId: parseInt(jobId),
+                    jobId: jobId,
                     coverLetter: `Estimado equipo, estoy muy interesado en la posición de ${job.title} y creo que mi perfil se alinea perfectamente con los requisitos.`
                 })
             });
@@ -433,8 +433,8 @@ async function toggleSaveJob(jobId, buttonElement) {
         return;
     }
 
-    const isSaved = savedJobIds.has(parseInt(jobId));
-    
+    const isSaved = savedJobIds.has(jobId);
+
     try {
         if (isSaved) {
             // Quitar de guardados
@@ -443,7 +443,7 @@ async function toggleSaveJob(jobId, buttonElement) {
             });
 
             if (response.ok) {
-                savedJobIds.delete(parseInt(jobId));
+                savedJobIds.delete(jobId);
                 buttonElement.classList.remove('saved');
                 buttonElement.textContent = '💾 Guardar';
             }
@@ -451,11 +451,11 @@ async function toggleSaveJob(jobId, buttonElement) {
             // Agregar a guardados
             const response = await fetchWithAuth(`${API_BASE_URL}/saved-jobs`, {
                 method: 'POST',
-                body: JSON.stringify({ jobId: parseInt(jobId) })
+                body: JSON.stringify({ jobId: jobId })
             });
 
             if (response.ok) {
-                savedJobIds.add(parseInt(jobId));
+                savedJobIds.add(jobId);
                 buttonElement.classList.add('saved');
                 buttonElement.textContent = '❤️ Guardado';
             }
