@@ -195,18 +195,11 @@ function attachJobCardListeners() {
 
 // Aplicar a trabajo
 async function applyToJob(jobId) {
-    const token = localStorage.getItem('token');
     const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-    
-        hasToken: !!token, 
-        userId: userData.id,
-        userRole: userData.role,
-        userData: userData
-    });
-    
-    if (!token) {
+
+    if (!localStorage.getItem('userData')) {
         if (confirm('Debes iniciar sesión para aplicar a esta oportunidad.\n¿Deseas ir a la página de inicio de sesión?')) {
-            window.location.href = 'login.html';
+            window.location.href = 'login-usuario.html';
         }
         return;
     }
@@ -418,8 +411,7 @@ function translateExperienceLevel(level) {
 
 // Cargar trabajos guardados del usuario
 async function loadSavedJobs() {
-    const token = localStorage.getItem('token');
-    if (!token) return;
+    if (!localStorage.getItem('userData')) return;
 
     try {
         const response = await fetchWithAuth(`${API_BASE_URL}/saved-jobs/job-ids`);
@@ -434,11 +426,9 @@ async function loadSavedJobs() {
 
 // Guardar o quitar trabajo de guardados
 async function toggleSaveJob(jobId, buttonElement) {
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
+    if (!localStorage.getItem('userData')) {
         if (confirm('Debes iniciar sesión para guardar oportunidades.\n¿Deseas ir a la página de inicio de sesión?')) {
-            window.location.href = 'login.html';
+            window.location.href = 'login-usuario.html';
         }
         return;
     }

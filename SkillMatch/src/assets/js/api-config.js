@@ -20,9 +20,9 @@ const API_CONFIG = {
 
 const API_BASE_URL = 'http://localhost:8080/api';
 
-// Token is stored as httpOnly cookie by the backend — JS cannot read it.
-// saveToken is kept for API compatibility but is intentionally a no-op.
-function saveToken(token) {}
+function saveToken(token) {
+    if (token) localStorage.setItem('token', token);
+}
 
 function saveUserData(userData) {
     localStorage.setItem('userData', JSON.stringify(userData));
@@ -34,40 +34,48 @@ function getUserData() {
 }
 
 function isAuthenticated() {
-    const userData = getUserData();
-    if (!userData) return false;
-    if (userData.expiresAt) {
-        return userData.expiresAt > Date.now();
+    const token = localStorage.getItem('token');
+    if (!token) return false;
+    try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.exp * 1000 > Date.now();
+    } catch (_) {
+        return false;
     }
-    return true;
 }
 
 async function logout() {
+    const token = localStorage.getItem('token');
     try {
         await fetch(`${API_BASE_URL}/auth/logout`, {
             method: 'POST',
-            credentials: 'include'
+            credentials: 'include',
+            headers: token ? { 'Authorization': `Bearer ${token}` } : {}
         });
     } catch (_) {}
+    localStorage.removeItem('token');
     localStorage.removeItem('userData');
     localStorage.removeItem('companyOffers');
     localStorage.removeItem('skillmatch_saved_opportunities');
-    window.location.href = '../pages/index.html';
+
+    const path = window.location.pathname;
+    const isPublicPage = /index\.html|login|registro|seleccionar-registro/.test(path);
+    if (!isPublicPage) {
+        window.location.href = '../pages/index.html';
+    }
 }
 
 async function fetchWithAuth(url, options = {}) {
+    const token = localStorage.getItem('token');
     const response = await fetch(url, {
         ...options,
         credentials: 'include',
         headers: {
             'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
             ...options.headers
         }
     });
-
-    if (response.status === 401 || response.status === 403) {
-        logout();
-    }
 
     return response;
 }

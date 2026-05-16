@@ -12,6 +12,10 @@ function sanitize(text) {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    if (!isAuthenticated()) {
+        window.location.href = 'login-empresa.html';
+        return;
+    }
     loadCompanyData();
     setupEventListeners();
     loadOffers();
@@ -21,9 +25,8 @@ document.addEventListener('DOMContentLoaded', function() {
 // Cargar datos de la empresa desde localStorage y backend
 function loadCompanyData() {
     const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
+
+    if (!localStorage.getItem('userData')) {
         alert('Debes iniciar sesión para ver esta página');
         window.location.href = 'login-empresa.html';
         return;
@@ -472,9 +475,8 @@ function openEditAboutModal() {
         }
         
         const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-        const token = localStorage.getItem('token');
-        
-        if (!userData.companyId || !token) {
+
+        if (!userData.companyId) {
             alert('Error: No se encontró información de sesión');
             return;
         }
@@ -557,7 +559,6 @@ function openNewOfferModal(existingOffer = null, offerId = null) {
         }
         
         const typeLabels = { practice: 'práctica', employment: 'empleo', freelance: 'freelance' };
-        const token = localStorage.getItem('token');
         const userData = JSON.parse(localStorage.getItem('userData') || '{}');
         
         // Preparar datos para el backend
@@ -946,9 +947,8 @@ function showNotification(message) {
 // Cargar aplicaciones recibidas por la empresa
 async function loadApplications() {
     const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-    const token = localStorage.getItem('token');
-    
-    if (!userData.companyId || !token) {
+
+    if (!userData.companyId) {
         return;
     }
     

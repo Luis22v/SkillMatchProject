@@ -9,9 +9,8 @@ function getUserData() {
     const userIdFromUrl = urlParams.get('id');
     
     const userData = localStorage.getItem('userData');
-    const token = localStorage.getItem('token');
-    
-    if (!token) {
+
+    if (!userData) {
         alert('Debes iniciar sesión para ver esta página');
         window.location.href = 'login-usuario.html';
         return null;
@@ -43,12 +42,7 @@ function getUserData() {
     return { ...parsed, id, isOtherUser: false };
 }
 
-// Función para cerrar sesión
-function logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('userData');
-    window.location.href = 'login-usuario.html';
-}
+// Cerrar sesión — usa la función global de api-config.js
 
 // Cargar perfil del usuario
 async function loadUserProfile() {
@@ -856,7 +850,12 @@ async function updateCoverImage(imageUrl) {
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', function() {
-    
+
+    if (!isAuthenticated()) {
+        window.location.href = 'login-usuario.html';
+        return;
+    }
+
     // Cargar datos del perfil
     loadUserProfile();
     loadUserSkills();

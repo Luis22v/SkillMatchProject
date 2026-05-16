@@ -8,8 +8,7 @@ const API_URL = typeof API_CONFIG !== 'undefined'
 let savedOpportunityIds = new Set();
 
 async function loadSavedOpportunities() {
-    const token = localStorage.getItem('token');
-    if (!token) return;
+    if (!localStorage.getItem('userData')) return;
 
     try {
         const response = await fetchWithAuth(`${API_BASE_URL}/saved-jobs/job-ids`);
@@ -26,7 +25,7 @@ async function loadOportunidades() {
     await loadSavedOpportunities();
 
     try {
-        const response = await fetchWithAuth(API_URL, { headers: { 'Accept': 'application/json' } });
+        const response = await fetch(API_URL, { headers: { 'Accept': 'application/json' } });
         if (!response.ok) throw new Error(`API respondió ${response.status}`);
         const apiData = await response.json();
         const normalized = apiData
@@ -369,9 +368,8 @@ function renderResults(oportunidades, criteria) {
     document.querySelectorAll('.btn-save').forEach(btn => {
         btn.addEventListener('click', async function() {
             const id = Number(this.getAttribute('data-id'));
-            const token = localStorage.getItem('token');
 
-            if (!token) {
+            if (!localStorage.getItem('userData')) {
                 if (confirm('Debes iniciar sesión para guardar oportunidades.\n¿Deseas ir a la página de inicio de sesión?')) {
                     window.location.href = 'login-usuario.html';
                 }

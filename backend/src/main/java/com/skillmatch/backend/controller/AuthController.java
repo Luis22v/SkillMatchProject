@@ -36,7 +36,6 @@ public class AuthController {
             HttpServletResponse response) {
         AuthResponse authResponse = authenticationService.login(loginRequest);
         setCookie(response, authResponse.getToken());
-        authResponse.setToken(null);
         return ResponseEntity.ok(authResponse);
     }
 
@@ -47,7 +46,6 @@ public class AuthController {
             HttpServletResponse response) {
         AuthResponse authResponse = registrationService.register(registerRequest);
         setCookie(response, authResponse.getToken());
-        authResponse.setToken(null);
         return ResponseEntity.ok(authResponse);
     }
 
