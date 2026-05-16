@@ -4,11 +4,18 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.lang.NonNull;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "jobs")
+@Table(name = "jobs",
+       indexes = {
+           @Index(name = "idx_job_company_id",  columnList = "company_id"),
+           @Index(name = "idx_job_status",      columnList = "status"),
+           @Index(name = "idx_job_active",      columnList = "active"),
+           @Index(name = "idx_job_created_at",  columnList = "created_at")
+       })
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,7 +23,7 @@ public class Job {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private @NonNull Long id;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id", nullable = false)
@@ -73,9 +80,8 @@ public class Job {
     @Convert(converter = StringListConverter.class)
     private List<String> benefits;
     
-    // Estado: "abierta", "cerrada", "pausada"
     @Column(length = 50, nullable = false)
-    private String status = "abierta";
+    private JobStatus status = JobStatus.ABIERTA;
     
     @Column(name = "posted_date", nullable = false, columnDefinition = "DATETIME")
     private LocalDateTime postedDate;

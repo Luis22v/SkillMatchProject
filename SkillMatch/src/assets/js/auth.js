@@ -1,4 +1,4 @@
-// Manejo del formulario de login (empresa y usuario)
+﻿// Manejo del formulario de login (empresa y usuario)
 document.addEventListener('DOMContentLoaded', function() {
     const loginForm = document.getElementById('empresa-login-form')
                    || document.getElementById('usuario-login-form');
@@ -36,7 +36,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 const isEmpresa = role === 'EMPRESA' || role === 'ROLE_EMPRESA';
 
                 if (isEmpresa && !data.companyId) {
-                    console.warn('⚠️ Usuario empresa sin companyId asociado');
                     if (errorMessage) {
                         errorMessage.textContent = 'Tu cuenta no tiene una empresa asociada. Contacta al administrador.';
                         errorMessage.style.display = 'block';
@@ -82,7 +81,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
         } catch (error) {
-            console.error('Error al iniciar sesión:', error);
             if (errorMessage) {
                 errorMessage.textContent = 'Error de conexión. Por favor, verifica que el servidor esté corriendo e intenta de nuevo.';
                 errorMessage.style.display = 'block';

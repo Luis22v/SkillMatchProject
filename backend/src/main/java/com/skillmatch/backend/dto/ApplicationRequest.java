@@ -10,12 +10,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ApplicationRequest {
     
-    @NotNull(message = "El ID del job es obligatorio")
+    @NotNull(message = "{validation.application.jobId.required}")
     private Long jobId;
-    
-    @Size(max = 1000, message = "El CV no puede exceder 1000 caracteres")
+
+    @Size(max = 1000, message = "{validation.application.resume.max}")
     private String resume;
-    
-    @Size(max = 2000, message = "La carta de presentación no puede exceder 2000 caracteres")
+
+    @Size(max = 2000, message = "{validation.application.coverLetter.max}")
     private String coverLetter;
 }

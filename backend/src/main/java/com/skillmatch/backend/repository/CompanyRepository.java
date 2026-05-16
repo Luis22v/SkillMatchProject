@@ -1,6 +1,8 @@
 package com.skillmatch.backend.repository;
 
 import com.skillmatch.backend.model.Company;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -17,6 +19,8 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
     Optional<Company> findByUserId(Long userId);
     
     List<Company> findByActiveTrue();
+
+    Page<Company> findByActiveTrue(Pageable pageable);
     
     List<Company> findByIndustry(String industry);
     

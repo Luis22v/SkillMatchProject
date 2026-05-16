@@ -1,6 +1,7 @@
 package com.skillmatch.backend.service;
 
 import com.skillmatch.backend.dto.CertificationRequest;
+import com.skillmatch.backend.dto.CertificationResponse;
 import com.skillmatch.backend.model.Certification;
 import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.repository.CertificationRepository;
@@ -11,9 +12,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -25,15 +24,14 @@ public class CertificationService {
     private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
-    public List<Map<String, Object>> getUserCertifications(Long userId) {
-        List<Certification> certifications = certificationRepository.findByUserIdOrderByIssueDateDesc(userId);
-        return certifications.stream()
-                .map(this::mapCertificationToResponse)
+    public List<CertificationResponse> getUserCertifications(Long userId) {
+        return certificationRepository.findByUserIdOrderByIssueDateDesc(userId).stream()
+                .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
     @Transactional
-    public Map<String, Object> addCertification(@NonNull Long userId, CertificationRequest request) {
+    public CertificationResponse addCertification(@NonNull Long userId, CertificationRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
 
@@ -47,13 +45,14 @@ public class CertificationService {
         certification.setCredentialUrl(request.getCredentialUrl());
         certification.setDescription(request.getDescription());
 
-        Map<String, Object> result = mapCertificationToResponse(certificationRepository.save(certification));
+        CertificationResponse result = mapToResponse(certificationRepository.save(certification));
         log.info("Certificación '{}' agregada para usuario {}", request.getName(), userId);
         return result;
     }
 
     @Transactional
-    public Certification updateCertification(Long userId, @NonNull Long certificationId, CertificationRequest request) {
+    public CertificationResponse updateCertification(Long userId, @NonNull Long certificationId,
+                                                      CertificationRequest request) {
         Certification certification = certificationRepository.findById(certificationId)
                 .orElseThrow(() -> new IllegalArgumentException("Certificación no encontrada"));
 
@@ -69,9 +68,9 @@ public class CertificationService {
         certification.setCredentialUrl(request.getCredentialUrl());
         certification.setDescription(request.getDescription());
 
-        Certification updated = certificationRepository.save(certification);
+        CertificationResponse result = mapToResponse(certificationRepository.save(certification));
         log.info("Certificación {} actualizada para usuario {}", certificationId, userId);
-        return updated;
+        return result;
     }
 
     @Transactional
@@ -87,17 +86,17 @@ public class CertificationService {
         log.info("Certificación {} eliminada para usuario {}", certificationId, userId);
     }
 
-    private Map<String, Object> mapCertificationToResponse(Certification certification) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("id", certification.getId());
-        response.put("name", certification.getName());
-        response.put("issuer", certification.getIssuer());
-        response.put("issueDate", certification.getIssueDate());
-        response.put("expirationDate", certification.getExpirationDate());
-        response.put("credentialId", certification.getCredentialId());
-        response.put("credentialUrl", certification.getCredentialUrl());
-        response.put("description", certification.getDescription());
-        response.put("createdAt", certification.getCreatedAt());
-        return response;
+    private CertificationResponse mapToResponse(Certification c) {
+        return new CertificationResponse(
+                c.getId(),
+                c.getName(),
+                c.getIssuer(),
+                c.getIssueDate(),
+                c.getExpirationDate(),
+                c.getCredentialId(),
+                c.getCredentialUrl(),
+                c.getDescription(),
+                c.getCreatedAt()
+        );
     }
 }

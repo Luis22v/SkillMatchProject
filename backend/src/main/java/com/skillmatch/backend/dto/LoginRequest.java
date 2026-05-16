@@ -12,11 +12,11 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class LoginRequest {
     
-    @NotBlank(message = "El email es obligatorio")
-    @Email(message = "El email debe ser válido")
+    @NotBlank(message = "{validation.email.required}")
+    @Email(message = "{validation.email.invalid}")
     private String email;
-    
-    @NotBlank(message = "La contraseña es obligatoria")
-    @Size(min = 6, message = "La contraseña debe tener al menos 6 caracteres")
+
+    @NotBlank(message = "{validation.password.required}")
+    @Size(min = 6, message = "{validation.password.min}")
     private String password;
 }

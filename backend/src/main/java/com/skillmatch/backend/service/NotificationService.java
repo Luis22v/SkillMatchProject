@@ -44,7 +44,7 @@ public class NotificationService {
     }
 
     @Transactional
-    public void createConnectionRequestNotification(Long userId, @NonNull Long requesterId, Long connectionId) {
+    public void createConnectionRequestNotification(@NonNull Long userId, @NonNull Long requesterId, Long connectionId) {
         User requester = userRepository.findById(requesterId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
@@ -55,7 +55,7 @@ public class NotificationService {
     }
 
     @Transactional
-    public void createConnectionAcceptedNotification(Long userId, @NonNull Long accepterId, Long connectionId) {
+    public void createConnectionAcceptedNotification(@NonNull Long userId, @NonNull Long accepterId, Long connectionId) {
         User accepter = userRepository.findById(accepterId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
@@ -66,7 +66,7 @@ public class NotificationService {
     }
 
     @Transactional
-    public void createMessageNotification(Long userId, @NonNull Long senderId, Long messageId) {
+    public void createMessageNotification(@NonNull Long userId, @NonNull Long senderId, Long messageId) {
         User sender = userRepository.findById(senderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
@@ -77,7 +77,7 @@ public class NotificationService {
     }
 
     @Transactional
-    public void createApplicationUpdateNotification(Long userId, String status, Long applicationId, String jobTitle) {
+    public void createApplicationUpdateNotification(@NonNull Long userId, String status, Long applicationId, String jobTitle) {
         String label = switch (status) {
             case "accepted" -> "aceptada";
             case "rejected" -> "rechazada";
@@ -90,7 +90,7 @@ public class NotificationService {
     }
 
     @Transactional
-    public void createNewJobNotification(Long userId, String companyName, Long jobId) {
+    public void createNewJobNotification(@NonNull Long userId, String companyName, Long jobId) {
         String content = companyName + " ha publicado una nueva oferta que podría interesarte";
         String actionUrl = "/pages/oportunidades.html?jobId=" + jobId;
 
@@ -98,7 +98,7 @@ public class NotificationService {
     }
 
     @Transactional
-    public void createApplicationReceivedNotification(Long companyUserId, String userName, Long applicationId, String jobTitle) {
+    public void createApplicationReceivedNotification(@NonNull Long companyUserId, String userName, Long applicationId, String jobTitle) {
         String content = userName + " ha aplicado a tu oferta: " + jobTitle;
         String actionUrl = "/pages/perfil-empresa.html?tab=applicants";
 

@@ -1,6 +1,5 @@
-// Configuración de la API
 const API_CONFIG = {
-    BASE_URL: 'http://localhost:8080/api', // Cambia el puerto según el que te asigne Spring Boot
+    BASE_URL: 'http://localhost:8080/api',
     ENDPOINTS: {
         LOGIN: '/auth/login',
         REGISTRO_USUARIO: '/auth/register',
@@ -21,70 +20,54 @@ const API_CONFIG = {
 
 const API_BASE_URL = 'http://localhost:8080/api';
 
-// Función para obtener el token del localStorage
-function getToken() {
-    return localStorage.getItem('token');
-}
+// Token is stored as httpOnly cookie by the backend — JS cannot read it.
+// saveToken is kept for API compatibility but is intentionally a no-op.
+function saveToken(token) {}
 
-// Función para guardar el token
-function saveToken(token) { 
-    localStorage.setItem('token', token);
-}
-
-// Función para guardar datos del usuario
 function saveUserData(userData) {
     localStorage.setItem('userData', JSON.stringify(userData));
 }
 
-// Función para obtener datos del usuario
 function getUserData() {
     const data = localStorage.getItem('userData');
     return data ? JSON.parse(data) : null;
 }
 
-// Función para verificar si el usuario está autenticado y su token no ha expirado
 function isAuthenticated() {
-    const token = getToken();
-    if (!token) return false;
-    try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        return payload.exp * 1000 > Date.now();
-    } catch (e) {
-        return false;
+    const userData = getUserData();
+    if (!userData) return false;
+    if (userData.expiresAt) {
+        return userData.expiresAt > Date.now();
     }
+    return true;
 }
 
-// Función para cerrar sesión
-function logout() {
-    localStorage.removeItem('token');
+async function logout() {
+    try {
+        await fetch(`${API_BASE_URL}/auth/logout`, {
+            method: 'POST',
+            credentials: 'include'
+        });
+    } catch (_) {}
     localStorage.removeItem('userData');
     localStorage.removeItem('companyOffers');
     localStorage.removeItem('skillmatch_saved_opportunities');
     window.location.href = '../pages/index.html';
 }
 
-// Función para hacer peticiones autenticadas
 async function fetchWithAuth(url, options = {}) {
-    const token = getToken();
-    
-    const headers = {
-        'Content-Type': 'application/json',
-        ...options.headers
-    };
-    
-    if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-    }
-    
     const response = await fetch(url, {
         ...options,
-        headers
+        credentials: 'include',
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
     });
-    
-    // Si el token expiró o es inválido, cerrar sesión
+
     if (response.status === 401 || response.status === 403) {
         logout();
     }
-    
+
     return response;
 }

@@ -2,6 +2,7 @@ package com.skillmatch.backend.service;
 
 import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.repository.UserRepository;
+import com.skillmatch.backend.security.UserDetailsImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.lang.NonNull;
@@ -25,7 +26,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con email: " + email));
 
-        return user;
+        return UserDetailsImpl.build(user);
     }
 
     @Transactional
@@ -34,6 +35,6 @@ public class CustomUserDetailsService implements UserDetailsService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con id: " + id));
 
-        return user;
+        return UserDetailsImpl.build(user);
     }
 }

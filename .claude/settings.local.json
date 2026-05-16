@@ -16,7 +16,25 @@
       "PowerShell(& \"C:\\\\xampp\\\\mysql\\\\bin\\\\mysql.exe\" -u root --password=\"\" -e \"SELECT User, Host, JSON_EXTRACT\\(Priv, '$.plugin'\\) AS plugin, JSON_EXTRACT\\(Priv, '$.authentication_string'\\) AS auth_string FROM mysql.global_priv WHERE User='root';\" 2>&1)",
       "PowerShell(Get-ChildItem env: | Where-Object { $_.Name -match \"\\(?i\\)\\(password|DB_|JWT|spring|datasource\\)\" } | Select-Object Name, Value)",
       "PowerShell(& \"C:\\\\xampp\\\\mysql\\\\bin\\\\mysql.exe\" -u root --password=\"\" --protocol=TCP -h 127.0.0.1 -e \"SELECT 'TCP OK' AS resultado;\" 2>&1)",
-      "Bash(grep -v \"//.*fetch\")"
+      "Bash(grep -v \"//.*fetch\")",
+      "Bash(./mvnw.cmd test *)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\amaya\\\\Desktop\\\\SkillMatchProject\\\\backend\\\\src\\\\main\\\\java\\\\com\\\\skillmatch\\\\backend\\\\\" -Recurse -Filter \"*.java\" | Select-Object -ExpandProperty FullName | Sort-Object)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\amaya\\\\Desktop\\\\SkillMatchProject\\\\backend\\\\src\\\\main\\\\java\\\\com\\\\skillmatch\\\\backend\\\\\" -Recurse -Directory | Select-Object FullName)",
+      "Bash(xargs head -50)",
+      "Bash(xargs cat)",
+      "Bash(.\\\\mvnw.cmd clean *)",
+      "Bash(Remove-Item \"c:\\\\Users\\\\amaya\\\\Desktop\\\\SkillMatchProject\\\\backend\\\\src\\\\main\\\\java\\\\com\\\\skillmatch\\\\backend\\\\service\\\\AuthService.java\")",
+      "PowerShell(cd \"c:\\\\Users\\\\amaya\\\\Desktop\\\\SkillMatchProject\\\\backend\"; $env:JWT_SECRET = \"skillmatch-dev-secret-key-for-local-development-only-do-not-use-in-production-2024\"; $env:DB_PASSWORD = \"\"; .\\\\mvnw.cmd clean compile -q 2>&1 | Select-Object -Last 40)",
+      "PowerShell(cd \"c:\\\\Users\\\\amaya\\\\Desktop\\\\SkillMatchProject\\\\backend\"; $env:JWT_SECRET=\"skillmatch-dev-secret-key-for-local-development-only-do-not-use-in-production-2024\"; $env:DB_PASSWORD=\"\"; .\\\\mvnw.cmd compile -q 2>&1 | Select-Object -Last 20)",
+      "Bash(.\\\\mvnw.cmd compile *)",
+      "PowerShell(cd \"c:\\\\Users\\\\amaya\\\\Desktop\\\\SkillMatchProject\\\\backend\"; $env:JWT_SECRET = \"skillmatch-dev-secret-key-for-local-development-only-do-not-use-in-production-2024\"; $env:DB_PASSWORD = \"\"; .\\\\mvnw.cmd spring-boot:run 2>&1 | Select-Object -First 120)",
+      "PowerShell(cd \"c:\\\\Users\\\\amaya\\\\Desktop\\\\SkillMatchProject\\\\backend\"; $env:JWT_SECRET = \"skillmatch-dev-secret-key-for-local-development-only-do-not-use-in-production-2024\"; $env:DB_PASSWORD = \"\"; .\\\\mvnw.cmd test 2>&1 | Select-Object -Last 80)",
+      "PowerShell(cd \"c:\\\\Users\\\\amaya\\\\Desktop\\\\SkillMatchProject\\\\backend\"; $env:JWT_SECRET = \"skillmatch-dev-secret-key-for-local-development-only-do-not-use-in-production-2024\"; $env:DB_PASSWORD = \"\"; .\\\\mvnw.cmd test 2>&1 | Where-Object { $_ -match \"ERROR|FAILED|Exception|Caused by|Tests run\" } | Select-Object -First 60)",
+      "PowerShell(cd \"c:\\\\Users\\\\amaya\\\\Desktop\\\\SkillMatchProject\\\\backend\"; $env:JWT_SECRET = \"skillmatch-dev-secret-key-for-local-development-only-do-not-use-in-production-2024\"; $env:DB_PASSWORD = \"\"; .\\\\mvnw.cmd test 2>&1 | Select-Object -Last 40)",
+      "PowerShell(cd \"c:\\\\Users\\\\amaya\\\\Desktop\\\\SkillMatchProject\\\\backend\"; $env:JWT_SECRET = \"skillmatch-dev-secret-key-for-local-development-only-do-not-use-in-production-2024\"; $env:DB_PASSWORD = \"\"; .\\\\mvnw.cmd test 2>&1 | Where-Object { $_ -match \"Tests run|ERROR|BUILD|FAILED\" } | Select-Object -Last 30)",
+      "PowerShell(cd \"c:\\\\Users\\\\amaya\\\\Desktop\\\\SkillMatchProject\\\\backend\"; $env:JWT_SECRET = \"skillmatch-dev-secret-key-for-local-development-only-do-not-use-in-production-2024\"; $env:DB_PASSWORD = \"\"; .\\\\mvnw.cmd test 2>&1 | Where-Object { $_ -match \"Tests run|ERROR|BUILD|FAILURES\" } | Select-Object -Last 30)",
+      "PowerShell(cd \"c:\\\\Users\\\\amaya\\\\Desktop\\\\SkillMatchProject\\\\backend\"; $env:JWT_SECRET = \"skillmatch-dev-secret-key-for-local-development-only-do-not-use-in-production-2024\"; $env:DB_PASSWORD = \"\"; .\\\\mvnw.cmd test 2>&1 | Where-Object { $_ -match \"Tests run|ERROR|BUILD|FAILURES\" } | Select-Object -Last 20)",
+      "Bash(./mvnw.cmd compile *)"
     ]
   }
 }

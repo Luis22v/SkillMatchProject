@@ -20,4 +20,6 @@ public interface SkillRepository extends JpaRepository<Skill, Long> {
     // Buscar habilidades ordenadas por años de experiencia
     @Query("SELECT s FROM Skill s WHERE s.user.id = :userId ORDER BY s.yearsOfExperience DESC")
     List<Skill> findByUserIdOrderByExperienceDesc(@Param("userId") Long userId);
+
+    long countByUserId(Long userId);
 }

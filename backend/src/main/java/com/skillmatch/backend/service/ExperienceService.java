@@ -1,6 +1,7 @@
 package com.skillmatch.backend.service;
 
 import com.skillmatch.backend.dto.ExperienceRequest;
+import com.skillmatch.backend.dto.ExperienceResponse;
 import com.skillmatch.backend.model.Experience;
 import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.repository.ExperienceRepository;
@@ -10,9 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -24,15 +23,14 @@ public class ExperienceService {
     private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
-    public List<Map<String, Object>> getUserExperiences(Long userId) {
-        List<Experience> experiences = experienceRepository.findByUserIdOrderByStartDateDesc(userId);
-        return experiences.stream()
-                .map(this::mapExperienceToResponse)
+    public List<ExperienceResponse> getUserExperiences(Long userId) {
+        return experienceRepository.findByUserIdOrderByStartDateDesc(userId).stream()
+                .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
     @Transactional
-    public Map<String, Object> addExperience(Long userId, ExperienceRequest request) {
+    public ExperienceResponse addExperience(Long userId, ExperienceRequest request) {
         if (userId == null) {
             throw new IllegalArgumentException("El ID de usuario no puede ser nulo");
         }
@@ -49,13 +47,13 @@ public class ExperienceService {
         experience.setDescription(request.getDescription());
         experience.setLocation(request.getLocation());
 
-        Map<String, Object> result = mapExperienceToResponse(experienceRepository.save(experience));
+        ExperienceResponse result = mapToResponse(experienceRepository.save(experience));
         log.info("Experiencia en '{}' agregada para usuario {}", request.getCompany(), userId);
         return result;
     }
 
     @Transactional
-    public Experience updateExperience(Long userId, Long experienceId, ExperienceRequest request) {
+    public ExperienceResponse updateExperience(Long userId, Long experienceId, ExperienceRequest request) {
         if (experienceId == null) {
             throw new IllegalArgumentException("El ID de experiencia no puede ser nulo");
         }
@@ -74,9 +72,9 @@ public class ExperienceService {
         experience.setDescription(request.getDescription());
         experience.setLocation(request.getLocation());
 
-        Experience updated = experienceRepository.save(experience);
+        ExperienceResponse result = mapToResponse(experienceRepository.save(experience));
         log.info("Experiencia {} actualizada para usuario {}", experienceId, userId);
-        return updated;
+        return result;
     }
 
     @Transactional
@@ -95,17 +93,17 @@ public class ExperienceService {
         log.info("Experiencia {} eliminada para usuario {}", experienceId, userId);
     }
 
-    private Map<String, Object> mapExperienceToResponse(Experience experience) {
-        Map<String, Object> response = new HashMap<>();
-        response.put("id", experience.getId());
-        response.put("company", experience.getCompany());
-        response.put("position", experience.getPosition());
-        response.put("startDate", experience.getStartDate());
-        response.put("endDate", experience.getEndDate());
-        response.put("isCurrent", experience.getIsCurrent());
-        response.put("description", experience.getDescription());
-        response.put("location", experience.getLocation());
-        response.put("createdAt", experience.getCreatedAt());
-        return response;
+    private ExperienceResponse mapToResponse(Experience e) {
+        return new ExperienceResponse(
+                e.getId(),
+                e.getCompany(),
+                e.getPosition(),
+                e.getStartDate(),
+                e.getEndDate(),
+                e.getIsCurrent(),
+                e.getDescription(),
+                e.getLocation(),
+                e.getCreatedAt()
+        );
     }
 }

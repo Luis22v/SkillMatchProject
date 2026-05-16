@@ -14,11 +14,15 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -99,10 +103,20 @@ public class CompanyService {
     }
 
     @Transactional(readOnly = true)
+    public Page<CompanyResponse> getAllCompanies(Pageable pageable) {
+        return companyRepository.findAll(Objects.requireNonNull(pageable)).map(this::mapToResponse);
+    }
+
+    @Transactional(readOnly = true)
     public List<CompanyResponse> getActiveCompanies() {
         return companyRepository.findByActiveTrue().stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public Page<CompanyResponse> getActiveCompanies(Pageable pageable) {
+        return companyRepository.findByActiveTrue(pageable).map(this::mapToResponse);
     }
 
     @Transactional(readOnly = true)
@@ -154,21 +168,10 @@ public class CompanyService {
     public Map<String, Object> getCompanyStatistics(@NonNull Long companyId) {
         Company company = findCompanyOrThrow(companyId);
 
-        var jobs = jobService.getJobsByCompany(companyId);
-
-        long activeJobs = jobs.stream()
-                .filter(j -> "abierta".equalsIgnoreCase(j.getStatus())
-                          && Boolean.TRUE.equals(j.getActive()))
-                .count();
-
-        long totalJobs = jobs.size();
-
-        var applications = applicationService.getApplicationsByCompany(companyId);
-        long totalApplications = applications.size();
-
-        long pendingApplications = applications.stream()
-                .filter(a -> "pendiente".equalsIgnoreCase(a.getStatus()))
-                .count();
+        long totalJobs = jobService.countJobsByCompany(companyId);
+        long activeJobs = jobService.countActiveJobsByCompany(companyId);
+        long totalApplications = applicationService.countApplicationsByCompany(companyId);
+        long pendingApplications = applicationService.countPendingApplicationsByCompany(companyId);
 
         LocalDateTime createdAt = company.getCreatedAt();
         long daysSinceCreation = createdAt != null
@@ -196,7 +199,7 @@ public class CompanyService {
     }
 
     @Transactional
-    public void syncOwnerEmail(Long userId, String newEmail) {
+    public void syncOwnerEmail(@NonNull Long userId, String newEmail) {
         companyRepository.findByUserId(userId).ifPresent(company -> {
             company.setEmail(newEmail);
             companyRepository.save(company);
@@ -205,7 +208,7 @@ public class CompanyService {
 
     // ─── Helpers privados ────────────────────────────────────────────────────
 
-    private Company findCompanyOrThrow(Long id) {
+    private Company findCompanyOrThrow(@NonNull Long id) {
         return companyRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Empresa no encontrada con ID: " + id));
     }

@@ -3,7 +3,10 @@ package com.skillmatch.backend.controller;
 import com.skillmatch.backend.dto.JobRequest;
 import com.skillmatch.backend.dto.JobResponse;
 import com.skillmatch.backend.dto.MessageResponse;
+import com.skillmatch.backend.security.UserDetailsImpl;
 import com.skillmatch.backend.service.JobService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -12,11 +15,16 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Objects;
+import org.springframework.lang.NonNull;
 
+@Tag(name = "Ofertas de trabajo", description = "Creación, consulta y gestión de ofertas laborales")
 @RestController
 @RequestMapping("/api/jobs")
 @CrossOrigin(origins = "*")
@@ -27,6 +35,7 @@ public class JobController {
 
     // ─── Escritura (empresa/admin) ────────────────────────────────────────────
 
+    @Operation(summary = "Crear oferta", description = "Crea una nueva oferta laboral (solo empresas)")
     @PostMapping
     @PreAuthorize("hasRole('EMPRESA') or hasRole('ADMIN')")
     public ResponseEntity<?> createJob(@Valid @RequestBody JobRequest request) {
@@ -41,11 +50,15 @@ public class JobController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('EMPRESA') or hasRole('ADMIN')")
-    public ResponseEntity<?> updateJob(@PathVariable Long id,
-                                       @Valid @RequestBody JobRequest request) {
+    public ResponseEntity<?> updateJob(@PathVariable @NonNull Long id,
+                                       @Valid @RequestBody JobRequest request,
+                                       @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
-            JobResponse response = jobService.updateJob(id, request);
+            JobResponse response = jobService.updateJob(id, request, Objects.requireNonNull(currentUser.getId()));
             return ResponseEntity.ok(response);
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new MessageResponse(e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new MessageResponse("Error al actualizar oferta: " + e.getMessage()));
@@ -54,11 +67,15 @@ public class JobController {
 
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('EMPRESA') or hasRole('ADMIN')")
-    public ResponseEntity<?> changeStatus(@PathVariable Long id,
-                                          @RequestParam String status) {
+    public ResponseEntity<?> changeStatus(@PathVariable @NonNull Long id,
+                                          @RequestParam String status,
+                                          @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
-            JobResponse response = jobService.changeStatus(id, status);
+            JobResponse response = jobService.changeStatus(id, status, Objects.requireNonNull(currentUser.getId()));
             return ResponseEntity.ok(response);
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new MessageResponse(e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new MessageResponse("Error al cambiar estado: " + e.getMessage()));
@@ -67,10 +84,14 @@ public class JobController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('EMPRESA') or hasRole('ADMIN')")
-    public ResponseEntity<?> deleteJob(@PathVariable Long id) {
+    public ResponseEntity<?> deleteJob(@PathVariable @NonNull Long id,
+                                       @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
-            jobService.deleteJob(id);
+            jobService.deleteJob(id, Objects.requireNonNull(currentUser.getId()));
             return ResponseEntity.ok(new MessageResponse("Oferta eliminada exitosamente"));
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(new MessageResponse(e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(new MessageResponse("Error al eliminar oferta: " + e.getMessage()));
@@ -80,7 +101,7 @@ public class JobController {
     // ─── Lectura pública con paginación ──────────────────────────────────────
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getJobById(@PathVariable Long id) {
+    public ResponseEntity<?> getJobById(@PathVariable @NonNull Long id) {
         try {
             return ResponseEntity.ok(jobService.getJobById(id));
         } catch (Exception e) {
@@ -100,6 +121,7 @@ public class JobController {
      *
      * Respuesta: Page<JobResponse> con metadata (totalElements, totalPages, etc.)
      */
+    @Operation(summary = "Listar ofertas activas", description = "Devuelve página de ofertas activas, ordenadas por fecha (público)")
     @GetMapping
     public ResponseEntity<Page<JobResponse>> getAllActiveJobs(
             @RequestParam(defaultValue = "0")          int page,
@@ -116,6 +138,7 @@ public class JobController {
      * Últimas 10 ofertas para landing/home.
      * Sin paginación — siempre retorna los 10 más recientes.
      */
+    @Operation(summary = "Ofertas recientes", description = "Devuelve las 10 ofertas más recientes para la landing page")
     @GetMapping("/recent")
     public ResponseEntity<List<JobResponse>> getRecentJobs() {
         return ResponseEntity.ok(jobService.getRecentJobs());
@@ -124,6 +147,7 @@ public class JobController {
     /**
      * Búsqueda por palabra clave con paginación.
      */
+    @Operation(summary = "Buscar ofertas", description = "Búsqueda por palabra clave en título, descripción y empresa")
     @GetMapping("/search")
     public ResponseEntity<Page<JobResponse>> searchJobs(
             @RequestParam String keyword,
@@ -167,7 +191,7 @@ public class JobController {
      */
     @GetMapping("/company/{companyId}")
     public ResponseEntity<List<JobResponse>> getJobsByCompany(
-            @PathVariable Long companyId) {
+            @PathVariable @NonNull Long companyId) {
         return ResponseEntity.ok(jobService.getJobsByCompany(companyId));
     }
 

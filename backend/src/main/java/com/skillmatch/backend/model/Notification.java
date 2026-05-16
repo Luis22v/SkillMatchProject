@@ -4,11 +4,17 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.lang.NonNull;
 
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "notifications")
+@Table(name = "notifications",
+       indexes = {
+           @Index(name = "idx_notification_user_id",    columnList = "user_id"),
+           @Index(name = "idx_notification_is_read",    columnList = "is_read"),
+           @Index(name = "idx_notification_created_at", columnList = "created_at")
+       })
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,7 +22,7 @@ public class Notification {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private @NonNull Long id;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)

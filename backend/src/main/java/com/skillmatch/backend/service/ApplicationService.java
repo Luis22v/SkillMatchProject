@@ -5,16 +5,23 @@ import com.skillmatch.backend.dto.ApplicationResponse;
 import com.skillmatch.backend.exception.DuplicateResourceException;
 import com.skillmatch.backend.exception.ResourceNotFoundException;
 import com.skillmatch.backend.model.Application;
+import com.skillmatch.backend.model.ApplicationStatus;
 import com.skillmatch.backend.model.Job;
+import com.skillmatch.backend.model.JobStatus;
 import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.repository.ApplicationRepository;
+import com.skillmatch.backend.repository.CompanyRepository;
 import com.skillmatch.backend.repository.JobRepository;
 import com.skillmatch.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.lang.NonNull;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,14 +33,12 @@ import java.util.stream.Collectors;
 public class ApplicationService {
 
     private final ApplicationRepository applicationRepository;
+    private final CompanyRepository companyRepository;
     private final JobRepository jobRepository;
     private final UserRepository userRepository;
 
     @Transactional
-    public ApplicationResponse createApplication(Long userId, ApplicationRequest request) {
-        if (userId == null) {
-            throw new IllegalArgumentException("El ID de usuario no puede ser nulo");
-        }
+    public ApplicationResponse createApplication(@NonNull Long userId, ApplicationRequest request) {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con ID: " + userId));
 
@@ -44,8 +49,7 @@ public class ApplicationService {
         Job job = jobRepository.findById(jobId)
             .orElseThrow(() -> new ResourceNotFoundException("Job no encontrado con ID: " + jobId));
 
-        String jobStatus = job.getStatus();
-        if (!Boolean.TRUE.equals(job.getActive()) || jobStatus == null || !"abierta".equalsIgnoreCase(jobStatus)) {
+        if (!Boolean.TRUE.equals(job.getActive()) || job.getStatus() != JobStatus.ABIERTA) {
             throw new RuntimeException("El job no está disponible para postulaciones");
         }
 
@@ -58,7 +62,7 @@ public class ApplicationService {
         application.setJob(job);
         application.setResume(request.getResume());
         application.setCoverLetter(request.getCoverLetter());
-        application.setStatus("pendiente");
+        application.setStatus(ApplicationStatus.PENDIENTE);
 
         Application saved = applicationRepository.save(application);
         log.info("Postulación creada: userId={}, jobId={}, applicationId={}", userId, jobId, saved.getId());
@@ -66,61 +70,78 @@ public class ApplicationService {
     }
 
     @Transactional(readOnly = true)
-    public ApplicationResponse getApplicationById(Long id) {
-        if (id == null) {
-            throw new IllegalArgumentException("El ID de la postulación no puede ser nulo");
-        }
+    public ApplicationResponse getApplicationById(@NonNull Long id) {
         Application application = applicationRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Postulación no encontrada con ID: " + id));
         return mapToResponse(application);
     }
 
     @Transactional(readOnly = true)
-    public List<ApplicationResponse> getApplicationsByUser(Long userId) {
+    public List<ApplicationResponse> getApplicationsByUser(@NonNull Long userId) {
         return applicationRepository.findByUserId(userId).stream()
             .map(this::mapToResponse)
             .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
-    public List<ApplicationResponse> getApplicationsByJob(Long jobId) {
+    public List<ApplicationResponse> getApplicationsByJob(@NonNull Long jobId) {
         return applicationRepository.findByJobId(jobId).stream()
             .map(this::mapToResponse)
             .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
-    public List<ApplicationResponse> getApplicationsByCompany(Long companyId) {
+    public List<ApplicationResponse> getApplicationsByJob(@NonNull Long jobId, @NonNull Long requesterId) {
+        Job job = jobRepository.findById(jobId)
+            .orElseThrow(() -> new ResourceNotFoundException("Job no encontrado con ID: " + jobId));
+        verifyJobOwnership(job, requesterId);
+        return applicationRepository.findByJobId(jobId).stream()
+            .map(this::mapToResponse)
+            .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<ApplicationResponse> getApplicationsByCompany(@NonNull Long companyId) {
         return applicationRepository.findByCompanyId(companyId).stream()
             .map(this::mapToResponse)
             .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
+    public List<ApplicationResponse> getApplicationsByCompany(@NonNull Long companyId, @NonNull Long requesterId) {
+        verifyCompanyOwnership(companyId, requesterId);
+        return applicationRepository.findByCompanyId(companyId).stream()
+            .map(this::mapToResponse)
+            .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public Page<ApplicationResponse> getApplicationsByCompany(@NonNull Long companyId, @NonNull Long requesterId, Pageable pageable) {
+        verifyCompanyOwnership(companyId, requesterId);
+        return applicationRepository.findPageByCompanyId(companyId, pageable).map(this::mapToResponse);
+    }
+
+    @Transactional(readOnly = true)
     public List<ApplicationResponse> getApplicationsByStatus(String status) {
-        return applicationRepository.findByStatus(status).stream()
+        return applicationRepository.findByStatus(ApplicationStatus.fromValue(status)).stream()
             .map(this::mapToResponse)
             .collect(Collectors.toList());
     }
 
     @Transactional
-    public ApplicationResponse updateStatus(Long id, String status, String notes) {
-        if (id == null) {
-            throw new IllegalArgumentException("El ID de la postulación no puede ser nulo");
-        }
+    public ApplicationResponse updateStatus(@NonNull Long id, String status, String notes, @NonNull Long requesterId) {
         Application application = applicationRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Postulación no encontrada con ID: " + id));
 
-        if (!List.of("pendiente", "revisada", "aceptada", "rechazada").contains(status)) {
-            throw new IllegalArgumentException("Estado inválido: " + status);
-        }
+        verifyJobOwnership(application.getJob(), requesterId);
 
-        application.setStatus(status);
+        ApplicationStatus appStatus = ApplicationStatus.fromValue(status);
+        application.setStatus(appStatus);
         if (notes != null) {
             application.setNotes(notes);
         }
 
-        if (!status.equals("pendiente") && application.getReviewedDate() == null) {
+        if (appStatus != ApplicationStatus.PENDIENTE && application.getReviewedDate() == null) {
             application.setReviewedDate(LocalDateTime.now());
         }
 
@@ -130,10 +151,7 @@ public class ApplicationService {
     }
 
     @Transactional
-    public void deleteApplication(Long id, Long requesterId, boolean hasManagementPrivileges) {
-        if (id == null) {
-            throw new IllegalArgumentException("El ID de la postulación no puede ser nulo");
-        }
+    public void deleteApplication(@NonNull Long id, Long requesterId, boolean hasManagementPrivileges) {
         Application application = applicationRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Postulación no encontrada con ID: " + id));
 
@@ -147,17 +165,43 @@ public class ApplicationService {
     }
 
     @Transactional(readOnly = true)
-    public Long countApplicationsByJob(Long jobId) {
+    public long countApplicationsByCompany(@NonNull Long companyId) {
+        return applicationRepository.countByCompanyId(companyId);
+    }
+
+    @Transactional(readOnly = true)
+    public long countPendingApplicationsByCompany(@NonNull Long companyId) {
+        return applicationRepository.countByCompanyIdAndStatus(companyId, ApplicationStatus.PENDIENTE);
+    }
+
+    @Transactional(readOnly = true)
+    public Long countApplicationsByJob(@NonNull Long jobId) {
         Long total = applicationRepository.countByJobId(jobId);
         log.debug("Total de postulaciones para job {}: {}", jobId, total);
         return total;
     }
 
     @Transactional(readOnly = true)
-    public boolean hasUserApplied(Long userId, Long jobId) {
+    public boolean hasUserApplied(@NonNull Long userId, @NonNull Long jobId) {
         boolean exists = applicationRepository.existsByUserIdAndJobId(userId, jobId);
         log.debug("Usuario {} ya aplicado a job {}: {}", userId, jobId, exists);
         return exists;
+    }
+
+    private void verifyJobOwnership(Job job, Long requesterId) {
+        if (job.getCompany() == null || job.getCompany().getUser() == null
+                || !requesterId.equals(job.getCompany().getUser().getId())) {
+            throw new AccessDeniedException("No tienes permiso para acceder a estas postulaciones");
+        }
+    }
+
+    private void verifyCompanyOwnership(@NonNull Long companyId, Long requesterId) {
+        boolean isOwner = companyRepository.findById(companyId)
+            .map(c -> c.getUser() != null && requesterId.equals(c.getUser().getId()))
+            .orElse(false);
+        if (!isOwner) {
+            throw new AccessDeniedException("No tienes permiso para acceder a esta empresa");
+        }
     }
 
     private ApplicationResponse mapToResponse(Application application) {
@@ -179,7 +223,7 @@ public class ApplicationService {
         response.setJobTitle(job.getTitle());
         response.setCompanyName(job.getCompany().getName());
 
-        response.setStatus(application.getStatus());
+        response.setStatus(application.getStatus().getValue());
         response.setResume(application.getResume());
         response.setCoverLetter(application.getCoverLetter());
         response.setNotes(application.getNotes());

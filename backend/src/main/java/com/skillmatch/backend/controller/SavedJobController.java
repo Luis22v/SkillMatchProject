@@ -3,7 +3,7 @@ package com.skillmatch.backend.controller;
 import com.skillmatch.backend.dto.MessageResponse;
 import com.skillmatch.backend.dto.SavedJobRequest;
 import com.skillmatch.backend.dto.SavedJobResponse;
-import com.skillmatch.backend.model.User;
+import com.skillmatch.backend.security.UserDetailsImpl;
 import com.skillmatch.backend.service.SavedJobService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +27,7 @@ public class SavedJobController {
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<?> saveJob(
             @Valid @RequestBody SavedJobRequest request,
-            @AuthenticationPrincipal User currentUser) {
+            @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             Long userId = requireAuthenticatedUser(currentUser);
             SavedJobResponse response = savedJobService.saveJob(userId, request);
@@ -41,7 +41,7 @@ public class SavedJobController {
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<?> unsaveJob(
             @PathVariable Long jobId,
-            @AuthenticationPrincipal User currentUser) {
+            @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             Long userId = requireAuthenticatedUser(currentUser);
             savedJobService.unsaveJob(userId, jobId);
@@ -53,7 +53,7 @@ public class SavedJobController {
     
     @GetMapping("/my-saved-jobs")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> getMySavedJobs(@AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<?> getMySavedJobs(@AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             Long userId = requireAuthenticatedUser(currentUser);
             List<SavedJobResponse> savedJobs = savedJobService.getUserSavedJobs(userId);
@@ -67,7 +67,7 @@ public class SavedJobController {
     @PreAuthorize("hasRole('USER')")
     public ResponseEntity<?> checkIfSaved(
             @PathVariable Long jobId,
-            @AuthenticationPrincipal User currentUser) {
+            @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             Long userId = requireAuthenticatedUser(currentUser);
             boolean isSaved = savedJobService.isJobSaved(userId, jobId);
@@ -79,7 +79,7 @@ public class SavedJobController {
     
     @GetMapping("/job-ids")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> getSavedJobIds(@AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<?> getSavedJobIds(@AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             Long userId = requireAuthenticatedUser(currentUser);
             List<Long> jobIds = savedJobService.getSavedJobIds(userId);
@@ -91,7 +91,7 @@ public class SavedJobController {
     
     @GetMapping("/count")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<?> getSavedJobsCount(@AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<?> getSavedJobsCount(@AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             Long userId = requireAuthenticatedUser(currentUser);
             Long count = savedJobService.getSavedJobsCount(userId);
@@ -106,7 +106,7 @@ public class SavedJobController {
     public ResponseEntity<?> updateNotes(
             @PathVariable Long jobId,
             @RequestBody NotesRequest request,
-            @AuthenticationPrincipal User currentUser) {
+            @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             Long userId = requireAuthenticatedUser(currentUser);
             SavedJobResponse response = savedJobService.updateNotes(userId, jobId, request.notes());
@@ -116,7 +116,7 @@ public class SavedJobController {
         }
     }
     
-    private Long requireAuthenticatedUser(User currentUser) {
+    private Long requireAuthenticatedUser(UserDetailsImpl currentUser) {
         if (currentUser == null) {
             throw new AccessDeniedException("Usuario no autenticado");
         }

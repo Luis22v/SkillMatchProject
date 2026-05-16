@@ -1,4 +1,4 @@
-// Manejo del formulario de registro de usuario
+﻿// Manejo del formulario de registro de usuario
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('form-registro-usuario');
     
@@ -117,7 +117,6 @@ document.addEventListener('DOMContentLoaded', function() {
         submitBtn.disabled = true;
         submitBtn.textContent = 'Registrando...';
         
-        console.log('📤 Enviando registro de usuario:', registerData);
         
         try {
             const response = await fetch(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.REGISTRO_USUARIO}`, {
@@ -128,11 +127,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: JSON.stringify(registerData)
             });
             
-            console.log('📥 Respuesta del servidor:', response.status);
             
             if (response.ok) {
                 const data = await response.json();
-                console.log('✅ Registro exitoso:', data);
                 
                 // Guardar token y datos del usuario
                 saveToken(data.token);
@@ -154,7 +151,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 let errorText = 'Error al registrar. Por favor intenta de nuevo.';
                 try {
                     const errorData = await response.json();
-                    console.error('❌ Error del servidor:', errorData);
                     errorText = errorData.message || errorText;
                 } catch (e) {
                     // Si no puede parsear JSON, usar el mensaje por defecto
@@ -168,7 +164,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
         } catch (error) {
-            console.error('❌ Error al registrar usuario:', error);
             alert('Error de conexión. Por favor verifica que el servidor esté corriendo e intenta de nuevo.');
             
             // Rehabilitar botón

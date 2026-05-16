@@ -3,11 +3,12 @@ package com.skillmatch.backend.controller;
 import com.skillmatch.backend.dto.ChatMessageResponse;
 import com.skillmatch.backend.dto.MessageRequest;
 import com.skillmatch.backend.dto.MessageResponse;
-import com.skillmatch.backend.model.User;
+import com.skillmatch.backend.security.UserDetailsImpl;
 import com.skillmatch.backend.service.MessageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -28,7 +29,7 @@ public class MessageController {
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
     public ResponseEntity<?> sendMessage(
             @Valid @RequestBody MessageRequest request,
-            @AuthenticationPrincipal User currentUser) {
+            @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             Long userId = requireAuthenticatedUser(currentUser);
             ChatMessageResponse response = messageService.sendMessage(userId, request);
@@ -42,7 +43,7 @@ public class MessageController {
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
     public ResponseEntity<?> getConversation(
             @PathVariable(required = false) String otherUserId,
-            @AuthenticationPrincipal User currentUser) {
+            @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             Long userId = requireAuthenticatedUser(currentUser);
             Long targetUserId = (otherUserId != null && !otherUserId.equals("undefined")) ? Long.parseLong(otherUserId) : null;
@@ -62,7 +63,7 @@ public class MessageController {
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
     public ResponseEntity<?> markAsRead(
             @PathVariable(required = false) String messageId,
-            @AuthenticationPrincipal User currentUser) {
+            @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             Long userId = requireAuthenticatedUser(currentUser);
             Long msgId = (messageId != null && !messageId.equals("undefined")) ? Long.parseLong(messageId) : null;
@@ -82,7 +83,7 @@ public class MessageController {
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
     public ResponseEntity<?> markConversationAsRead(
             @PathVariable(required = false) String otherUserId,
-            @AuthenticationPrincipal User currentUser) {
+            @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             Long userId = requireAuthenticatedUser(currentUser);
             Long targetUserId = (otherUserId != null && !otherUserId.equals("undefined")) ? Long.parseLong(otherUserId) : null;
@@ -102,7 +103,7 @@ public class MessageController {
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
     public ResponseEntity<?> deleteMessage(
             @PathVariable(required = false) String messageId,
-            @AuthenticationPrincipal User currentUser) {
+            @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             Long userId = requireAuthenticatedUser(currentUser);
             Long msgId = (messageId != null && !messageId.equals("undefined")) ? Long.parseLong(messageId) : null;
@@ -120,7 +121,7 @@ public class MessageController {
     
     @GetMapping("/unread-count")
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
-    public ResponseEntity<?> getUnreadCount(@AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<?> getUnreadCount(@AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             Long userId = requireAuthenticatedUser(currentUser);
             Long count = messageService.getUnreadCount(userId);
@@ -134,7 +135,7 @@ public class MessageController {
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
     public ResponseEntity<?> getUnreadCountFromUser(
             @PathVariable(required = false) String fromUserId,
-            @AuthenticationPrincipal User currentUser) {
+            @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             Long userId = requireAuthenticatedUser(currentUser);
             Long targetUserId = (fromUserId != null && !fromUserId.equals("undefined")) ? Long.parseLong(fromUserId) : null;
@@ -152,7 +153,7 @@ public class MessageController {
     
     @GetMapping("/conversations")
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
-    public ResponseEntity<?> getLastMessages(@AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<?> getLastMessages(@AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             Long userId = requireAuthenticatedUser(currentUser);
             List<ChatMessageResponse> lastMessages = messageService.getLastMessages(userId);
@@ -164,7 +165,7 @@ public class MessageController {
     
     @GetMapping("/unread-counts-by-conversation")
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
-    public ResponseEntity<?> getUnreadCountsByConversation(@AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<?> getUnreadCountsByConversation(@AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             Long userId = requireAuthenticatedUser(currentUser);
             Map<Long, Long> counts = messageService.getUnreadCountsByConversation(userId);
@@ -174,7 +175,7 @@ public class MessageController {
         }
     }
     
-    private Long requireAuthenticatedUser(User currentUser) {
+    private @NonNull Long requireAuthenticatedUser(UserDetailsImpl currentUser) {
         if (currentUser == null) {
             throw new AccessDeniedException("Usuario no autenticado");
         }

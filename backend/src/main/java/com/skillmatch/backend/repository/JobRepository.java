@@ -75,4 +75,10 @@ public interface JobRepository extends JpaRepository<Job, Long> {
     @Query("SELECT j FROM Job j WHERE j.active = true AND j.status = 'abierta' " +
            "AND j.expirationDate IS NOT NULL AND j.expirationDate <= :date")
     List<Job> findExpiredJobsToClose(@Param("date") LocalDateTime date);
+
+    @Query("SELECT COUNT(j) FROM Job j WHERE j.company.id = :companyId")
+    long countByCompanyId(@Param("companyId") Long companyId);
+
+    @Query("SELECT COUNT(j) FROM Job j WHERE j.company.id = :companyId AND j.active = true AND j.status = 'abierta'")
+    long countActiveByCompanyId(@Param("companyId") Long companyId);
 }

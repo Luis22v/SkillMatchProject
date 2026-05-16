@@ -4,12 +4,17 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.lang.NonNull;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "saved_jobs",
-       uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "job_id"}))
+       uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "job_id"}),
+       indexes = {
+           @Index(name = "idx_saved_job_user_id", columnList = "user_id"),
+           @Index(name = "idx_saved_job_job_id",  columnList = "job_id")
+       })
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -17,7 +22,7 @@ public class SavedJob {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private @NonNull Long id;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)

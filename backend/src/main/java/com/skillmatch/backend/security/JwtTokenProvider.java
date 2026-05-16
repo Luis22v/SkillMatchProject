@@ -1,7 +1,6 @@
 package com.skillmatch.backend.security;
 
 import com.skillmatch.backend.config.JwtProperties;
-import com.skillmatch.backend.model.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
@@ -28,6 +27,9 @@ public class JwtTokenProvider {
     @Autowired
     private JwtProperties jwtProperties;
 
+    @Autowired
+    private TokenBlacklistService tokenBlacklistService;
+
     private SecretKey signingKey;
 
     @PostConstruct
@@ -36,7 +38,7 @@ public class JwtTokenProvider {
     }
 
     public String generateToken(Authentication authentication) {
-        User user = (User) authentication.getPrincipal();
+        UserDetailsImpl user = (UserDetailsImpl) authentication.getPrincipal();
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtProperties.getExpiration());
 
@@ -69,13 +71,26 @@ public class JwtTokenProvider {
         return claims.get("userId", Long.class);
     }
 
+    public long getExpirationMillis() {
+        return jwtProperties.getExpiration();
+    }
+
+    public Date getExpirationFromToken(String token) {
+        return Jwts.parser()
+                .verifyWith(signingKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .getExpiration();
+    }
+
     public boolean validateToken(String authToken) {
         try {
             Jwts.parser()
                     .verifyWith(signingKey)
                     .build()
                     .parseSignedClaims(authToken);
-            return true;
+            return !tokenBlacklistService.isBlacklisted(authToken);
         } catch (SecurityException ex) {
             logger.error("Invalid JWT signature: {}", ex.getMessage(), ex);
         } catch (MalformedJwtException ex) {

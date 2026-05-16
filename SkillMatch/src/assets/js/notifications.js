@@ -1,23 +1,32 @@
-// Sistema de notificaciones global
+﻿// Sistema de notificaciones global
 
 let notificationsInterval = null;
+let notificationsAbortController = null;
 
 // Inicializar sistema de notificaciones
 function initNotifications() {
-    const token = localStorage.getItem('token');
-    if (!token) return;
+    if (!isAuthenticated()) return;
 
-    // Crear dropdown de notificaciones si no existe
     createNotificationsDropdown();
-    
-    // Cargar notificaciones iniciales
     loadNotifications();
-    
-    // Actualizar cada 30 segundos
+
     notificationsInterval = setInterval(loadNotifications, 30000);
-    
-    // Event listeners
     setupNotificationListeners();
+
+    // Pause polling when tab is hidden, resume when visible again
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') {
+            clearInterval(notificationsInterval);
+            notificationsInterval = null;
+            if (notificationsAbortController) {
+                notificationsAbortController.abort();
+                notificationsAbortController = null;
+            }
+        } else {
+            loadNotifications();
+            notificationsInterval = setInterval(loadNotifications, 30000);
+        }
+    });
 }
 
 // Crear dropdown de notificaciones
@@ -96,27 +105,28 @@ function setupNotificationListeners() {
 
 // Cargar notificaciones
 async function loadNotifications() {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-    
-    try {
-        // Cargar contador de no leídas
-        const countResponse = await fetchWithAuth(`${API_BASE_URL}/notifications/count`);
+    if (!isAuthenticated()) return;
 
+    if (notificationsAbortController) {
+        notificationsAbortController.abort();
+    }
+    notificationsAbortController = new AbortController();
+    const signal = notificationsAbortController.signal;
+
+    try {
+        const countResponse = await fetchWithAuth(`${API_BASE_URL}/notifications/count`, { signal });
         if (countResponse.ok) {
             const count = await countResponse.json();
             updateNotificationBadge(count);
         }
 
-        // Cargar notificaciones no leídas
-        const response = await fetchWithAuth(`${API_BASE_URL}/notifications/unread`);
-        
+        const response = await fetchWithAuth(`${API_BASE_URL}/notifications/unread`, { signal });
         if (response.ok) {
             const notifications = await response.json();
             displayNotifications(notifications);
         }
     } catch (error) {
-        console.error('❌ Error cargando notificaciones:', error);
+        if (error.name !== 'AbortError') throw error;
     }
 }
 
@@ -203,7 +213,6 @@ async function handleNotificationClick(notificationId, actionUrl) {
             window.location.href = actionUrl;
         }
     } catch (error) {
-        console.error('❌ Error marcando notificación:', error);
     }
 }
 
@@ -218,7 +227,6 @@ async function markAllAsRead() {
             loadNotifications();
         }
     } catch (error) {
-        console.error('❌ Error marcando todas como leídas:', error);
     }
 }
 

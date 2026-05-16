@@ -1,11 +1,17 @@
-// SkillMatch - Perfil de Empresa
+﻿// SkillMatch - Perfil de Empresa
 // Script para funcionalidad completa de la página
 
 let currentOffers = [];
 let currentCompanyData = {};
 
+function sanitize(text) {
+    if (text == null) return '';
+    const div = document.createElement('div');
+    div.textContent = String(text);
+    return div.innerHTML;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Iniciando perfil de empresa...');
     loadCompanyData();
     setupEventListeners();
     loadOffers();
@@ -25,7 +31,6 @@ function loadCompanyData() {
     
     // Validar que exista companyId
     if (!userData.companyId) {
-        console.error('❌ CRÍTICO: No se encontró companyId en userData');
         alert('⚠️ Tu cuenta no tiene una empresa asociada.\n\nPor favor contacta al administrador o cierra sesión e inicia sesión nuevamente.');
         return;
     }
@@ -40,8 +45,6 @@ function loadCompanyData() {
         }
     }
     
-    console.log('✅ Datos de empresa cargados:', userData);
-    console.log('🏢 Company ID:', userData.companyId);
     
     // Cargar información completa de la empresa desde el backend
     if (userData.companyId) {
@@ -51,12 +54,13 @@ function loadCompanyData() {
             return response.json();
         })
         .then(company => {
-            console.log('📋 Información de empresa desde backend:', company);
             
             // Actualizar descripción "Acerca de"
             const aboutElement = document.getElementById('companyAbout');
             if (aboutElement && company.description) {
-                aboutElement.innerHTML = `<p>${company.description}</p>`;
+                const p = document.createElement('p');
+                p.textContent = company.description;
+                aboutElement.replaceChildren(p);
             } else if (aboutElement) {
                 aboutElement.innerHTML = `<p>Esta empresa aún no ha agregado una descripción. Haz clic en el botón de editar para agregar información sobre tu empresa.</p>`;
             }
@@ -71,7 +75,6 @@ function loadCompanyData() {
             currentCompanyData = { ...userData, ...company };
         })
         .catch(error => {
-            console.error('❌ Error cargando datos de empresa:', error);
             const aboutElement = document.getElementById('companyAbout');
             if (aboutElement) {
                 aboutElement.innerHTML = `<p>Esta empresa aún no ha agregado una descripción. Haz clic en el botón de editar para agregar información sobre tu empresa.</p>`;
@@ -85,7 +88,6 @@ function loadActivityStats() {
     const userData = JSON.parse(localStorage.getItem('userData') || '{}');
 
     if (!userData.companyId) {
-        console.log('⚠️ No hay ID de usuario para cargar estadísticas');
         return;
     }
 
@@ -96,7 +98,6 @@ function loadActivityStats() {
         return response.json();
     })
     .then(stats => {
-        console.log('📊 Estadísticas reales cargadas:', stats);
         
         // Actualizar estadísticas REALES en el DOM
         const statOfertasPublicadas = document.getElementById('statOfertasPublicadas');
@@ -116,10 +117,8 @@ function loadActivityStats() {
         if (profileViews) profileViews.textContent = stats.profileViews || 0;
         if (responseRate) responseRate.textContent = `${(stats.responseRate || 0).toFixed(1)}%`;
         
-        console.log('✅ Estadísticas actualizadas con datos reales del backend');
     })
     .catch(error => {
-        console.error('❌ Error cargando estadísticas:', error);
         // Valores por defecto en caso de error
         document.getElementById('statOfertasPublicadas').textContent = '0';
         document.getElementById('statCandidatosContactados').textContent = '0';
@@ -133,7 +132,6 @@ function loadOffers() {
     const userData = JSON.parse(localStorage.getItem('userData') || '{}');
 
     if (!userData.companyId) {
-        console.log('⚠️ No se encontró companyId, cargando ofertas almacenadas localmente...');
         const savedOffers = JSON.parse(localStorage.getItem('companyOffers') || '[]');
         currentOffers = savedOffers;
         if (savedOffers.length > 0) {
@@ -160,7 +158,6 @@ function loadOffers() {
                     candidateCount = await countResponse.json();
                 }
             } catch (error) {
-                console.error(`Error obteniendo candidatos para job ${job.id}:`, error);
             }
             
             return {
@@ -179,10 +176,8 @@ function loadOffers() {
         
         currentOffers = offersWithCandidates;
         renderOffers(currentOffers);
-        console.log('📋 Ofertas cargadas desde backend:', currentOffers.length);
     })
     .catch(error => {
-        console.error('❌ Error cargando ofertas:', error);
         // Fallback a localStorage
         const savedOffers = JSON.parse(localStorage.getItem('companyOffers') || '[]');
         currentOffers = savedOffers;
@@ -244,7 +239,6 @@ function renderOffers(offers) {
 // ========================================
 
 function setupEventListeners() {
-    console.log('🔧 Configurando event listeners...');
     
     // Botón Cerrar Sesión
     const btnCerrarSesion = document.getElementById('btnCerrarSesion');
@@ -257,52 +251,44 @@ function setupEventListeners() {
                 window.location.href = 'login.html';
             }
         });
-        console.log('✅ Botón cerrar sesión configurado');
     }
     
     // Botón Editar Portada
     const btnEditCover = document.getElementById('btnEditCover');
     if (btnEditCover) {
         btnEditCover.addEventListener('click', openChangeCoverModal);
-        console.log('✅ Botón editar portada configurado');
     }
     
     // Botón Editar Logo
     const btnEditLogo = document.getElementById('btnEditLogo');
     if (btnEditLogo) {
         btnEditLogo.addEventListener('click', openChangeLogoModal);
-        console.log('✅ Botón editar logo configurado');
     }
     
     // Botón Editar Perfil
     const btnEditProfile = document.getElementById('btnEditProfile');
     if (btnEditProfile) {
         btnEditProfile.addEventListener('click', openEditProfileModal);
-        console.log('✅ Botón editar perfil configurado');
     }
     
     // Botón Editar "Acerca de"
     const btnEditAbout = document.getElementById('btnEditAbout');
     if (btnEditAbout) {
         btnEditAbout.addEventListener('click', openEditAboutModal);
-        console.log('✅ Botón editar acerca de configurado');
     }
     
     // Botón Nueva Oferta
     const btnNewOffer = document.getElementById('btnNewOffer');
     if (btnNewOffer) {
         btnNewOffer.addEventListener('click', () => openNewOfferModal());
-        console.log('✅ Botón nueva oferta configurado');
     }
     
     // Botón Upgrade Plan
     const btnUpgradePlan = document.querySelector('.btn-upgrade-plan');
     if (btnUpgradePlan) {
         btnUpgradePlan.addEventListener('click', openUpgradePlanModal);
-        console.log('✅ Botón upgrade plan configurado');
     }
     
-    console.log('✅ Todos los event listeners configurados');
 }
 
 // ========================================
@@ -310,14 +296,12 @@ function setupEventListeners() {
 // ========================================
 
 function showOfferMenu(offerId) {
-    console.log('🗑️ Mostrar menú para oferta:', offerId);
     if (confirm('¿Deseas eliminar esta oferta?')) {
         deleteOffer(offerId);
     }
 }
 
 function deleteOffer(offerId) {
-    console.log('🗑️ Eliminando oferta:', offerId);
 
     // Eliminar en backend
     fetchWithAuth(`${API_BASE_URL}/jobs/${offerId}`, { method: 'DELETE' })
@@ -330,10 +314,8 @@ function deleteOffer(offerId) {
         localStorage.setItem('companyOffers', JSON.stringify(currentOffers));
         renderOffers(currentOffers);
         showNotification('Oferta eliminada correctamente');
-        console.log('✅ Oferta eliminada del backend');
     })
     .catch(error => {
-        console.error('❌ Error eliminando oferta:', error);
         // Fallback: eliminar solo de localStorage
         currentOffers = currentOffers.filter((offer, index) => (offer.id || index) !== offerId);
         localStorage.setItem('companyOffers', JSON.stringify(currentOffers));
@@ -343,7 +325,6 @@ function deleteOffer(offerId) {
 }
 
 function viewOfferCandidates(offerId) {
-    console.log('👥 Ver candidatos para oferta:', offerId);
     const offer = currentOffers.find((o, i) => (o.id || i) === offerId);
     if (offer) {
         showCandidatesModal(offer);
@@ -351,7 +332,6 @@ function viewOfferCandidates(offerId) {
 }
 
 function editOffer(offerId) {
-    console.log('✏️ Editar oferta:', offerId);
     const offer = currentOffers.find((o, i) => (o.id || i) === offerId);
     if (offer) {
         openNewOfferModal(offer, offerId);
@@ -359,7 +339,6 @@ function editOffer(offerId) {
 }
 
 function toggleOfferStatus(offerId) {
-    console.log('🔄 Toggle status oferta:', offerId);
     const offerIndex = currentOffers.findIndex((o, i) => (o.id || i) === offerId);
     if (offerIndex === -1) return;
     
@@ -376,10 +355,8 @@ function toggleOfferStatus(offerId) {
         localStorage.setItem('companyOffers', JSON.stringify(currentOffers));
         renderOffers(currentOffers);
         showNotification(newStatus === 'active' ? 'Oferta reabierta' : 'Oferta archivada');
-        console.log('✅ Estado actualizado en backend');
     })
     .catch(error => {
-        console.error('❌ Error actualizando estado:', error);
         // Fallback: actualizar solo localmente
         currentOffers[offerIndex].status = newStatus;
         localStorage.setItem('companyOffers', JSON.stringify(currentOffers));
@@ -393,7 +370,6 @@ function toggleOfferStatus(offerId) {
 // ========================================
 
 function openChangeCoverModal() {
-    console.log('📷 Abriendo modal cambiar portada');
     const currentCover = document.getElementById('companyCover')?.src || '';
     createModal('Cambiar Portada', `
         <div class="form-group">
@@ -415,7 +391,6 @@ function openChangeCoverModal() {
 }
 
 function openChangeLogoModal() {
-    console.log('🖼️ Abriendo modal cambiar logo');
     const currentLogo = document.getElementById('companyLogo')?.src || '';
     createModal('Cambiar Logo', `
         <div class="form-group">
@@ -437,7 +412,6 @@ function openChangeLogoModal() {
 }
 
 function openEditProfileModal() {
-    console.log('👤 Abriendo modal editar perfil');
     const companyIndustry = document.getElementById('companyIndustry')?.textContent || '';
     createModal('Editar Perfil de Empresa', `
         <div class="form-group">
@@ -481,7 +455,6 @@ function openEditProfileModal() {
 }
 
 function openEditAboutModal() {
-    console.log('📝 Abriendo modal editar acerca de');
     const aboutElement = document.getElementById('companyAbout');
     const aboutText = aboutElement?.querySelector('p')?.textContent || '';
     
@@ -522,12 +495,13 @@ function openEditAboutModal() {
             return response.json();
         })
         .then(data => {
-            console.log('✅ Descripción actualizada en backend:', data);
             
             // Actualizar UI
             const aboutElement = document.getElementById('companyAbout');
             if (aboutElement) {
-                aboutElement.innerHTML = `<p>${newText}</p>`;
+                const p = document.createElement('p');
+                p.textContent = newText;
+                aboutElement.replaceChildren(p);
             }
             
             // Actualizar datos locales
@@ -537,8 +511,6 @@ function openEditAboutModal() {
             closeModal();
         })
         .catch(error => {
-            console.error('❌ Error actualizando descripción:', error);
-            console.error('Detalles del error:', error.message);
             alert(`Error al guardar la descripción: ${error.message}`);
         });
     });
@@ -546,7 +518,6 @@ function openEditAboutModal() {
 
 function openNewOfferModal(existingOffer = null, offerId = null) {
     const isEdit = existingOffer !== null;
-    console.log(isEdit ? '✏️ Abriendo modal editar oferta' : '➕ Abriendo modal nueva oferta');
     
     createModal(isEdit ? 'Editar Oferta' : 'Nueva Oferta de Empleo', `
         <div class="form-group">
@@ -590,10 +561,8 @@ function openNewOfferModal(existingOffer = null, offerId = null) {
         const userData = JSON.parse(localStorage.getItem('userData') || '{}');
         
         // Preparar datos para el backend
-        console.log('📋 Datos de usuario completos:', userData);
         
         if (!userData.companyId) {
-            console.error('❌ companyId no encontrado en userData');
             alert('⚠️ No se encontró el identificador de la empresa.\n\nPor favor, cierra sesión e inicia sesión nuevamente para sincronizar tus datos.');
             return;
         }
@@ -621,13 +590,6 @@ function openNewOfferModal(existingOffer = null, offerId = null) {
         const url = isEdit ? `${API_BASE_URL}/jobs/${offerId}` : `${API_BASE_URL}/jobs`;
         const method = isEdit ? 'PUT' : 'POST';
         
-        console.log('📤 Enviando oferta al backend:');
-        console.log('   URL:', url);
-        console.log('   Método:', method);
-        console.log('   Datos:', backendData);
-        console.log('🔑 Token:', token ? '✓ presente' : '✗ AUSENTE');
-        console.log('👤 User ID:', userData.id);
-        console.log('🏢 Company ID:', userData.companyId);
         
         // Guardar en backend
         fetchWithAuth(url, {
@@ -635,17 +597,14 @@ function openNewOfferModal(existingOffer = null, offerId = null) {
             body: JSON.stringify(backendData)
         })
         .then(async response => {
-            console.log('📥 Respuesta del servidor:', response.status, response.statusText);
             
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({ message: 'Error desconocido' }));
-                console.error('❌ Error del servidor:', errorData);
                 throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
             }
             return response.json();
         })
         .then(data => {
-            console.log('✅ Oferta guardada en backend:', data);
             
             // Actualizar lista local
             const offerData = {
@@ -676,15 +635,12 @@ function openNewOfferModal(existingOffer = null, offerId = null) {
             closeModal();
         })
         .catch(error => {
-            console.error('❌ Error guardando oferta:', error);
-            console.error('Detalles completos:', error.message);
             alert('Error al guardar la oferta:\n\n' + error.message + '\n\nRevisa la consola (F12) para más detalles.');
         });
     });
 }
 
 async function showCandidatesModal(offer) {
-    console.log('👥 Abriendo modal candidatos para oferta:', offer.id);
 
     // Mostrar modal con loading
     const modal = createModal(`Candidatos para: ${offer.title}`, `
@@ -706,7 +662,6 @@ async function showCandidatesModal(offer) {
         }
         
         const applications = await response.json();
-        console.log('✅ Candidatos cargados:', applications.length);
         
         // Generar contenido del modal
         let content = '';
@@ -741,7 +696,6 @@ async function showCandidatesModal(offer) {
         }
         
     } catch (error) {
-        console.error('❌ Error cargando candidatos:', error);
         const modalBody = modal.querySelector('.modal-body');
         if (modalBody) {
             modalBody.innerHTML = `
@@ -786,15 +740,15 @@ function createCandidateCard(application, offerId) {
         <div style="border:1px solid #e4e6e9;border-radius:12px;padding:1.5rem;margin-bottom:1rem;background:white;box-shadow:0 2px 8px rgba(0,0,0,0.05);">
             <div style="display:flex;gap:1.5rem;margin-bottom:1.5rem;">
                 <div style="flex-shrink:0;">
-                    <img src="${application.userProfileImageUrl || '../assets/img/default-avatar.png'}" 
-                         alt="${application.userName}" 
+                    <img src="${sanitize(application.userProfileImageUrl) || '../assets/img/default-avatar.png'}"
+                         alt="${sanitize(application.userName)}"
                          style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid #1ba3a3;">
                 </div>
                 <div style="flex:1;">
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.5rem;">
                         <div>
-                            <h4 style="margin:0 0 0.5rem 0;color:#003d82;font-size:1.2rem;">${application.userName || 'Candidato'}</h4>
-                            <p style="margin:0 0 0.5rem 0;color:#666;font-size:1rem;font-weight:500;">${application.userHeadline || 'Profesional'}</p>
+                            <h4 style="margin:0 0 0.5rem 0;color:#003d82;font-size:1.2rem;">${sanitize(application.userName) || 'Candidato'}</h4>
+                            <p style="margin:0 0 0.5rem 0;color:#666;font-size:1rem;font-weight:500;">${sanitize(application.userHeadline) || 'Profesional'}</p>
                         </div>
                         <span style="padding:0.5rem 1rem;border-radius:20px;font-size:0.875rem;font-weight:600;color:white;background-color:${statusColors[status]};">
                             ${statusLabels[status]}
@@ -802,13 +756,13 @@ function createCandidateCard(application, offerId) {
                     </div>
                     <div style="display:flex;flex-direction:column;gap:0.4rem;margin-top:0.8rem;">
                         <p style="margin:0;color:#555;font-size:0.9rem;">
-                            <strong>📧 Email:</strong> <a href="mailto:${application.userEmail}" style="color:#1ba3a3;text-decoration:none;">${application.userEmail || 'No especificado'}</a>
+                            <strong>📧 Email:</strong> <a href="mailto:${sanitize(application.userEmail)}" style="color:#1ba3a3;text-decoration:none;">${sanitize(application.userEmail) || 'No especificado'}</a>
                         </p>
                         <p style="margin:0;color:#555;font-size:0.9rem;">
-                            <strong>📱 Teléfono:</strong> ${application.userPhone || 'No especificado'}
+                            <strong>📱 Teléfono:</strong> ${sanitize(application.userPhone) || 'No especificado'}
                         </p>
                         <p style="margin:0;color:#555;font-size:0.9rem;">
-                            <strong>📍 Ubicación:</strong> ${application.userLocation || 'No especificada'}
+                            <strong>📍 Ubicación:</strong> ${sanitize(application.userLocation) || 'No especificada'}
                         </p>
                         <p style="margin:0;color:#666;font-size:0.875rem;margin-top:0.5rem;">
                             📅 Aplicó el ${appliedDate}
@@ -819,7 +773,7 @@ function createCandidateCard(application, offerId) {
             ${application.coverLetter ? `
                 <div style="background:#f8f9fa;padding:1rem;border-radius:8px;margin-bottom:1rem;border-left:3px solid #1ba3a3;">
                     <p style="margin:0 0 0.3rem 0;color:#003d82;font-weight:600;font-size:0.9rem;">Carta de presentación:</p>
-                    <p style="margin:0;color:#333;font-size:0.9rem;line-height:1.6;">${application.coverLetter}</p>
+                    <p style="margin:0;color:#333;font-size:0.9rem;line-height:1.6;">${sanitize(application.coverLetter)}</p>
                 </div>
             ` : ''}
             <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1.5rem;padding-top:1rem;border-top:1px solid #e4e6e9;">
@@ -872,13 +826,11 @@ async function updateCandidateStatus(applicationId, newStatus, offerId) {
             throw new Error('Error al actualizar estado');
         }
     } catch (error) {
-        console.error('❌ Error actualizando estado:', error);
         alert('Error al actualizar el estado del candidato');
     }
 }
 
 function openUpgradePlanModal() {
-    console.log('💎 Abriendo modal upgrade plan');
     createModal('Upgrade a Plan Premium', `
         <div style="text-align:center;padding:1rem;">
             <h3 style="color:#1ba3a3;margin-bottom:1rem;">Plan Premium</h3>
@@ -898,7 +850,6 @@ function openUpgradePlanModal() {
 }
 
 function viewCandidateProfile(candidateId) {
-    console.log('👤 Ver perfil candidato:', candidateId);
     showNotification('Abriendo perfil del candidato...');
     setTimeout(() => {
         window.location.href = 'perfil-usuario.html';
@@ -906,7 +857,6 @@ function viewCandidateProfile(candidateId) {
 }
 
 function contactCandidate(candidateId, candidateName) {
-    console.log('💬 Contactar candidato:', candidateId);
     showNotification(`Abriendo chat con ${candidateName}...`);
 }
 
@@ -963,7 +913,6 @@ function closeModal() {
 }
 
 function showNotification(message) {
-    console.log('📢 Notificación:', message);
     const notification = document.createElement('div');
     notification.className = 'custom-notification';
     notification.textContent = message;
@@ -1000,24 +949,19 @@ async function loadApplications() {
     const token = localStorage.getItem('token');
     
     if (!userData.companyId || !token) {
-        console.log('⚠️ No hay companyId o token para cargar aplicaciones');
         return;
     }
     
     try {
-        console.log('📥 Cargando aplicaciones para companyId:', userData.companyId);
         
         const response = await fetchWithAuth(`${API_BASE_URL}/applications/company/${userData.companyId}`);
         
         if (response.ok) {
             const applications = await response.json();
-            console.log('✅ Aplicaciones recibidas:', applications.length);
             displayApplications(applications);
         } else {
-            console.error('❌ Error cargando aplicaciones:', response.status);
         }
     } catch (error) {
-        console.error('❌ Error cargando aplicaciones:', error);
     }
 }
 
@@ -1171,14 +1115,12 @@ async function updateApplicationStatus(applicationId, newStatus) {
             throw new Error('Error al actualizar estado');
         }
     } catch (error) {
-        console.error('❌ Error actualizando estado:', error);
         alert('Error al actualizar el estado de la aplicación');
     }
 }
 
 // Ver perfil del candidato - IMPLEMENTADO
 function viewCandidateProfile(userId) {
-    console.log('👤 Abriendo perfil del candidato:', userId);
     // Abrir perfil en nueva pestaña
     window.open(`perfil-usuario.html?id=${userId}`, '_blank');
 }
@@ -1191,4 +1133,3 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 1000);
 });
 
-console.log('✅ perfil-empresa.js cargado correctamente');

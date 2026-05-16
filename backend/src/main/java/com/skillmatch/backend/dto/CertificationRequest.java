@@ -1,5 +1,6 @@
 package com.skillmatch.backend.dto;
 
+import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -13,23 +14,24 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class CertificationRequest {
 
-    @NotBlank(message = "El nombre de la certificación es obligatorio")
-    @Size(max = 200, message = "El nombre no puede exceder 200 caracteres")
+    @NotBlank(message = "{validation.certification.name.required}")
+    @Size(max = 200, message = "{validation.certification.name.max}")
     private String name;
 
-    @NotBlank(message = "El emisor de la certificación es obligatorio")
-    @Size(max = 200, message = "El emisor no puede exceder 200 caracteres")
+    @NotBlank(message = "{validation.certification.issuer.required}")
+    @Size(max = 200, message = "{validation.certification.issuer.max}")
     private String issuer;
 
     private LocalDate issueDate;
 
+    @FutureOrPresent(message = "{validation.certification.expiration.future}")
     private LocalDate expirationDate;
 
-    @Size(max = 100, message = "El ID de credencial no puede exceder 100 caracteres")
+    @Size(max = 100, message = "{validation.certification.credentialId.max}")
     private String credentialId;
 
     private String credentialUrl;
 
-    @Size(max = 500, message = "La descripción no puede exceder 500 caracteres")
+    @Size(max = 500, message = "{validation.certification.description.max}")
     private String description;
 }

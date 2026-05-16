@@ -1,4 +1,4 @@
-// search-handler.js
+﻿// search-handler.js
 // Carga datos mock, filtra oportunidades y renderiza resultados
 
 let allOportunidades = [];
@@ -18,7 +18,6 @@ async function loadSavedOpportunities() {
             savedOpportunityIds = new Set(ids);
         }
     } catch (e) {
-        console.warn('No se pudieron cargar favoritos desde la API', e);
     }
 }
 
@@ -34,15 +33,11 @@ async function loadOportunidades() {
             .map(normalizeOportunidadFromApi)
             .filter(Boolean);
         allOportunidades = normalized;
-        console.log('✓ Oportunidades cargadas desde API:', allOportunidades.length);
     } catch (apiError) {
-        console.warn('No se pudo conectar al backend, usando JSON local.', apiError);
         try {
             const fallback = await fetch('../assets/data/oportunidades-mock.json');
             allOportunidades = await fallback.json();
-            console.log('✓ Oportunidades cargadas desde JSON local:', allOportunidades.length);
         } catch (fileError) {
-            console.error('✗ Error al cargar oportunidades:', fileError);
             allOportunidades = [];
         }
     }
@@ -405,7 +400,6 @@ function renderResults(oportunidades, criteria) {
                     }
                 }
             } catch (e) {
-                console.error('❌ Error actualizando guardado:', e);
             }
         });
     });
@@ -413,7 +407,6 @@ function renderResults(oportunidades, criteria) {
 
 // Función pública para realizar búsqueda
 function performSearch(criteria) {
-    console.log('🔍 Buscando con criterios:', criteria);
     const noCriteria = !criteria.q && !criteria.location && !criteria.modality && !criteria.experience && !criteria.salary;
 
     if (noCriteria) {

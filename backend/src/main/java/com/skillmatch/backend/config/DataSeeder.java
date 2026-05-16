@@ -5,6 +5,7 @@ import com.skillmatch.backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -15,8 +16,9 @@ import java.util.*;
 
 @Slf4j
 @Component
-@Order(2) // Se ejecuta después de CompanyUserSyncRunner
+@Order(2)
 @RequiredArgsConstructor
+@ConditionalOnProperty(name = "skillmatch.seed.enabled", havingValue = "true", matchIfMissing = true)
 public class DataSeeder implements CommandLineRunner {
 
     private final UserRepository userRepository;
@@ -319,7 +321,10 @@ public class DataSeeder implements CommandLineRunner {
             Application application = new Application();
             application.setUser(user);
             application.setJob(job);
-            application.setStatus(new String[]{"pending", "reviewed", "accepted", "rejected"}[random.nextInt(4)]);
+            application.setStatus(new ApplicationStatus[]{
+                ApplicationStatus.PENDIENTE, ApplicationStatus.REVISADA,
+                ApplicationStatus.ACEPTADA, ApplicationStatus.RECHAZADA
+            }[random.nextInt(4)]);
             application.setAppliedDate(LocalDateTime.now().minusDays(random.nextInt(60)));
             application.setCoverLetter("Estimado equipo de " + job.getCompany().getName() + 
                 ", me interesa mucho la posición de " + job.getTitle() + 

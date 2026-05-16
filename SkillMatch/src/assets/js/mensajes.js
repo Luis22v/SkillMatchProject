@@ -1,11 +1,10 @@
-// Script para la página de mensajes
+﻿// Script para la página de mensajes
 
 let conversations = [];
 let currentConversationUserId = null;
 let currentMessages = [];
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Iniciando página de mensajes...');
     
     // Verificar autenticación
     const token = localStorage.getItem('token');
@@ -87,13 +86,11 @@ async function loadConversations() {
 
         if (response.ok) {
             conversations = await response.json();
-            console.log('✅ Conversaciones cargadas:', conversations.length);
             displayConversations(conversations);
         } else {
             throw new Error('Error al cargar conversaciones');
         }
     } catch (error) {
-        console.error('❌ Error cargando conversaciones:', error);
         container.innerHTML = '<div class="error-message">Error al cargar conversaciones</div>';
     }
 }
@@ -157,7 +154,6 @@ async function openConversation(userId) {
 // Cargar mensajes de una conversación
 async function loadMessages(otherUserId) {
     if (!otherUserId || otherUserId === 'undefined' || otherUserId === null) {
-        console.error('❌ userId inválido:', otherUserId);
         return;
     }
     
@@ -170,7 +166,6 @@ async function loadMessages(otherUserId) {
 
         if (response.ok) {
             currentMessages = await response.json();
-            console.log('✅ Mensajes cargados:', currentMessages.length);
             displayMessages(currentMessages);
             
             // Actualizar header del chat
@@ -186,7 +181,6 @@ async function loadMessages(otherUserId) {
             throw new Error('Error al cargar mensajes');
         }
     } catch (error) {
-        console.error('❌ Error cargando mensajes:', error);
         container.innerHTML = '<div class="error-message">Error al cargar mensajes</div>';
     }
 }
@@ -247,7 +241,6 @@ async function sendMessage() {
             throw new Error('Error al enviar mensaje');
         }
     } catch (error) {
-        console.error('❌ Error enviando mensaje:', error);
         alert('Error al enviar mensaje');
     }
 }
@@ -276,7 +269,6 @@ async function markConversationAsRead(otherUserId) {
         }
         
     } catch (error) {
-        console.error('❌ Error marcando como leído:', error);
     }
 }
 

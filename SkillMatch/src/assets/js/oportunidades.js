@@ -1,12 +1,20 @@
-// Script para la página de oportunidades con backend integration
+﻿// Script para la página de oportunidades con backend integration
 
 let allJobs = [];
 let currentFilters = {};
 let savedJobIds = new Set();
+let searchAbortController = null;
+
+function debounce(fn, delay) {
+    let timer;
+    return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), delay);
+    };
+}
 
 // Cargar oportunidades al iniciar
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Iniciando página de oportunidades...');
     loadJobs();
     loadSavedJobs();
     setupEventListeners();
@@ -16,33 +24,26 @@ document.addEventListener('DOMContentLoaded', function() {
 async function loadJobs() {
     const container = document.querySelector('.opportunities-list');
     if (!container) {
-        console.error('❌ Contenedor .opportunities-list no encontrado');
         return;
     }
 
     try {
         container.innerHTML = '<div class="loading-message">Cargando oportunidades...</div>';
         
-        console.log('🔍 Intentando cargar desde:', `${API_BASE_URL}/jobs`);
         const response = await fetchWithAuth(`${API_BASE_URL}/jobs`);
         
-        console.log('📡 Respuesta recibida:', response.status);
         
         if (response.ok) {
             const data = await response.json();
             allJobs = Array.isArray(data) ? data : (data.content || []);
-            console.log('✅ Oportunidades cargadas:', allJobs.length);
             if (allJobs.length > 0) {
-                console.log('📋 Primera oportunidad:', allJobs[0]);
             }
             displayJobs(allJobs);
         } else {
             const errorText = await response.text();
-            console.error('❌ Error HTTP:', response.status, errorText);
             throw new Error(`Error ${response.status}: ${errorText}`);
         }
     } catch (error) {
-        console.error('❌ Error cargando oportunidades:', error);
         container.innerHTML = `
             <div class="error-message">
                 <h3>Error al cargar oportunidades</h3>
@@ -129,34 +130,32 @@ function createJobCard(job) {
 
 // Configurar event listeners
 function setupEventListeners() {
-    console.log('🔧 Configurando event listeners...');
     
     // Búsqueda
     const searchInput = document.getElementById('searchInput');
     const searchBtn = document.querySelector('.btn-search-main');
     
     if (searchInput && searchBtn) {
+        const debouncedSearch = debounce(performSearch, 300);
         searchBtn.addEventListener('click', performSearch);
+        searchInput.addEventListener('input', debouncedSearch);
         searchInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
                 performSearch();
             }
         });
-        console.log('✓ Listeners de búsqueda configurados');
     }
 
     // Filtros
     const applyFilterBtn = document.querySelector('.btn-apply-filters');
     if (applyFilterBtn) {
         applyFilterBtn.addEventListener('click', applyFilters);
-        console.log('✓ Botón de aplicar filtros configurado');
     }
 
     const clearFilterBtn = document.querySelector('.btn-clear-filters');
     if (clearFilterBtn) {
         clearFilterBtn.addEventListener('click', clearFilters);
-        console.log('✓ Botón de limpiar filtros configurado');
     }
 
     // Rango de salario - actualización en tiempo real
@@ -166,14 +165,12 @@ function setupEventListeners() {
             const value = parseInt(this.value);
             document.getElementById('maxSalary').textContent = formatCurrency(value);
         });
-        console.log('✓ Rango de salario configurado');
     }
 
     // Ordenar
     const sortSelect = document.getElementById('sortSelect');
     if (sortSelect) {
         sortSelect.addEventListener('change', sortJobs);
-        console.log('✓ Selector de ordenamiento configurado');
     }
 }
 
@@ -201,7 +198,6 @@ async function applyToJob(jobId) {
     const token = localStorage.getItem('token');
     const userData = JSON.parse(localStorage.getItem('userData') || '{}');
     
-    console.log('🔍 Verificando autenticación:', { 
         hasToken: !!token, 
         userId: userData.id,
         userRole: userData.role,
@@ -223,7 +219,6 @@ async function applyToJob(jobId) {
 
     const job = allJobs.find(j => j.id == jobId);
     if (!job) {
-        console.error('❌ Trabajo no encontrado:', jobId);
         return;
     }
 
@@ -231,7 +226,6 @@ async function applyToJob(jobId) {
     
     if (confirm(confirmMessage)) {
         try {
-            console.log('📤 Enviando aplicación al trabajo:', jobId);
             
             const response = await fetchWithAuth(`${API_BASE_URL}/applications`, {
                 method: 'POST',
@@ -243,7 +237,6 @@ async function applyToJob(jobId) {
             
             if (response.ok) {
                 const result = await response.json();
-                console.log('✅ Aplicación enviada:', result);
                 alert(`✅ ¡Aplicación enviada exitosamente!\n\n📋 Puesto: ${job.title}\n🏢 Empresa: ${job.companyName || 'Empresa Confidencial'}\n\nLa empresa revisará tu perfil pronto.`);
                 
                 // Deshabilitar el botón para evitar aplicaciones duplicadas
@@ -258,7 +251,6 @@ async function applyToJob(jobId) {
                 throw new Error(errorData.message || 'Error al enviar aplicación');
             }
         } catch (error) {
-            console.error('❌ Error aplicando al trabajo:', error);
             alert('❌ Error al enviar la aplicación: ' + error.message);
         }
     }
@@ -272,14 +264,12 @@ function toggleSaveJob(btn) {
         // Desguardar
         btn.classList.remove('saved');
         btn.innerHTML = '💾 Guardar';
-        console.log('🗑️ Trabajo removido de guardados:', jobId);
         
         // TODO: Implementar DELETE a /api/saved-jobs/:id
     } else {
         // Guardar
         btn.classList.add('saved');
         btn.innerHTML = '✓ Guardado';
-        console.log('💾 Trabajo guardado:', jobId);
         
         // TODO: Implementar POST a /api/saved-jobs
         
@@ -294,17 +284,20 @@ function toggleSaveJob(btn) {
 // Realizar búsqueda
 async function performSearch() {
     const query = document.getElementById('searchInput').value.trim();
-    
+
     if (!query) {
         displayJobs(allJobs);
         return;
     }
 
-    console.log('🔍 Buscando:', query);
+    if (searchAbortController) searchAbortController.abort();
+    searchAbortController = new AbortController();
 
     try {
-        const response = await fetchWithAuth(`${API_BASE_URL}/jobs/search?keyword=${encodeURIComponent(query)}`);
-        
+        const response = await fetchWithAuth(
+            `${API_BASE_URL}/jobs/search?keyword=${encodeURIComponent(query)}`,
+            { signal: searchAbortController.signal }
+        );
         if (response.ok) {
             const jobs = await response.json();
             displayJobs(jobs);
@@ -312,8 +305,7 @@ async function performSearch() {
             displayJobs([]);
         }
     } catch (error) {
-        console.error('Error en búsqueda:', error);
-        displayJobs(allJobs);
+        if (error.name !== 'AbortError') displayJobs(allJobs);
     }
 }
 
@@ -326,7 +318,6 @@ async function applyFilters() {
         maxSalary: document.getElementById('salaryRange')?.value
     };
 
-    console.log('🔧 Aplicando filtros:', filters);
 
     currentFilters = filters;
 
@@ -348,13 +339,11 @@ async function applyFilters() {
             displayJobs([]);
         }
     } catch (error) {
-        console.error('Error aplicando filtros:', error);
     }
 }
 
 // Limpiar filtros
 function clearFilters() {
-    console.log('🧹 Limpiando filtros...');
     
     // Desmarcar todos los checkboxes
     document.querySelectorAll('.filter-card input[type="checkbox"]').forEach(cb => {
@@ -374,7 +363,6 @@ function clearFilters() {
     // Recargar todas las oportunidades
     loadJobs();
     
-    console.log('✅ Filtros limpiados');
 }
 
 // Ordenar trabajos
@@ -439,10 +427,8 @@ async function loadSavedJobs() {
         if (response.ok) {
             const ids = await response.json();
             savedJobIds = new Set(ids);
-            console.log('✅ Trabajos guardados cargados:', savedJobIds.size);
         }
     } catch (error) {
-        console.error('❌ Error cargando trabajos guardados:', error);
     }
 }
 
@@ -470,7 +456,6 @@ async function toggleSaveJob(jobId, buttonElement) {
                 savedJobIds.delete(parseInt(jobId));
                 buttonElement.classList.remove('saved');
                 buttonElement.textContent = '💾 Guardar';
-                console.log('✅ Trabajo removido de guardados');
             }
         } else {
             // Agregar a guardados
@@ -483,11 +468,9 @@ async function toggleSaveJob(jobId, buttonElement) {
                 savedJobIds.add(parseInt(jobId));
                 buttonElement.classList.add('saved');
                 buttonElement.textContent = '❤️ Guardado';
-                console.log('✅ Trabajo guardado exitosamente');
             }
         }
     } catch (error) {
-        console.error('❌ Error guardando/quitando trabajo:', error);
         alert('Error al actualizar el estado. Por favor intenta de nuevo.');
     }
 }
@@ -509,4 +492,3 @@ function calculateMatchScore(job) {
     return Math.min(100, score);
 }
 
-console.log('✅ Módulo de oportunidades cargado');

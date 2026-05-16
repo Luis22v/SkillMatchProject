@@ -4,6 +4,7 @@ import com.skillmatch.backend.dto.ConnectionRequest;
 import com.skillmatch.backend.dto.ConnectionResponse;
 import com.skillmatch.backend.dto.MessageResponse;
 import com.skillmatch.backend.model.User;
+import com.skillmatch.backend.security.UserDetailsImpl;
 import com.skillmatch.backend.service.ConnectionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -19,12 +20,13 @@ import java.util.List;
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class ConnectionController {
-    
+
     private final ConnectionService connectionService;
-    
+
     @PostMapping
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
-    public ResponseEntity<?> sendConnectionRequest(@Valid @RequestBody ConnectionRequest request, @AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<?> sendConnectionRequest(@Valid @RequestBody ConnectionRequest request,
+                                                    @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             ConnectionResponse response = connectionService.sendConnectionRequest(currentUser.getId(), request);
             return ResponseEntity.ok(response);
@@ -32,10 +34,11 @@ public class ConnectionController {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
         }
     }
-    
+
     @PatchMapping("/{connectionId}/accept")
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
-    public ResponseEntity<?> acceptConnection(@PathVariable Long connectionId, @AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<?> acceptConnection(@PathVariable Long connectionId,
+                                               @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             ConnectionResponse response = connectionService.acceptConnection(connectionId, currentUser.getId());
             return ResponseEntity.ok(response);
@@ -43,10 +46,11 @@ public class ConnectionController {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
         }
     }
-    
+
     @PatchMapping("/{connectionId}/reject")
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
-    public ResponseEntity<?> rejectConnection(@PathVariable Long connectionId, @AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<?> rejectConnection(@PathVariable Long connectionId,
+                                               @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             ConnectionResponse response = connectionService.rejectConnection(connectionId, currentUser.getId());
             return ResponseEntity.ok(response);
@@ -54,10 +58,11 @@ public class ConnectionController {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
         }
     }
-    
+
     @PatchMapping("/{connectionId}/block")
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
-    public ResponseEntity<?> blockConnection(@PathVariable Long connectionId, @AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<?> blockConnection(@PathVariable Long connectionId,
+                                              @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             connectionService.blockConnection(connectionId, currentUser.getId());
             return ResponseEntity.ok(new MessageResponse("Conexión bloqueada exitosamente"));
@@ -65,10 +70,10 @@ public class ConnectionController {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
         }
     }
-    
+
     @GetMapping("/my-connections")
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
-    public ResponseEntity<?> getMyConnections(@AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<?> getMyConnections(@AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             List<ConnectionResponse> connections = connectionService.getMyConnections(currentUser.getId());
             return ResponseEntity.ok(connections);
@@ -76,10 +81,10 @@ public class ConnectionController {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
         }
     }
-    
+
     @GetMapping("/pending-requests")
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
-    public ResponseEntity<?> getPendingRequests(@AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<?> getPendingRequests(@AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             List<ConnectionResponse> requests = connectionService.getPendingRequests(currentUser.getId());
             return ResponseEntity.ok(requests);
@@ -87,10 +92,10 @@ public class ConnectionController {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
         }
     }
-    
+
     @GetMapping("/sent-requests")
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
-    public ResponseEntity<?> getSentRequests(@AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<?> getSentRequests(@AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             List<ConnectionResponse> requests = connectionService.getSentRequests(currentUser.getId());
             return ResponseEntity.ok(requests);
@@ -98,10 +103,11 @@ public class ConnectionController {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
         }
     }
-    
+
     @GetMapping("/check/{otherUserId}")
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
-    public ResponseEntity<?> checkConnection(@PathVariable Long otherUserId, @AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<?> checkConnection(@PathVariable Long otherUserId,
+                                              @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             boolean isConnected = connectionService.areUsersConnected(currentUser.getId(), otherUserId);
             return ResponseEntity.ok(new ConnectionStatus(isConnected));
@@ -109,10 +115,10 @@ public class ConnectionController {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
         }
     }
-    
+
     @GetMapping("/count")
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
-    public ResponseEntity<?> getConnectionsCount(@AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<?> getConnectionsCount(@AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             Long count = connectionService.getConnectionsCount(currentUser.getId());
             return ResponseEntity.ok(new CountResponse(count));
@@ -120,10 +126,10 @@ public class ConnectionController {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
         }
     }
-    
+
     @GetMapping("/suggestions")
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
-    public ResponseEntity<?> getSuggestions(@AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<?> getSuggestions(@AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             List<User> suggestions = connectionService.getSuggestions(currentUser.getId());
             return ResponseEntity.ok(suggestions);
@@ -131,7 +137,7 @@ public class ConnectionController {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
         }
     }
-    
+
     private record ConnectionStatus(boolean isConnected) {}
     private record CountResponse(Long count) {}
 }

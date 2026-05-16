@@ -2,6 +2,7 @@ package com.skillmatch.backend.config;
 
 import com.skillmatch.backend.security.JwtAuthenticationEntryPoint;
 import com.skillmatch.backend.security.JwtAuthenticationFilter;
+import com.skillmatch.backend.security.RateLimitingFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -45,14 +46,18 @@ public class SecurityConfig {
     }
 
     @Bean
+    public RateLimitingFilter rateLimitingFilter() {
+        return new RateLimitingFilter();
+    }
+
+    @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userDetailsService);
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }
@@ -77,17 +82,30 @@ public class SecurityConfig {
                     .maxAgeInSeconds(31536000))
                 .frameOptions(frame -> frame.deny())
                 .contentTypeOptions(Customizer.withDefaults())
+                .contentSecurityPolicy(csp -> csp.policyDirectives(
+                    "default-src 'self'; " +
+                    "script-src 'self' 'unsafe-inline'; " +
+                    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+                    "font-src 'self' https://fonts.gstatic.com; " +
+                    "img-src 'self' data:; " +
+                    "connect-src 'self'; " +
+                    "frame-ancestors 'none'"
+                ))
             )
             .authorizeHttpRequests(auth -> auth
+                .requestMatchers(HttpMethod.POST, "/api/auth/logout").authenticated()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/public/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/jobs/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/companies/**").permitAll()
+                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                 .anyRequest().authenticated()
             );
 
         http.authenticationProvider(authenticationProvider());
+        // JWT primero (le asigna posición en la cadena), luego RateLimiting antes que JWT
         http.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(rateLimitingFilter(), JwtAuthenticationFilter.class);
 
         return http.build();
     }
@@ -97,8 +115,9 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of("http://localhost:5501", "http://127.0.0.1:5501"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
-        configuration.setAllowCredentials(false);
+        configuration.setAllowedHeaders(Arrays.asList(
+            "Authorization", "Content-Type", "Accept", "X-Requested-With", "Cache-Control"));
+        configuration.setAllowCredentials(true);
         configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
         configuration.setMaxAge(3600L);
 

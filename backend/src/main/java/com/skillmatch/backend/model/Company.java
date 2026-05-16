@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.lang.NonNull;
 
 import java.time.LocalDateTime;
 
@@ -16,7 +17,7 @@ public class Company {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private @NonNull Long id;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(

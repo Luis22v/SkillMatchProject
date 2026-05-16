@@ -6,8 +6,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import com.skillmatch.backend.exception.DuplicateResourceException;
-import com.skillmatch.backend.exception.UnauthorizedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -77,10 +75,11 @@ public class GlobalExceptionHandler {
                             "Parámetro '" + ex.getName() + "' inválido. "
                             + "Verifica que el ID sea válido antes de llamar este endpoint."));
         }
+        Class<?> requiredType = ex.getRequiredType();
+        String typeName = requiredType != null ? requiredType.getSimpleName() : "tipo desconocido";
         return ResponseEntity.badRequest()
                 .body(new MessageResponse(
-                        "El parámetro '" + ex.getName() + "' debe ser "
-                        + ex.getRequiredType().getSimpleName()));
+                        "El parámetro '" + ex.getName() + "' debe ser " + typeName));
     }
 
     // 6. Recurso no encontrado (nuestro tipo custom)

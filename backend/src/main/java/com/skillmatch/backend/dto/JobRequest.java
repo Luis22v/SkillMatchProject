@@ -13,36 +13,36 @@ import java.util.List;
 @AllArgsConstructor
 public class JobRequest {
     
-    @NotNull(message = "El ID de la compañía es obligatorio")
+    @NotNull(message = "{validation.job.companyId.required}")
     private Long companyId;
-    
-    @NotBlank(message = "El título es obligatorio")
-    @Size(max = 200, message = "El título no puede exceder 200 caracteres")
+
+    @NotBlank(message = "{validation.job.title.required}")
+    @Size(max = 200, message = "{validation.job.title.max}")
     private String title;
-    
-    @Size(max = 5000, message = "La descripción no puede exceder 5000 caracteres")
+
+    @Size(max = 5000, message = "{validation.job.description.max}")
     private String description;
-    
-    @NotBlank(message = "El tipo es obligatorio")
-    @Pattern(regexp = "empleo|práctica|freelance", message = "El tipo debe ser: empleo, práctica o freelance")
+
+    @NotBlank(message = "{validation.job.type.required}")
+    @Pattern(regexp = "empleo|práctica|freelance", message = "{validation.job.type.pattern}")
     private String type;
-    
-    @Pattern(regexp = "junior|semi-senior|senior|sin-experiencia", message = "El nivel debe ser: junior, semi-senior, senior o sin-experiencia")
+
+    @Pattern(regexp = "junior|semi-senior|senior|sin-experiencia", message = "{validation.job.level.pattern}")
     private String experienceLevel;
-    
-    @Min(value = 0, message = "El salario mínimo no puede ser negativo")
+
+    @Min(value = 0, message = "{validation.job.salary.min}")
     private Double salaryMin;
-    
-    @Min(value = 0, message = "El salario máximo no puede ser negativo")
+
+    @Min(value = 0, message = "{validation.job.salary.min}")
     private Double salaryMax;
-    
-    @Size(max = 100, message = "La ubicación no puede exceder 100 caracteres")
+
+    @Size(max = 100, message = "{validation.job.location.max}")
     private String location;
-    
-    @Pattern(regexp = "presencial|remoto|híbrido", message = "La modalidad debe ser: presencial, remoto o híbrido")
+
+    @Pattern(regexp = "presencial|remoto|híbrido", message = "{validation.job.modality.pattern}")
     private String modality;
-    
-    @Size(max = 100, message = "La duración no puede exceder 100 caracteres")
+
+    @Size(max = 100, message = "{validation.job.duration.max}")
     private String duration;
     
     private List<String> requirements;
@@ -53,5 +53,6 @@ public class JobRequest {
     
     private List<String> benefits;
     
+    @FutureOrPresent(message = "{validation.job.expiration.future}")
     private LocalDateTime expirationDate;
 }

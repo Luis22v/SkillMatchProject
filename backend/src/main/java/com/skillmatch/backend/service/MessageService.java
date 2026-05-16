@@ -9,6 +9,7 @@ import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.repository.MessageRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,7 +28,7 @@ public class MessageService {
     private final NotificationService notificationService;
 
     @Transactional
-    public ChatMessageResponse sendMessage(Long senderId, MessageRequest request) {
+    public ChatMessageResponse sendMessage(@NonNull Long senderId, MessageRequest request) {
         if (senderId.equals(request.getReceiverId())) {
             throw new IllegalArgumentException("No puedes enviarte un mensaje a ti mismo");
         }

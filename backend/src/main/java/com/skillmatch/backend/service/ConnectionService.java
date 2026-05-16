@@ -11,6 +11,7 @@ import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.repository.ConnectionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,7 +29,7 @@ public class ConnectionService {
     private final NotificationService notificationService;
 
     @Transactional
-    public ConnectionResponse sendConnectionRequest(Long userId, ConnectionRequest request) {
+    public ConnectionResponse sendConnectionRequest(@NonNull Long userId, ConnectionRequest request) {
         if (userId.equals(request.getConnectedUserId())) {
             throw new IllegalArgumentException("No puedes enviarte una solicitud a ti mismo");
         }
@@ -62,7 +63,7 @@ public class ConnectionService {
     }
 
     @Transactional
-    public ConnectionResponse acceptConnection(Long connectionId, Long userId) {
+    public ConnectionResponse acceptConnection(Long connectionId, @NonNull Long userId) {
         if (connectionId == null) {
             throw new IllegalArgumentException("ID de conexión no puede ser nulo");
         }

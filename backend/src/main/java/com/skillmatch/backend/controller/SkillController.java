@@ -2,7 +2,7 @@ package com.skillmatch.backend.controller;
 
 import com.skillmatch.backend.dto.MessageResponse;
 import com.skillmatch.backend.dto.SkillRequest;
-import com.skillmatch.backend.model.User;
+import com.skillmatch.backend.security.UserDetailsImpl;
 import com.skillmatch.backend.service.SkillService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -114,7 +114,7 @@ public class SkillController {
     }
 
     private Long extractCurrentUserId() {
-        return ((User) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getId();
+        return ((UserDetailsImpl) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getId();
     }
 
     private Long resolveTargetUserId(String pathUserId, Long fallbackId) {

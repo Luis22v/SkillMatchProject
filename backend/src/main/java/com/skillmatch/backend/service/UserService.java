@@ -10,6 +10,7 @@ import com.skillmatch.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.lang.NonNull;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,17 +34,14 @@ public class UserService {
     private final SkillRepository skillRepository;
 
     @Transactional(readOnly = true)
-    public User getUserById(Long id) {
-        if (id == null) {
-            throw new IllegalArgumentException("El id no puede ser nulo");
-        }
+    public User getUserById(@NonNull Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con id: " + id));
     }
 
     @Transactional(readOnly = true)
-    public User getUserByEmail(String email) {
-        if (email == null || email.isBlank()) {
+    public User getUserByEmail(@NonNull String email) {
+        if (email.isBlank()) {
             throw new IllegalArgumentException("El email no puede estar vacío");
         }
         return userRepository.findByEmail(email)
@@ -51,7 +49,7 @@ public class UserService {
     }
 
     @Transactional
-    public User updateProfile(Long userId, UpdateProfileRequest request) {
+    public User updateProfile(@NonNull Long userId, UpdateProfileRequest request) {
         User user = getUserById(userId);
 
         if (request.getFirstName() != null) {
@@ -80,13 +78,13 @@ public class UserService {
             user.setBio(request.getBio());
         }
 
-        User saved = Objects.requireNonNull(userRepository.save(user));
+        User saved = userRepository.save(Objects.requireNonNull(user));
         log.info("Perfil actualizado para usuario {}", userId);
         return saved;
     }
 
     @Transactional
-    public User updateProfileImage(Long userId, String imageUrl) {
+    public User updateProfileImage(@NonNull Long userId, String imageUrl) {
         if (imageUrl == null || imageUrl.trim().isEmpty()) {
             throw new IllegalArgumentException("La URL de la imagen de perfil es obligatoria");
         }
@@ -98,7 +96,7 @@ public class UserService {
     }
 
     @Transactional
-    public User updateCoverImage(Long userId, String imageUrl) {
+    public User updateCoverImage(@NonNull Long userId, String imageUrl) {
         if (imageUrl == null || imageUrl.trim().isEmpty()) {
             throw new IllegalArgumentException("La URL de la imagen de portada es obligatoria");
         }
@@ -110,7 +108,7 @@ public class UserService {
     }
 
     @Transactional
-    public void updatePassword(Long userId, UpdatePasswordRequest request) {
+    public void updatePassword(@NonNull Long userId, UpdatePasswordRequest request) {
         User user = getUserById(userId);
 
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
@@ -124,7 +122,7 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Object> getUserProfile(Long userId) {
+    public Map<String, Object> getUserProfile(@NonNull Long userId) {
         User user = getUserById(userId);
 
         Map<String, Object> profile = new HashMap<>();
@@ -144,7 +142,7 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public List<User> findSuggestionsForUser(Long userId) {
+    public List<User> findSuggestionsForUser(@NonNull Long userId) {
         User user = getUserById(userId);
         if (user.getLocation() == null) {
             return List.of();
@@ -154,11 +152,11 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public Map<String, Object> getUserStatistics(Long userId) {
+    public Map<String, Object> getUserStatistics(@NonNull Long userId) {
         User user = getUserById(userId);
 
-        long applicationsCount = applicationRepository.findByUserId(userId).size();
-        long skillsCount = skillRepository.findByUserId(userId).size();
+        long applicationsCount = applicationRepository.countByUserId(userId);
+        long skillsCount = skillRepository.countByUserId(userId);
 
         LocalDateTime createdAt = user.getCreatedAt();
         long daysSinceCreation = createdAt != null ? ChronoUnit.DAYS.between(createdAt, LocalDateTime.now()) : 0;

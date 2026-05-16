@@ -12,26 +12,25 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class RegisterRequest {
     
-    @NotBlank(message = "El email es obligatorio")
-    @Email(message = "El email debe ser válido")
+    @NotBlank(message = "{validation.email.required}")
+    @Email(message = "{validation.email.invalid}")
     private String email;
-    
-    @NotBlank(message = "La contraseña es obligatoria")
-    @Size(min = 6, message = "La contraseña debe tener al menos 6 caracteres")
+
+    @NotBlank(message = "{validation.password.required}")
+    @Size(min = 8, message = "{validation.password.min}")
     private String password;
-    
-    @NotBlank(message = "El nombre es obligatorio")
-    @Size(max = 100, message = "El nombre no puede exceder 100 caracteres")
+
+    @NotBlank(message = "{validation.firstName.required}")
+    @Size(max = 100, message = "{validation.firstName.max}")
     private String firstName;
-    
-    @NotBlank(message = "El apellido es obligatorio")
-    @Size(max = 100, message = "El apellido no puede exceder 100 caracteres")
+
+    @NotBlank(message = "{validation.lastName.required}")
+    @Size(max = 100, message = "{validation.lastName.max}")
     private String lastName;
-    
-    @Size(max = 20, message = "El teléfono no puede exceder 20 caracteres")
+
+    @Size(max = 20, message = "{validation.phone.max}")
     private String phone;
-    
-    // Tipo de usuario: USER o EMPRESA
-    @NotBlank(message = "userType is required")
+
+    @NotBlank(message = "{validation.userType.required}")
     private String userType;
 }

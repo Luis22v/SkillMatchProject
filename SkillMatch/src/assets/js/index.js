@@ -1,4 +1,4 @@
-// index.js
+﻿// index.js
 // Maneja selección de filtros en la página principal
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -26,7 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (locationSelect) {
         locationSelect.addEventListener('change', (e) => {
             filters.location = e.target.value;
-            console.log('Lugar seleccionado:', filters.location);
         });
     }
 
@@ -34,7 +33,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (modalitySelect) {
         modalitySelect.addEventListener('change', (e) => {
             filters.modality = e.target.value;
-            console.log('Modalidad seleccionada:', filters.modality);
         });
     }
 
@@ -42,7 +40,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (experienceSelect) {
         experienceSelect.addEventListener('change', (e) => {
             filters.experience = e.target.value;
-            console.log('Experiencia seleccionada:', filters.experience);
         });
     }
 
@@ -50,7 +47,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (salarySelect) {
         salarySelect.addEventListener('change', (e) => {
             filters.salary = e.target.value;
-            console.log('Rango de salario seleccionado:', filters.salary);
         });
     }
 
@@ -72,7 +68,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 resultsContainer.scrollIntoView({ behavior: 'smooth' });
             }
         } else {
-            console.warn('performSearch no está disponible');
         }
     });
 });

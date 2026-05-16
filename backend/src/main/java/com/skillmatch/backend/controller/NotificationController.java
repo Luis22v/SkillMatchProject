@@ -2,12 +2,13 @@ package com.skillmatch.backend.controller;
 
 import com.skillmatch.backend.dto.MessageResponse;
 import com.skillmatch.backend.dto.NotificationResponse;
-import com.skillmatch.backend.model.User;
+import com.skillmatch.backend.security.UserDetailsImpl;
 import com.skillmatch.backend.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,7 +23,7 @@ public class NotificationController {
     
     @GetMapping
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
-    public ResponseEntity<?> getUserNotifications(@AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<?> getUserNotifications(@AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             List<NotificationResponse> notifications = notificationService.getUserNotifications(currentUser.getId());
             return ResponseEntity.ok(notifications);
@@ -33,7 +34,7 @@ public class NotificationController {
     
     @GetMapping("/unread")
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
-    public ResponseEntity<?> getUnreadNotifications(@AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<?> getUnreadNotifications(@AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             List<NotificationResponse> notifications = notificationService.getUnreadNotifications(currentUser.getId());
             return ResponseEntity.ok(notifications);
@@ -44,7 +45,7 @@ public class NotificationController {
     
     @GetMapping("/count")
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
-    public ResponseEntity<?> getUnreadCount(@AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<?> getUnreadCount(@AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             Long count = notificationService.getUnreadCount(currentUser.getId());
             return ResponseEntity.ok(new CountResponse(count));
@@ -55,7 +56,7 @@ public class NotificationController {
     
     @GetMapping("/type/{type}")
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
-    public ResponseEntity<?> getNotificationsByType(@PathVariable String type, @AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<?> getNotificationsByType(@PathVariable String type, @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             List<NotificationResponse> notifications = notificationService.getNotificationsByType(currentUser.getId(), type);
             return ResponseEntity.ok(notifications);
@@ -66,7 +67,7 @@ public class NotificationController {
     
     @PatchMapping("/{notificationId}/read")
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
-    public ResponseEntity<?> markAsRead(@PathVariable Long notificationId, @AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<?> markAsRead(@PathVariable @NonNull Long notificationId, @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             NotificationResponse response = notificationService.markAsRead(notificationId, currentUser.getId());
             return ResponseEntity.ok(response);
@@ -77,7 +78,7 @@ public class NotificationController {
     
     @PatchMapping("/read-all")
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
-    public ResponseEntity<?> markAllAsRead(@AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<?> markAllAsRead(@AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             notificationService.markAllAsRead(currentUser.getId());
             return ResponseEntity.ok(new MessageResponse("Todas las notificaciones marcadas como leídas"));
@@ -88,7 +89,7 @@ public class NotificationController {
     
     @DeleteMapping("/cleanup/{daysOld}")
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
-    public ResponseEntity<?> deleteOldNotifications(@PathVariable int daysOld, @AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<?> deleteOldNotifications(@PathVariable int daysOld, @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             notificationService.deleteOldNotifications(currentUser.getId(), daysOld);
             return ResponseEntity.ok(new MessageResponse("Notificaciones antiguas eliminadas exitosamente"));
@@ -99,7 +100,7 @@ public class NotificationController {
     
     @DeleteMapping("/{notificationId}")
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
-    public ResponseEntity<?> deleteNotification(@PathVariable Long notificationId, @AuthenticationPrincipal User currentUser) {
+    public ResponseEntity<?> deleteNotification(@PathVariable @NonNull Long notificationId, @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             notificationService.deleteNotification(notificationId, currentUser.getId());
             return ResponseEntity.ok(new MessageResponse("Notificación eliminada exitosamente"));

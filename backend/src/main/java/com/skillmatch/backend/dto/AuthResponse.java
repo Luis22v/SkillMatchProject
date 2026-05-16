@@ -9,12 +9,13 @@ public class AuthResponse {
 
     private String token;
     private String type = "Bearer";
-    private Long id; // userId for backward compatibility
+    private Long id;
     private Long companyId;
     private String email;
     private String firstName;
     private String lastName;
     private String role;
+    private Long expiresAt;
 
     public AuthResponse(String token, Long userId, Long companyId, String email,
                         String firstName, String lastName, String role) {

@@ -1,7 +1,6 @@
-// Script para la página de conexiones
+﻿// Script para la página de conexiones
 
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Iniciando página de conexiones...');
 
     const token = localStorage.getItem('token');
     if (!token) {
@@ -78,7 +77,6 @@ async function loadMyConnections() {
             container.innerHTML = '<div class="error-message">Error al cargar conexiones</div>';
         }
     } catch (error) {
-        console.error('❌ Error cargando conexiones:', error);
         container.innerHTML = '<div class="error-message">Error al cargar conexiones</div>';
     }
 }
@@ -136,7 +134,6 @@ async function loadPendingRequests() {
             container.innerHTML = '<div class="error-message">Error al cargar solicitudes</div>';
         }
     } catch (error) {
-        console.error('❌ Error cargando solicitudes:', error);
         container.innerHTML = '<div class="error-message">Error al cargar solicitudes</div>';
     }
 }
@@ -188,7 +185,6 @@ async function loadSuggestions() {
             container.innerHTML = '<div class="error-message">Error al cargar sugerencias</div>';
         }
     } catch (error) {
-        console.error('❌ Error cargando sugerencias:', error);
         container.innerHTML = '<div class="error-message">Error al cargar sugerencias</div>';
     }
 }
@@ -239,7 +235,6 @@ async function sendConnectionRequest(userId) {
             showToast(err.message || 'Error al enviar solicitud', 'error');
         }
     } catch (error) {
-        console.error('❌ Error:', error);
         showToast('Error al enviar solicitud', 'error');
     }
 }
@@ -255,7 +250,6 @@ async function acceptConnection(connectionId) {
             showToast('Error al aceptar conexión', 'error');
         }
     } catch (error) {
-        console.error('❌ Error:', error);
         showToast('Error al aceptar conexión', 'error');
     }
 }
@@ -270,7 +264,6 @@ async function rejectConnection(connectionId) {
             showToast('Error al rechazar solicitud', 'error');
         }
     } catch (error) {
-        console.error('❌ Error:', error);
         showToast('Error al rechazar solicitud', 'error');
     }
 }

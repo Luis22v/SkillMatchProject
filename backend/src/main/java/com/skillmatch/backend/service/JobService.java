@@ -4,14 +4,17 @@ import com.skillmatch.backend.dto.JobRequest;
 import com.skillmatch.backend.dto.JobResponse;
 import com.skillmatch.backend.model.Company;
 import com.skillmatch.backend.model.Job;
+import com.skillmatch.backend.model.JobStatus;
 import com.skillmatch.backend.repository.CompanyRepository;
 import com.skillmatch.backend.repository.JobRepository;
+import org.springframework.lang.NonNull;
+import org.springframework.security.access.AccessDeniedException;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,43 +47,44 @@ public class JobService {
 
         Job job = buildJobFromRequest(new Job(), request);
         job.setCompany(company);
-        job.setStatus("abierta");
+        job.setStatus(JobStatus.ABIERTA);
         job.setActive(true);
 
         return mapToResponse(jobRepository.save(job));
     }
 
     @Transactional
-    public JobResponse updateJob(Long id, JobRequest request) {
+    public JobResponse updateJob(@NonNull Long id, JobRequest request, @NonNull Long requesterId) {
         Job job = findJobOrThrow(id);
+        verifyOwnership(job, requesterId);
         validateSalaryRange(request);
         buildJobFromRequest(job, request);
         return mapToResponse(jobRepository.save(job));
     }
 
     @Transactional
-    public JobResponse changeStatus(Long id, String status) {
+    public JobResponse changeStatus(@NonNull Long id, String status, @NonNull Long requesterId) {
         Job job = findJobOrThrow(id);
-        if (!List.of("abierta", "cerrada", "pausada").contains(status)) {
-            throw new RuntimeException("Estado inválido: " + status);
-        }
-        job.setStatus(status);
-        job.setActive(!"cerrada".equalsIgnoreCase(status));
+        verifyOwnership(job, requesterId);
+        JobStatus jobStatus = JobStatus.fromValue(status);
+        job.setStatus(jobStatus);
+        job.setActive(jobStatus != JobStatus.CERRADA);
         return mapToResponse(jobRepository.save(job));
     }
 
     @Transactional
-    public void deleteJob(Long id) {
+    public void deleteJob(@NonNull Long id, @NonNull Long requesterId) {
         Job job = findJobOrThrow(id);
+        verifyOwnership(job, requesterId);
         job.setActive(false);
-        job.setStatus("cerrada");
+        job.setStatus(JobStatus.CERRADA);
         jobRepository.save(job);
     }
 
     // ─── Lectura paginada ─────────────────────────────────────────────────────
 
     @Transactional(readOnly = true)
-    public JobResponse getJobById(Long id) {
+    public JobResponse getJobById(@NonNull Long id) {
         return mapToResponse(findJobOrThrow(id));
     }
 
@@ -120,10 +124,20 @@ public class JobService {
 
     /** Jobs de una empresa — lista completa para el dashboard interno. */
     @Transactional(readOnly = true)
-    public List<JobResponse> getJobsByCompany(Long companyId) {
+    public List<JobResponse> getJobsByCompany(@NonNull Long companyId) {
         return jobRepository.findByCompanyId(companyId).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public long countJobsByCompany(@NonNull Long companyId) {
+        return jobRepository.countByCompanyId(companyId);
+    }
+
+    @Transactional(readOnly = true)
+    public long countActiveJobsByCompany(@NonNull Long companyId) {
+        return jobRepository.countActiveByCompanyId(companyId);
     }
 
     // ─── Scheduler ────────────────────────────────────────────────────────────
@@ -140,7 +154,7 @@ public class JobService {
         if (expired.isEmpty()) return;
 
         expired.forEach(job -> {
-            job.setStatus("cerrada");
+            job.setStatus(JobStatus.CERRADA);
             job.setActive(false);
         });
         jobRepository.saveAll(expired);
@@ -149,10 +163,18 @@ public class JobService {
 
     // ─── Helpers privados ─────────────────────────────────────────────────────
 
-    private Job findJobOrThrow(Long id) {
+    private void verifyOwnership(Job job, Long requesterId) {
+        Company company = job.getCompany();
+        if (company == null || company.getUser() == null
+                || !requesterId.equals(company.getUser().getId())) {
+            throw new AccessDeniedException("No tienes permiso para modificar esta oferta");
+        }
+    }
+
+    private @NonNull Job findJobOrThrow(Long id) {
         if (id == null) throw new RuntimeException("El ID del job no puede ser nulo");
-        return jobRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Job no encontrado con ID: " + id));
+        return Objects.requireNonNull(jobRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Job no encontrado con ID: " + id)));
     }
 
     private void validateSalaryRange(JobRequest request) {
@@ -199,7 +221,7 @@ public class JobService {
         response.setResponsibilities(job.getResponsibilities());
         response.setSkills(job.getSkills());
         response.setBenefits(job.getBenefits());
-        response.setStatus(job.getStatus());
+        response.setStatus(job.getStatus().getValue());
         response.setPostedDate(job.getPostedDate());
         response.setExpirationDate(job.getExpirationDate());
         response.setActive(job.getActive());

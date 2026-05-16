@@ -1,4 +1,4 @@
-// Script para la página de perfil de usuario con conexión al backend
+﻿// Script para la página de perfil de usuario con conexión al backend
 
 let currentUserProfile = {};
 
@@ -19,7 +19,6 @@ function getUserData() {
     
     // Si hay un ID en la URL, devolver un objeto con ese ID (cargar desde backend)
     if (userIdFromUrl) {
-        console.log('👀 Visualizando perfil de usuario ID:', userIdFromUrl);
         return { id: parseInt(userIdFromUrl), isOtherUser: true };
     }
     
@@ -56,7 +55,6 @@ async function loadUserProfile() {
     const user = getUserData();
     if (!user) return;
 
-    console.log('📋 Cargando perfil del usuario ID:', user.id);
 
     try {
         // Cargar información del perfil
@@ -64,7 +62,6 @@ async function loadUserProfile() {
 
         if (response.ok) {
             const profileData = await response.json();
-            console.log('✅ Perfil cargado:', profileData);
             currentUserProfile = { ...profileData, isOtherUser: user.isOtherUser };
             displayUserProfile(currentUserProfile);
             
@@ -73,18 +70,15 @@ async function loadUserProfile() {
                 hideEditButtons();
             }
         } else {
-            console.warn('⚠️ No se pudo cargar perfil del backend, usando datos de localStorage');
             displayUserProfile(user);
         }
     } catch (error) {
-        console.error('❌ Error cargando perfil:', error);
         displayUserProfile(user);
     }
 }
 
 // Ocultar botones de edición cuando se visualiza el perfil de otro usuario
 function hideEditButtons() {
-    console.log('🔒 Ocultando controles de edición (perfil de otro usuario)');
     
     // Ocultar todos los botones de edición
     const editButtons = document.querySelectorAll('.btn-edit, .edit-btn, .add-btn, button[onclick*="edit"], button[onclick*="add"]');
@@ -100,7 +94,6 @@ function hideEditButtons() {
     const profileProgress = document.querySelector('.profile-progress');
     if (profileProgress) profileProgress.style.display = 'none';
     
-    console.log('✅ Controles de edición ocultados');
 }
 
 // Mostrar información del perfil
@@ -123,7 +116,6 @@ async function loadUserStatistics(userId) {
 
         if (response.ok) {
             const stats = await response.json();
-            console.log('✅ Estadísticas cargadas:', stats);
             
             document.getElementById('profileViews').textContent = stats.profileViews || 0;
             document.getElementById('applicationsCount').textContent = stats.applicationsCount || 0;
@@ -134,13 +126,11 @@ async function loadUserStatistics(userId) {
             document.getElementById('profileProgress').style.width = percentage + '%';
             document.getElementById('progressPercentage').textContent = percentage;
         } else {
-            console.warn('⚠️ No se pudieron cargar estadísticas, usando valores por defecto');
             document.getElementById('profileViews').textContent = '0';
             document.getElementById('applicationsCount').textContent = '0';
             document.getElementById('matchRate').textContent = '50%';
         }
     } catch (error) {
-        console.error('❌ Error cargando estadísticas:', error);
     }
 }
 
@@ -209,7 +199,6 @@ async function loadUserSkills() {
             displaySkills(defaultSkills.map(name => ({ name })));
         }
     } catch (error) {
-        console.error('Error cargando habilidades:', error);
         skillsContainer.innerHTML = '<p class="error-text">Error cargando habilidades</p>';
     }
 }
@@ -267,7 +256,6 @@ async function addSkill(event) {
     const skillName = document.getElementById('skillName').value.trim();
     const skillLevel = document.getElementById('skillLevel').value;
 
-    console.log('📤 Agregando skill:', { name: skillName, level: skillLevel });
 
     try {
         const response = await fetchWithAuth(`${API_BASE_URL}/users/${user.id}/skills`, {
@@ -280,17 +268,14 @@ async function addSkill(event) {
         
         if (response.ok) {
             const result = await response.json();
-            console.log('✅ Skill agregada:', result);
             alert('¡Habilidad agregada exitosamente!');
             closeAddSkillModal();
             loadUserSkills(); // Recargar skills
         } else {
             const error = await response.json();
-            console.error('❌ Error agregando skill:', error);
             alert(error.message || 'Error al agregar la habilidad');
         }
     } catch (error) {
-        console.error('❌ Error en la solicitud:', error);
         alert('Error al conectar con el servidor');
     }
 }
@@ -304,7 +289,6 @@ async function deleteSkill(skillId) {
         return;
     }
     
-    console.log('🗑️ Eliminando skill ID:', skillId);
 
     try {
         const response = await fetchWithAuth(`${API_BASE_URL}/users/${user.id}/skills/${skillId}`, {
@@ -312,16 +296,13 @@ async function deleteSkill(skillId) {
         });
         
         if (response.ok) {
-            console.log('✅ Skill eliminada');
             alert('Habilidad eliminada exitosamente');
             loadUserSkills(); // Recargar skills
         } else {
             const error = await response.json();
-            console.error('❌ Error eliminando skill:', error);
             alert(error.message || 'Error al eliminar la habilidad');
         }
     } catch (error) {
-        console.error('❌ Error en la solicitud:', error);
         alert('Error al conectar con el servidor');
     }
 }
@@ -345,7 +326,6 @@ async function loadUserExperiences() {
             container.innerHTML = '<p class="empty-text">No se pudieron cargar las experiencias</p>';
         }
     } catch (error) {
-        console.error('Error cargando experiencias:', error);
         container.innerHTML = '<p class="error-text">Error cargando experiencias</p>';
     }
 }
@@ -413,7 +393,6 @@ async function addExperience(event) {
         description: document.getElementById('expDescription').value
     };
     
-    console.log('📤 Agregando experiencia:', data);
     
     try {
         const response = await fetchWithAuth(`${API_BASE_URL}/users/${user.id}/experiences`, {
@@ -422,17 +401,14 @@ async function addExperience(event) {
         });
 
         if (response.ok) {
-            console.log('✅ Experiencia agregada');
             alert('¡Experiencia agregada exitosamente!');
             closeAddExperienceModal();
             loadUserExperiences();
         } else {
             const error = await response.json();
-            console.error('❌ Error:', error);
             alert(error.message || 'Error al agregar la experiencia');
         }
     } catch (error) {
-        console.error('❌ Error en la solicitud:', error);
         alert('Error al conectar con el servidor');
     }
 }
@@ -459,7 +435,6 @@ async function deleteExperience(expId) {
             alert(error.message || 'Error al eliminar la experiencia');
         }
     } catch (error) {
-        console.error('Error:', error);
         alert('Error al conectar con el servidor');
     }
 }
@@ -483,7 +458,6 @@ async function loadUserEducations() {
             container.innerHTML = '<p class="empty-text">No se pudo cargar la educación</p>';
         }
     } catch (error) {
-        console.error('Error cargando educación:', error);
         container.innerHTML = '<p class="error-text">Error cargando educación</p>';
     }
 }
@@ -551,7 +525,6 @@ async function addEducation(event) {
         description: document.getElementById('eduDescription').value
     };
 
-    console.log('📤 Agregando educación:', data);
 
     try {
         const response = await fetchWithAuth(`${API_BASE_URL}/users/${user.id}/educations`, {
@@ -560,17 +533,14 @@ async function addEducation(event) {
         });
         
         if (response.ok) {
-            console.log('✅ Educación agregada');
             alert('¡Educación agregada exitosamente!');
             closeAddEducationModal();
             loadUserEducations();
         } else {
             const error = await response.json();
-            console.error('❌ Error:', error);
             alert(error.message || 'Error al agregar la educación');
         }
     } catch (error) {
-        console.error('❌ Error en la solicitud:', error);
         alert('Error al conectar con el servidor');
     }
 }
@@ -597,7 +567,6 @@ async function deleteEducation(eduId) {
             alert(error.message || 'Error al eliminar la educación');
         }
     } catch (error) {
-        console.error('Error:', error);
         alert('Error al conectar con el servidor');
     }
 }
@@ -615,7 +584,6 @@ async function loadRecommendedJobs() {
 
         if (response.ok) {
             let jobs = await response.json();
-            console.log('✅ Oportunidades cargadas:', jobs);
             
             // Limitar a 5 trabajos y calcular matchScore simulado
             jobs = jobs.slice(0, 5).map(job => ({
@@ -628,7 +596,6 @@ async function loadRecommendedJobs() {
             jobsContainer.innerHTML = '<p class="empty-text">No hay oportunidades disponibles en este momento</p>';
         }
     } catch (error) {
-        console.error('❌ Error cargando oportunidades:', error);
         jobsContainer.innerHTML = '<p class="error-text">Error cargando oportunidades</p>';
     }
 }
@@ -689,7 +656,6 @@ async function applyToJob(jobId) {
             alert(error.message || 'Ya has aplicado a esta oferta o ocurrió un error');
         }
     } catch (error) {
-        console.error('❌ Error aplicando:', error);
         alert('Error al enviar la aplicación. Intenta nuevamente.');
     }
 }
@@ -707,7 +673,6 @@ async function loadInterestedCompanies() {
 
         if (response.ok) {
             const applications = await response.json();
-            console.log('✅ Aplicaciones cargadas:', applications);
             
             // Extraer empresas únicas de las aplicaciones
             const companiesMap = new Map();
@@ -754,7 +719,6 @@ async function loadInterestedCompanies() {
             companiesContainer.innerHTML = '<p class="empty-text">No se pudieron cargar las empresas</p>';
         }
     } catch (error) {
-        console.error('❌ Error cargando empresas:', error);
         companiesContainer.innerHTML = '<p class="error-text">Error cargando empresas</p>';
     }
 }
@@ -781,7 +745,6 @@ function openEditModal() {
         document.getElementById('editProfileModal').style.display = 'flex';
     })
     .catch(error => {
-        console.error('Error cargando datos:', error);
         alert('Error al cargar los datos del perfil');
     });
 }
@@ -837,7 +800,6 @@ async function updateProfile(formData) {
             alert('❌ Error: ' + (error.message || 'No se pudo actualizar el perfil'));
         }
     } catch (error) {
-        console.error('Error:', error);
         alert('❌ Error al actualizar el perfil');
     }
 }
@@ -862,7 +824,6 @@ async function updateProfileImage(imageUrl) {
             alert('❌ Error: ' + (error.message || 'No se pudo actualizar la foto'));
         }
     } catch (error) {
-        console.error('Error:', error);
         alert('❌ Error al actualizar la foto de perfil');
     }
 }
@@ -889,14 +850,12 @@ async function updateCoverImage(imageUrl) {
             alert('❌ Error: ' + (error.message || 'No se pudo actualizar la portada'));
         }
     } catch (error) {
-        console.error('Error:', error);
         alert('❌ Error al actualizar la portada');
     }
 }
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🚀 Iniciando perfil de usuario...');
     
     // Cargar datos del perfil
     loadUserProfile();
@@ -1042,5 +1001,4 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    console.log('Perfil de usuario cargado correctamente');
 });
