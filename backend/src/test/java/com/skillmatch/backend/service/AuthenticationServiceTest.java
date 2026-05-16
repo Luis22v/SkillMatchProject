@@ -3,7 +3,6 @@ package com.skillmatch.backend.service;
 import com.skillmatch.backend.dto.AuthResponse;
 import com.skillmatch.backend.dto.LoginRequest;
 import com.skillmatch.backend.exception.ResourceNotFoundException;
-import com.skillmatch.backend.model.Role;
 import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.repository.CompanyRepository;
 import com.skillmatch.backend.repository.UserRepository;
@@ -20,8 +19,8 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -44,15 +43,12 @@ class AuthenticationServiceTest {
 
     @BeforeEach
     void setUp() {
-        Role role = new Role();
-        role.setName("USER");
-
         testUser = new User();
-        testUser.setId(1L);
+        testUser.setId("test-user-id");
         testUser.setEmail("test@skillmatch.com");
         testUser.setFirstName("Ana");
         testUser.setLastName("García");
-        testUser.setRoles(Set.of(role));
+        testUser.setRoles(List.of("USER"));
 
         mockAuth = mock(Authentication.class);
     }
@@ -70,7 +66,7 @@ class AuthenticationServiceTest {
         assertThat(result.getToken()).isEqualTo("mock.jwt.token");
         assertThat(result.getEmail()).isEqualTo("test@skillmatch.com");
         assertThat(result.getRole()).isEqualTo("USER");
-        assertThat(result.getId()).isEqualTo(1L);
+        assertThat(result.getId()).isEqualTo("test-user-id");
     }
 
     @Test
@@ -96,20 +92,18 @@ class AuthenticationServiceTest {
 
     @Test
     void login_empresaRole_includesCompanyId() {
-        Role empresaRole = new Role();
-        empresaRole.setName("EMPRESA");
-        testUser.setRoles(Set.of(empresaRole));
+        testUser.setRoles(List.of("EMPRESA"));
 
         LoginRequest request = new LoginRequest("test@skillmatch.com", "pass");
         when(authenticationManager.authenticate(any())).thenReturn(mockAuth);
         when(tokenProvider.generateToken(mockAuth)).thenReturn("tok");
         when(userRepository.findByEmail("test@skillmatch.com")).thenReturn(Optional.of(testUser));
-        when(companyRepository.findByUserId(1L)).thenReturn(Optional.empty());
+        when(companyRepository.findByUserId("test-user-id")).thenReturn(Optional.empty());
 
         AuthResponse result = authenticationService.login(request);
 
         assertThat(result.getRole()).isEqualTo("EMPRESA");
-        verify(companyRepository).findByUserId(1L);
+        verify(companyRepository).findByUserId("test-user-id");
     }
 
     @Test

@@ -11,10 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Objects;
 
 import java.util.List;
 
@@ -30,8 +27,7 @@ public class EducationController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<EducationResponse>> getUserEducations(
             @PathVariable(required = false) String userId) {
-        Long targetUserId = resolveTargetUserId(userId, extractCurrentUserId());
-        return ResponseEntity.ok(educationService.getUserEducations(targetUserId));
+        return ResponseEntity.ok(educationService.getUserEducations(resolveUserId(userId)));
     }
 
     @PostMapping
@@ -39,18 +35,15 @@ public class EducationController {
     public ResponseEntity<?> addEducation(
             @PathVariable(required = false) String userId,
             @Valid @RequestBody EducationRequest request) {
-
-        Long currentUserId = extractCurrentUserId();
-        Long targetUserId = resolveTargetUserId(userId, currentUserId);
-
+        String currentUserId = currentUserId();
+        String targetUserId = resolveUserId(userId, currentUserId);
         if (!currentUserId.equals(targetUserId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new MessageResponse("No tienes permiso para agregar educación a este perfil"));
         }
-
         try {
-            EducationResponse education = educationService.addEducation(Objects.requireNonNull(targetUserId), request);
-            return ResponseEntity.status(HttpStatus.CREATED).body(education);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(educationService.addEducation(targetUserId, request));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
         }
@@ -60,20 +53,16 @@ public class EducationController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> updateEducation(
             @PathVariable(required = false) String userId,
-            @PathVariable @NonNull Long educationId,
+            @PathVariable String educationId,
             @Valid @RequestBody EducationRequest request) {
-
-        Long currentUserId = extractCurrentUserId();
-        Long targetUserId = resolveTargetUserId(userId, currentUserId);
-
+        String currentUserId = currentUserId();
+        String targetUserId = resolveUserId(userId, currentUserId);
         if (!currentUserId.equals(targetUserId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new MessageResponse("No tienes permiso para actualizar esta educación"));
         }
-
         try {
-            EducationResponse updated = educationService.updateEducation(targetUserId, educationId, request);
-            return ResponseEntity.ok(updated);
+            return ResponseEntity.ok(educationService.updateEducation(targetUserId, educationId, request));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
         }
@@ -83,16 +72,13 @@ public class EducationController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> deleteEducation(
             @PathVariable(required = false) String userId,
-            @PathVariable @NonNull Long educationId) {
-
-        Long currentUserId = extractCurrentUserId();
-        Long targetUserId = resolveTargetUserId(userId, currentUserId);
-
+            @PathVariable String educationId) {
+        String currentUserId = currentUserId();
+        String targetUserId = resolveUserId(userId, currentUserId);
         if (!currentUserId.equals(targetUserId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new MessageResponse("No tienes permiso para eliminar esta educación"));
         }
-
         try {
             educationService.deleteEducation(targetUserId, educationId);
             return ResponseEntity.ok(new MessageResponse("Educación eliminada exitosamente"));
@@ -101,13 +87,15 @@ public class EducationController {
         }
     }
 
-    private Long extractCurrentUserId() {
+    private String currentUserId() {
         return ((UserDetailsImpl) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getId();
     }
 
-    private Long resolveTargetUserId(String pathUserId, Long fallbackId) {
-        return (pathUserId != null && !pathUserId.equals("undefined"))
-                ? Long.parseLong(pathUserId)
-                : fallbackId;
+    private String resolveUserId(String pathUserId) {
+        return resolveUserId(pathUserId, currentUserId());
+    }
+
+    private String resolveUserId(String pathUserId, String fallback) {
+        return (pathUserId != null && !pathUserId.equals("undefined")) ? pathUserId : fallback;
     }
 }

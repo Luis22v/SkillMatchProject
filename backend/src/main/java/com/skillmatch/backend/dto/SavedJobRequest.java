@@ -1,6 +1,6 @@
 package com.skillmatch.backend.dto;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -9,8 +9,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SavedJobRequest {
-    @NotNull(message = "Job ID es requerido")
-    private Long jobId;
-    
+    @NotBlank(message = "Job ID es requerido")
+    private String jobId;
+
     private String notes;
 }

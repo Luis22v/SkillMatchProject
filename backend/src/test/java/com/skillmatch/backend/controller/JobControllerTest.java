@@ -43,7 +43,7 @@ class JobControllerTest {
     @Test
     void getAllActiveJobs_returnsPageWithOkStatus() throws Exception {
         JobResponse job = new JobResponse();
-        job.setId(1L);
+        job.setId("job-1");
         job.setTitle("Backend Developer");
         Page<JobResponse> page = new PageImpl<>(List.of(job));
 
@@ -68,7 +68,7 @@ class JobControllerTest {
     @Test
     void getRecentJobs_returnsList() throws Exception {
         JobResponse job = new JobResponse();
-        job.setId(2L);
+        job.setId("job-2");
         job.setTitle("Frontend Developer");
         when(jobService.getRecentJobs()).thenReturn(List.of(job));
 
@@ -80,9 +80,9 @@ class JobControllerTest {
     @Test
     void getJobsByCompany_returnsListForCompany() throws Exception {
         JobResponse job = new JobResponse();
-        job.setId(3L);
+        job.setId("job-3");
         job.setTitle("Data Engineer");
-        when(jobService.getJobsByCompany(5L)).thenReturn(List.of(job));
+        when(jobService.getJobsByCompany("5")).thenReturn(List.of(job));
 
         mockMvc.perform(get("/api/jobs/company/5"))
                 .andExpect(status().isOk())
@@ -91,7 +91,7 @@ class JobControllerTest {
 
     @Test
     void getJobById_notFound_returns404() throws Exception {
-        when(jobService.getJobById(99L))
+        when(jobService.getJobById("99"))
                 .thenThrow(new ResourceNotFoundException("Job no encontrado con ID: 99"));
 
         mockMvc.perform(get("/api/jobs/99"))

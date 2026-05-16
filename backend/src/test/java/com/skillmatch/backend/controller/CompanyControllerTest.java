@@ -43,20 +43,20 @@ class CompanyControllerTest {
     @Test
     void getCompany_existingId_returnsCompany() throws Exception {
         CompanyResponse company = new CompanyResponse();
-        company.setId(1L);
+        company.setId("company-1");
         company.setName("TechCorp");
 
-        when(companyService.getCompanyById(1L)).thenReturn(company);
+        when(companyService.getCompanyById("1")).thenReturn(company);
 
         mockMvc.perform(get("/api/companies/1").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.id").value("company-1"))
                 .andExpect(jsonPath("$.name").value("TechCorp"));
     }
 
     @Test
     void getCompany_notFound_returns404() throws Exception {
-        when(companyService.getCompanyById(99L))
+        when(companyService.getCompanyById("99"))
                 .thenThrow(new ResourceNotFoundException("Empresa no encontrada con ID: 99"));
 
         mockMvc.perform(get("/api/companies/99"))
@@ -66,11 +66,11 @@ class CompanyControllerTest {
     @Test
     void getAllCompanies_noFilter_returnsPage() throws Exception {
         CompanyResponse c1 = new CompanyResponse();
-        c1.setId(1L);
+        c1.setId("company-1");
         c1.setName("Alpha Corp");
 
         CompanyResponse c2 = new CompanyResponse();
-        c2.setId(2L);
+        c2.setId("company-2");
         c2.setName("Beta S.A.S.");
 
         Page<CompanyResponse> page = new PageImpl<>(new ArrayList<>(List.of(c1, c2)));
@@ -95,7 +95,7 @@ class CompanyControllerTest {
     @Test
     void searchCompanies_returnsMatchingList() throws Exception {
         CompanyResponse c = new CompanyResponse();
-        c.setId(3L);
+        c.setId("company-3");
         c.setName("SkillMatch SAS");
 
         when(companyService.searchCompanies("SkillMatch")).thenReturn(List.of(c));

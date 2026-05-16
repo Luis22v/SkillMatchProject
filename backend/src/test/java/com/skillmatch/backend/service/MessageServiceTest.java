@@ -7,6 +7,7 @@ import com.skillmatch.backend.exception.UnauthorizedException;
 import com.skillmatch.backend.model.Message;
 import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.repository.MessageRepository;
+import com.skillmatch.backend.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,14 +15,14 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.mongodb.core.MongoTemplate;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @SuppressWarnings("null")
@@ -29,8 +30,9 @@ import static org.mockito.Mockito.*;
 class MessageServiceTest {
 
     @Mock private MessageRepository messageRepository;
-    @Mock private UserService userService;
+    @Mock private UserRepository userRepository;
     @Mock private NotificationService notificationService;
+    @Mock private MongoTemplate mongoTemplate;
 
     @InjectMocks
     private MessageService messageService;
@@ -41,13 +43,13 @@ class MessageServiceTest {
     @BeforeEach
     void setUp() {
         sender = new User();
-        sender.setId(1L);
+        sender.setId("user-id-1");
         sender.setFirstName("Ana");
         sender.setLastName("García");
         sender.setEmail("ana@test.com");
 
         receiver = new User();
-        receiver.setId(2L);
+        receiver.setId("user-id-2");
         receiver.setFirstName("Luis");
         receiver.setLastName("Martínez");
         receiver.setEmail("luis@test.com");
@@ -57,13 +59,13 @@ class MessageServiceTest {
 
     @Test
     void sendMessage_happyPath_savesAndNotifies() {
-        MessageRequest req = new MessageRequest(2L, "Hola!", null);
-        when(userService.getUserById(1L)).thenReturn(sender);
-        when(userService.getUserById(2L)).thenReturn(receiver);
-        Message saved = buildMessage(10L, sender, receiver);
+        MessageRequest req = new MessageRequest("user-id-2", "Hola!", null);
+        when(userRepository.findById("user-id-1")).thenReturn(Optional.of(sender));
+        when(userRepository.findById("user-id-2")).thenReturn(Optional.of(receiver));
+        Message saved = buildMessage("msg-id-10", sender, receiver);
         when(messageRepository.save(any(Message.class))).thenReturn(saved);
 
-        ChatMessageResponse response = messageService.sendMessage(1L, req);
+        ChatMessageResponse response = messageService.sendMessage("user-id-1", req);
 
         ArgumentCaptor<Message> captor = ArgumentCaptor.forClass(Message.class);
         verify(messageRepository).save(captor.capture());
@@ -72,17 +74,17 @@ class MessageServiceTest {
         assertThat(captor.getValue().getDeletedByReceiver()).isFalse();
 
         verify(notificationService).createMessageNotification(
-                eq(receiver.getId()), eq(sender.getId()), eq(saved.getId()));
+                eq("user-id-2"), eq("user-id-1"), eq("msg-id-10"));
 
-        assertThat(response.getSenderId()).isEqualTo(1L);
-        assertThat(response.getReceiverId()).isEqualTo(2L);
+        assertThat(response.getSenderId()).isEqualTo("user-id-1");
+        assertThat(response.getReceiverId()).isEqualTo("user-id-2");
     }
 
     @Test
     void sendMessage_toSelf_throwsIllegalArgument() {
-        MessageRequest req = new MessageRequest(1L, "Hola!", null);
+        MessageRequest req = new MessageRequest("user-id-1", "Hola!", null);
 
-        assertThatThrownBy(() -> messageService.sendMessage(1L, req))
+        assertThatThrownBy(() -> messageService.sendMessage("user-id-1", req))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("ti mismo");
     }
@@ -90,40 +92,39 @@ class MessageServiceTest {
     @Test
     void sendMessage_nullReceiverId_throwsIllegalArgument() {
         MessageRequest req = new MessageRequest(null, "Hola!", null);
-        when(userService.getUserById(1L)).thenReturn(sender);
 
-        assertThatThrownBy(() -> messageService.sendMessage(1L, req))
+        assertThatThrownBy(() -> messageService.sendMessage("user-id-1", req))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("nulo");
     }
 
     @Test
     void sendMessage_senderNotFound_throwsResourceNotFound() {
-        MessageRequest req = new MessageRequest(2L, "Hola!", null);
-        when(userService.getUserById(1L)).thenThrow(new ResourceNotFoundException("Usuario no encontrado"));
+        MessageRequest req = new MessageRequest("user-id-2", "Hola!", null);
+        when(userRepository.findById("user-id-1")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> messageService.sendMessage(1L, req))
+        assertThatThrownBy(() -> messageService.sendMessage("user-id-1", req))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
     @Test
     void sendMessage_receiverNotFound_throwsResourceNotFound() {
-        MessageRequest req = new MessageRequest(2L, "Hola!", null);
-        when(userService.getUserById(1L)).thenReturn(sender);
-        when(userService.getUserById(2L)).thenThrow(new ResourceNotFoundException("Usuario no encontrado"));
+        MessageRequest req = new MessageRequest("user-id-2", "Hola!", null);
+        when(userRepository.findById("user-id-1")).thenReturn(Optional.of(sender));
+        when(userRepository.findById("user-id-2")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> messageService.sendMessage(1L, req))
+        assertThatThrownBy(() -> messageService.sendMessage("user-id-1", req))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
     @Test
     void sendMessage_noNotificationWhenSaveFails() {
-        MessageRequest req = new MessageRequest(2L, "Hola!", null);
-        when(userService.getUserById(1L)).thenReturn(sender);
-        when(userService.getUserById(2L)).thenReturn(receiver);
+        MessageRequest req = new MessageRequest("user-id-2", "Hola!", null);
+        when(userRepository.findById("user-id-1")).thenReturn(Optional.of(sender));
+        when(userRepository.findById("user-id-2")).thenReturn(Optional.of(receiver));
         when(messageRepository.save(any())).thenThrow(new RuntimeException("DB error"));
 
-        assertThatThrownBy(() -> messageService.sendMessage(1L, req))
+        assertThatThrownBy(() -> messageService.sendMessage("user-id-1", req))
                 .isInstanceOf(RuntimeException.class);
 
         verifyNoInteractions(notificationService);
@@ -133,34 +134,37 @@ class MessageServiceTest {
 
     @Test
     void getConversation_returnsMappedList() {
-        Message m1 = buildMessage(11L, sender, receiver);
-        Message m2 = buildMessage(12L, receiver, sender);
-        when(messageRepository.findConversationBetweenUsers(1L, 2L)).thenReturn(List.of(m1, m2));
+        Message m1 = buildMessage("msg-id-11", sender, receiver);
+        Message m2 = buildMessage("msg-id-12", receiver, sender);
+        when(mongoTemplate.find(any(), eq(Message.class))).thenReturn(List.of(m1, m2));
+        when(userRepository.findAllById(any())).thenReturn(List.of(sender, receiver));
 
-        List<ChatMessageResponse> result = messageService.getConversation(1L, 2L);
+        List<ChatMessageResponse> result = messageService.getConversation("user-id-1", "user-id-2");
 
         assertThat(result).hasSize(2);
-        assertThat(result.get(0).getId()).isEqualTo(11L);
-        assertThat(result.get(1).getId()).isEqualTo(12L);
+        assertThat(result.get(0).getId()).isEqualTo("msg-id-11");
+        assertThat(result.get(1).getId()).isEqualTo("msg-id-12");
     }
 
     @Test
     void getConversation_empty_returnsEmptyList() {
-        when(messageRepository.findConversationBetweenUsers(1L, 2L)).thenReturn(List.of());
+        when(mongoTemplate.find(any(), eq(Message.class))).thenReturn(List.of());
 
-        assertThat(messageService.getConversation(1L, 2L)).isEmpty();
+        assertThat(messageService.getConversation("user-id-1", "user-id-2")).isEmpty();
     }
 
     // ─── markAsRead ───────────────────────────────────────────────────────────
 
     @Test
     void markAsRead_happyPath_setsReadAndSaves() {
-        Message msg = buildMessage(10L, sender, receiver);
+        Message msg = buildMessage("msg-id-10", sender, receiver);
         msg.setIsRead(false);
-        when(messageRepository.findById(10L)).thenReturn(Optional.of(msg));
+        when(messageRepository.findById("msg-id-10")).thenReturn(Optional.of(msg));
         when(messageRepository.save(any(Message.class))).thenReturn(msg);
+        when(userRepository.findById("user-id-1")).thenReturn(Optional.of(sender));
+        when(userRepository.findById("user-id-2")).thenReturn(Optional.of(receiver));
 
-        messageService.markAsRead(10L, receiver.getId());
+        messageService.markAsRead("msg-id-10", "user-id-2");
 
         ArgumentCaptor<Message> captor = ArgumentCaptor.forClass(Message.class);
         verify(messageRepository).save(captor.capture());
@@ -170,35 +174,35 @@ class MessageServiceTest {
 
     @Test
     void markAsRead_alreadyRead_skipsUpdate() {
-        Message msg = buildMessage(10L, sender, receiver);
+        Message msg = buildMessage("msg-id-10", sender, receiver);
         msg.setIsRead(true);
-        when(messageRepository.findById(10L)).thenReturn(Optional.of(msg));
+        when(messageRepository.findById("msg-id-10")).thenReturn(Optional.of(msg));
 
-        messageService.markAsRead(10L, receiver.getId());
+        messageService.markAsRead("msg-id-10", "user-id-2");
 
         verify(messageRepository, never()).save(any());
     }
 
     @Test
     void markAsRead_notFound_throwsResourceNotFound() {
-        when(messageRepository.findById(99L)).thenReturn(Optional.empty());
+        when(messageRepository.findById("msg-id-99")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> messageService.markAsRead(99L, receiver.getId()))
+        assertThatThrownBy(() -> messageService.markAsRead("msg-id-99", "user-id-2"))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
     @Test
     void markAsRead_wrongUser_throwsUnauthorized() {
-        Message msg = buildMessage(10L, sender, receiver);
-        when(messageRepository.findById(10L)).thenReturn(Optional.of(msg));
+        Message msg = buildMessage("msg-id-10", sender, receiver);
+        when(messageRepository.findById("msg-id-10")).thenReturn(Optional.of(msg));
 
-        assertThatThrownBy(() -> messageService.markAsRead(10L, sender.getId()))
+        assertThatThrownBy(() -> messageService.markAsRead("msg-id-10", "user-id-1"))
                 .isInstanceOf(UnauthorizedException.class);
     }
 
     @Test
     void markAsRead_nullMessageId_throwsIllegalArgument() {
-        assertThatThrownBy(() -> messageService.markAsRead(null, receiver.getId()))
+        assertThatThrownBy(() -> messageService.markAsRead(null, "user-id-2"))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -206,11 +210,12 @@ class MessageServiceTest {
 
     @Test
     void markConversationAsRead_happyPath_setsIsReadAndSavesAll() {
-        Message m1 = buildMessage(11L, sender, receiver);
-        Message m2 = buildMessage(12L, sender, receiver);
-        when(messageRepository.findUnreadMessagesFromUser(2L, 1L)).thenReturn(List.of(m1, m2));
+        Message m1 = buildMessage("msg-id-11", sender, receiver);
+        Message m2 = buildMessage("msg-id-12", sender, receiver);
+        when(messageRepository.findBySenderIdAndReceiverIdAndIsReadFalseAndDeletedByReceiverFalse(
+                "user-id-2", "user-id-1")).thenReturn(List.of(m1, m2));
 
-        messageService.markConversationAsRead(2L, 1L);
+        messageService.markConversationAsRead("user-id-1", "user-id-2");
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<Message>> captor = ArgumentCaptor.forClass(List.class);
@@ -218,15 +223,16 @@ class MessageServiceTest {
 
         List<Message> saved = captor.getValue();
         assertThat(saved).hasSize(2);
-        assertThat(saved).allMatch(m -> m.getIsRead());
+        assertThat(saved).allMatch(Message::getIsRead);
         assertThat(saved).allMatch(m -> m.getReadAt() != null);
     }
 
     @Test
     void markConversationAsRead_emptyList_noSaveAll() {
-        when(messageRepository.findUnreadMessagesFromUser(2L, 1L)).thenReturn(List.of());
+        when(messageRepository.findBySenderIdAndReceiverIdAndIsReadFalseAndDeletedByReceiverFalse(
+                "user-id-2", "user-id-1")).thenReturn(List.of());
 
-        messageService.markConversationAsRead(2L, 1L);
+        messageService.markConversationAsRead("user-id-1", "user-id-2");
 
         verify(messageRepository, never()).saveAll(any());
     }
@@ -235,10 +241,10 @@ class MessageServiceTest {
 
     @Test
     void deleteMessage_bySender_setsSenderFlagAndSaves() {
-        Message msg = buildMessage(10L, sender, receiver);
-        when(messageRepository.findById(10L)).thenReturn(Optional.of(msg));
+        Message msg = buildMessage("msg-id-10", sender, receiver);
+        when(messageRepository.findById("msg-id-10")).thenReturn(Optional.of(msg));
 
-        messageService.deleteMessage(10L, sender.getId());
+        messageService.deleteMessage("msg-id-10", "user-id-1");
 
         ArgumentCaptor<Message> captor = ArgumentCaptor.forClass(Message.class);
         verify(messageRepository).save(captor.capture());
@@ -248,10 +254,10 @@ class MessageServiceTest {
 
     @Test
     void deleteMessage_byReceiver_setsReceiverFlagAndSaves() {
-        Message msg = buildMessage(10L, sender, receiver);
-        when(messageRepository.findById(10L)).thenReturn(Optional.of(msg));
+        Message msg = buildMessage("msg-id-10", sender, receiver);
+        when(messageRepository.findById("msg-id-10")).thenReturn(Optional.of(msg));
 
-        messageService.deleteMessage(10L, receiver.getId());
+        messageService.deleteMessage("msg-id-10", "user-id-2");
 
         ArgumentCaptor<Message> captor = ArgumentCaptor.forClass(Message.class);
         verify(messageRepository).save(captor.capture());
@@ -261,11 +267,11 @@ class MessageServiceTest {
 
     @Test
     void deleteMessage_bothDeleted_callsHardDelete() {
-        Message msg = buildMessage(10L, sender, receiver);
-        msg.setDeletedBySender(true);               // sender already deleted
-        when(messageRepository.findById(10L)).thenReturn(Optional.of(msg));
+        Message msg = buildMessage("msg-id-10", sender, receiver);
+        msg.setDeletedBySender(true);
+        when(messageRepository.findById("msg-id-10")).thenReturn(Optional.of(msg));
 
-        messageService.deleteMessage(10L, receiver.getId());   // receiver deletes → both true
+        messageService.deleteMessage("msg-id-10", "user-id-2");
 
         verify(messageRepository).delete(msg);
         verify(messageRepository, never()).save(any());
@@ -273,24 +279,24 @@ class MessageServiceTest {
 
     @Test
     void deleteMessage_thirdParty_throwsUnauthorized() {
-        Message msg = buildMessage(10L, sender, receiver);
-        when(messageRepository.findById(10L)).thenReturn(Optional.of(msg));
+        Message msg = buildMessage("msg-id-10", sender, receiver);
+        when(messageRepository.findById("msg-id-10")).thenReturn(Optional.of(msg));
 
-        assertThatThrownBy(() -> messageService.deleteMessage(10L, 99L))
+        assertThatThrownBy(() -> messageService.deleteMessage("msg-id-10", "user-id-99"))
                 .isInstanceOf(UnauthorizedException.class);
     }
 
     @Test
     void deleteMessage_notFound_throwsResourceNotFound() {
-        when(messageRepository.findById(99L)).thenReturn(Optional.empty());
+        when(messageRepository.findById("msg-id-99")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> messageService.deleteMessage(99L, sender.getId()))
+        assertThatThrownBy(() -> messageService.deleteMessage("msg-id-99", "user-id-1"))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
     @Test
     void deleteMessage_nullMessageId_throwsIllegalArgument() {
-        assertThatThrownBy(() -> messageService.deleteMessage(null, sender.getId()))
+        assertThatThrownBy(() -> messageService.deleteMessage(null, "user-id-1"))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -298,39 +304,42 @@ class MessageServiceTest {
 
     @Test
     void getUnreadCount_returnsCount() {
-        when(messageRepository.countUnreadMessagesByUserId(2L)).thenReturn(5L);
+        when(messageRepository.countByReceiverIdAndIsReadFalseAndDeletedByReceiverFalse("user-id-2"))
+                .thenReturn(5L);
 
-        assertThat(messageService.getUnreadCount(2L)).isEqualTo(5L);
+        assertThat(messageService.getUnreadCount("user-id-2")).isEqualTo(5L);
     }
 
     // ─── getUnreadCountFromUser ───────────────────────────────────────────────
 
     @Test
     void getUnreadCountFromUser_returnsCount() {
-        when(messageRepository.countUnreadMessagesFromUser(2L, 1L)).thenReturn(3L);
+        when(messageRepository.countBySenderIdAndReceiverIdAndIsReadFalseAndDeletedByReceiverFalse(
+                "user-id-2", "user-id-1")).thenReturn(3L);
 
-        assertThat(messageService.getUnreadCountFromUser(2L, 1L)).isEqualTo(3L);
+        assertThat(messageService.getUnreadCountFromUser("user-id-2", "user-id-1")).isEqualTo(3L);
     }
 
     // ─── getLastMessages ──────────────────────────────────────────────────────
 
     @Test
     void getLastMessages_returnsMappedList() {
-        Message m1 = buildMessage(11L, sender, receiver);
-        Message m2 = buildMessage(12L, receiver, sender);
-        when(messageRepository.findLastMessagesByUserId(1L)).thenReturn(List.of(m1, m2));
+        Message m1 = buildMessage("msg-id-11", sender, receiver);
+        Message m2 = buildMessage("msg-id-12", receiver, sender);
+        when(mongoTemplate.find(any(), eq(Message.class))).thenReturn(List.of(m1, m2));
+        when(userRepository.findAllById(any())).thenReturn(List.of(sender, receiver));
 
-        List<ChatMessageResponse> result = messageService.getLastMessages(1L);
+        List<ChatMessageResponse> result = messageService.getLastMessages("user-id-1");
 
         assertThat(result).hasSize(2);
-        assertThat(result.get(0).getId()).isEqualTo(11L);
+        assertThat(result.get(0).getId()).isEqualTo("msg-id-11");
     }
 
     @Test
     void getLastMessages_empty_returnsEmptyList() {
-        when(messageRepository.findLastMessagesByUserId(1L)).thenReturn(List.of());
+        when(mongoTemplate.find(any(), eq(Message.class))).thenReturn(List.of());
 
-        assertThat(messageService.getLastMessages(1L)).isEmpty();
+        assertThat(messageService.getLastMessages("user-id-1")).isEmpty();
     }
 
     // ─── getUnreadCountsByConversation ────────────────────────────────────────
@@ -338,32 +347,32 @@ class MessageServiceTest {
     @Test
     void getUnreadCountsByConversation_groupsBySenderId() {
         User senderB = new User();
-        senderB.setId(3L);
+        senderB.setId("user-id-3");
         senderB.setFirstName("Carlos");
         senderB.setLastName("López");
         senderB.setEmail("carlos@test.com");
 
-        Message m1 = buildMessage(11L, sender,  receiver);  // sender id=1
-        Message m2 = buildMessage(12L, sender,  receiver);  // sender id=1
-        Message m3 = buildMessage(13L, senderB, receiver);  // sender id=3
+        Message m1 = buildMessage("msg-id-11", sender, receiver);
+        Message m2 = buildMessage("msg-id-12", sender, receiver);
+        Message m3 = buildMessage("msg-id-13", senderB, receiver);
 
-        when(messageRepository.findUnreadMessagesByUserId(receiver.getId()))
+        when(messageRepository.findByReceiverIdAndIsReadFalseAndDeletedByReceiverFalse("user-id-2"))
                 .thenReturn(List.of(m1, m2, m3));
 
-        Map<Long, Long> result = messageService.getUnreadCountsByConversation(receiver.getId());
+        Map<String, Long> result = messageService.getUnreadCountsByConversation("user-id-2");
 
-        assertThat(result).containsEntry(1L, 2L)
-                          .containsEntry(3L, 1L)
+        assertThat(result).containsEntry("user-id-1", 2L)
+                          .containsEntry("user-id-3", 1L)
                           .hasSize(2);
     }
 
     // ─── Helper ───────────────────────────────────────────────────────────────
 
-    private Message buildMessage(Long id, User msgSender, User msgReceiver) {
+    private Message buildMessage(String id, User msgSender, User msgReceiver) {
         Message msg = new Message();
         msg.setId(id);
-        msg.setSender(msgSender);
-        msg.setReceiver(msgReceiver);
+        msg.setSenderId(msgSender.getId());
+        msg.setReceiverId(msgReceiver.getId());
         msg.setContent("Mensaje de prueba");
         msg.setIsRead(false);
         msg.setDeletedBySender(false);

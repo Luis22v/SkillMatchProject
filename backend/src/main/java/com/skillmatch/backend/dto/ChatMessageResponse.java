@@ -10,11 +10,11 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ChatMessageResponse {
-    private Long id;
-    private Long senderId;
+    private String id;
+    private String senderId;
     private String senderName;
     private String senderProfileImage;
-    private Long receiverId;
+    private String receiverId;
     private String receiverName;
     private String receiverProfileImage;
     private String content;

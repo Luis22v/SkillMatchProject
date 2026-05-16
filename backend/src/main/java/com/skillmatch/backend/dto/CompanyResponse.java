@@ -10,8 +10,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CompanyResponse {
-    
-    private Long id;
+
+    private String id;
     private String name;
     private String description;
     private String industry;
@@ -21,7 +21,7 @@ public class CompanyResponse {
     private String website;
     private String email;
     private String phone;
-    private Long userId;
+    private String userId;
     private Integer foundedYear;
     private String benefits;
     private Boolean isVerified;

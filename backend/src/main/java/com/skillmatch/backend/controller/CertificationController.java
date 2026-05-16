@@ -11,10 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Objects;
 
 import java.util.List;
 
@@ -30,8 +27,7 @@ public class CertificationController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<CertificationResponse>> getUserCertifications(
             @PathVariable(required = false) String userId) {
-        Long targetUserId = resolveTargetUserId(userId, extractCurrentUserId());
-        return ResponseEntity.ok(certificationService.getUserCertifications(targetUserId));
+        return ResponseEntity.ok(certificationService.getUserCertifications(resolveUserId(userId)));
     }
 
     @PostMapping
@@ -39,18 +35,15 @@ public class CertificationController {
     public ResponseEntity<?> addCertification(
             @PathVariable(required = false) String userId,
             @Valid @RequestBody CertificationRequest request) {
-
-        Long currentUserId = extractCurrentUserId();
-        Long targetUserId = resolveTargetUserId(userId, currentUserId);
-
+        String currentUserId = currentUserId();
+        String targetUserId = resolveUserId(userId, currentUserId);
         if (!currentUserId.equals(targetUserId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new MessageResponse("No tienes permiso para agregar certificación a este perfil"));
         }
-
         try {
-            CertificationResponse certification = certificationService.addCertification(Objects.requireNonNull(targetUserId), request);
-            return ResponseEntity.status(HttpStatus.CREATED).body(certification);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(certificationService.addCertification(targetUserId, request));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
         }
@@ -60,20 +53,16 @@ public class CertificationController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> updateCertification(
             @PathVariable(required = false) String userId,
-            @PathVariable @NonNull Long certificationId,
+            @PathVariable String certificationId,
             @Valid @RequestBody CertificationRequest request) {
-
-        Long currentUserId = extractCurrentUserId();
-        Long targetUserId = resolveTargetUserId(userId, currentUserId);
-
+        String currentUserId = currentUserId();
+        String targetUserId = resolveUserId(userId, currentUserId);
         if (!currentUserId.equals(targetUserId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new MessageResponse("No tienes permiso para actualizar esta certificación"));
         }
-
         try {
-            CertificationResponse updated = certificationService.updateCertification(targetUserId, certificationId, request);
-            return ResponseEntity.ok(updated);
+            return ResponseEntity.ok(certificationService.updateCertification(targetUserId, certificationId, request));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
         }
@@ -83,16 +72,13 @@ public class CertificationController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> deleteCertification(
             @PathVariable(required = false) String userId,
-            @PathVariable @NonNull Long certificationId) {
-
-        Long currentUserId = extractCurrentUserId();
-        Long targetUserId = resolveTargetUserId(userId, currentUserId);
-
+            @PathVariable String certificationId) {
+        String currentUserId = currentUserId();
+        String targetUserId = resolveUserId(userId, currentUserId);
         if (!currentUserId.equals(targetUserId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new MessageResponse("No tienes permiso para eliminar esta certificación"));
         }
-
         try {
             certificationService.deleteCertification(targetUserId, certificationId);
             return ResponseEntity.ok(new MessageResponse("Certificación eliminada exitosamente"));
@@ -101,13 +87,15 @@ public class CertificationController {
         }
     }
 
-    private Long extractCurrentUserId() {
+    private String currentUserId() {
         return ((UserDetailsImpl) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getId();
     }
 
-    private Long resolveTargetUserId(String pathUserId, Long fallbackId) {
-        return (pathUserId != null && !pathUserId.equals("undefined"))
-                ? Long.parseLong(pathUserId)
-                : fallbackId;
+    private String resolveUserId(String pathUserId) {
+        return resolveUserId(pathUserId, currentUserId());
+    }
+
+    private String resolveUserId(String pathUserId, String fallback) {
+        return (pathUserId != null && !pathUserId.equals("undefined")) ? pathUserId : fallback;
     }
 }

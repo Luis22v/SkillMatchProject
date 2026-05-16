@@ -4,12 +4,12 @@ import com.skillmatch.backend.model.*;
 import com.skillmatch.backend.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.bson.types.ObjectId;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -22,7 +22,6 @@ import java.util.*;
 public class DataSeeder implements CommandLineRunner {
 
     private final UserRepository userRepository;
-    private final RoleRepository roleRepository;
     private final CompanyRepository companyRepository;
     private final JobRepository jobRepository;
     private final ApplicationRepository applicationRepository;
@@ -30,7 +29,6 @@ public class DataSeeder implements CommandLineRunner {
 
     private final Random random = new Random();
 
-    // Datos de ejemplo
     private final String[] firstNames = {
         "Carlos", "María", "Juan", "Ana", "Pedro", "Laura", "Luis", "Carmen", "Jorge", "Isabel",
         "Miguel", "Elena", "Fernando", "Sofía", "Ricardo", "Patricia", "Andrés", "Beatriz", "Diego", "Claudia",
@@ -67,7 +65,7 @@ public class DataSeeder implements CommandLineRunner {
         "Tech Lead", "Software Engineer", "Machine Learning Engineer"
     };
 
-    private final String[] skills = {
+    private final String[] skillNames = {
         "Java", "Spring Boot", "JavaScript", "React", "Angular", "Vue.js", "Node.js", "Python",
         "Django", "Flask", "PHP", "Laravel", "C#", ".NET", "Ruby", "Rails", "Go", "Kotlin",
         "Swift", "Flutter", "React Native", "Docker", "Kubernetes", "AWS", "Azure", "GCP",
@@ -75,16 +73,16 @@ public class DataSeeder implements CommandLineRunner {
         "REST API", "GraphQL", "Microservices", "TDD", "Design Patterns", "SQL"
     };
 
+    private final String[] levels = {"BÁSICO", "INTERMEDIO", "AVANZADO", "EXPERTO"};
+
     private final String[] locations = {
         "Cartagena", "Bogotá", "Medellín", "Cali", "Barranquilla", "Bucaramanga",
         "Pereira", "Manizales", "Santa Marta", "Ibagué"
     };
 
     @Override
-    @Transactional
     public void run(String... args) {
         try {
-            // Verificar si ya hay datos - evitar duplicados
             long totalUsers = userRepository.count();
             if (totalUsers > 0) {
                 log.info("✓ Base de datos ya tiene {} usuarios. Saltando seed.", totalUsers);
@@ -93,64 +91,29 @@ public class DataSeeder implements CommandLineRunner {
 
             log.info("🌱 Iniciando seed de datos...");
 
-            // 1. Crear roles
-            createRoles();
-
-            // 2. Crear skills
-            createSkills();
-
-            // 3. Crear usuarios regulares (100)
             log.info("Creando usuarios regulares...");
             List<User> users = createUsers(100);
 
-            // 4. Crear empresas con sus usuarios (50)
             log.info("Creando empresas...");
             List<Company> companies = createCompanies(50);
 
-            // 5. Crear trabajos/ofertas (100)
             log.info("Creando ofertas de trabajo...");
             List<Job> jobs = createJobs(companies, 100);
 
-            // 6. Crear aplicaciones (100)
             log.info("Creando aplicaciones...");
             createApplications(users, jobs, 100);
 
             log.info("✅ Seed completado exitosamente!");
-            log.info("📊 Datos creados: 150 usuarios, 50 empresas, 100 ofertas, 100 aplicaciones, 3 roles = 403 registros totales");
+            log.info("📊 Datos creados: 150 usuarios, 50 empresas, 100 ofertas, 100 aplicaciones");
 
         } catch (Exception e) {
             log.error("❌ Error durante el seed: ", e);
         }
     }
 
-    private void createRoles() {
-        Role userRole = new Role();
-        userRole.setName("USER");
-        userRole.setDescription("Usuario estándar");
-        roleRepository.save(userRole);
-
-        Role empresaRole = new Role();
-        empresaRole.setName("EMPRESA");
-        empresaRole.setDescription("Empresa");
-        roleRepository.save(empresaRole);
-
-        Role adminRole = new Role();
-        adminRole.setName("ADMIN");
-        adminRole.setDescription("Administrador");
-        roleRepository.save(adminRole);
-
-        log.info("✓ Roles creados");
-    }
-
-    private void createSkills() {
-        // Skills se crearán asociados a usuarios, no como entidades independientes
-        log.info("✓ Skills se crearán con los usuarios");
-    }
-
     private List<User> createUsers(int count) {
-        List<User> users = new ArrayList<>();
+        List<User> toSave = new ArrayList<>();
         List<User> allSaved = new ArrayList<>();
-        Role userRole = roleRepository.findByName("USER").orElseThrow();
         int batchSize = 50;
 
         for (int i = 0; i < count; i++) {
@@ -165,30 +128,44 @@ public class DataSeeder implements CommandLineRunner {
             user.setBio("Profesional con experiencia en desarrollo de software y pasión por la tecnología.");
             user.setEnabled(true);
             user.setCreatedAt(LocalDateTime.now().minusDays(random.nextInt(365)));
-            user.setRoles(new HashSet<>(Collections.singletonList(userRole)));
+            user.setRoles(List.of("USER"));
+            user.setSkills(generateEmbeddedSkills());
 
-            users.add(user);
+            toSave.add(user);
 
-            // Guardar en lotes
             if ((i + 1) % batchSize == 0 || i == count - 1) {
-                allSaved.addAll(userRepository.saveAll(users));
-                userRepository.flush();
+                allSaved.addAll(userRepository.saveAll(toSave));
                 log.info("   - Usuarios creados: {}/{}", i + 1, count);
-                users.clear();
+                toSave.clear();
             }
         }
 
         return allSaved;
     }
 
+    private List<Skill> generateEmbeddedSkills() {
+        int count = random.nextInt(4) + 2;
+        List<Skill> embedded = new ArrayList<>();
+        Set<String> chosen = new LinkedHashSet<>();
+        while (chosen.size() < count) {
+            chosen.add(skillNames[random.nextInt(skillNames.length)]);
+        }
+        for (String name : chosen) {
+            Skill skill = new Skill();
+            skill.setId(ObjectId.get().toString());
+            skill.setName(name);
+            skill.setLevel(levels[random.nextInt(levels.length)]);
+            embedded.add(skill);
+        }
+        return embedded;
+    }
+
     private List<Company> createCompanies(int count) {
-        List<Company> companies = new ArrayList<>();
         List<User> usersToSave = new ArrayList<>();
-        Role empresaRole = roleRepository.findByName("EMPRESA").orElseThrow();
+        List<Company> allCompanies = new ArrayList<>();
         int batchSize = 50;
 
         for (int i = 0; i < count; i++) {
-            // Crear usuario para la empresa
             User user = new User();
             user.setEmail("empresa" + i + "@skillmatch.com");
             user.setPassword(passwordEncoder.encode("password123"));
@@ -197,23 +174,20 @@ public class DataSeeder implements CommandLineRunner {
             user.setPhone("+57 3" + String.format("%09d", random.nextInt(1000000000)));
             user.setEnabled(true);
             user.setCreatedAt(LocalDateTime.now().minusDays(random.nextInt(365)));
-            user.setRoles(new HashSet<>(Collections.singletonList(empresaRole)));
+            user.setRoles(List.of("EMPRESA"));
             usersToSave.add(user);
 
             if ((i + 1) % batchSize == 0 || i == count - 1) {
-                // Guardar usuarios en lote
                 List<User> savedUsers = userRepository.saveAll(usersToSave);
-                userRepository.flush();
-                
-                // Crear empresas para estos usuarios
+
                 List<Company> companiesToSave = new ArrayList<>();
                 for (User savedUser : savedUsers) {
                     Company company = new Company();
-                    company.setUser(savedUser);
+                    company.setUserId(savedUser.getId());
                     company.setName(savedUser.getFirstName());
                     company.setEmail(savedUser.getEmail());
                     company.setPhone(savedUser.getPhone());
-                    company.setDescription("Empresa líder en " + industries[random.nextInt(industries.length)] + 
+                    company.setDescription("Empresa líder en " + industries[random.nextInt(industries.length)] +
                         " con más de " + (random.nextInt(20) + 5) + " años de experiencia en el mercado.");
                     company.setIndustry(industries[random.nextInt(industries.length)]);
                     company.setSize(new String[]{"small", "medium", "large", "enterprise"}[random.nextInt(4)]);
@@ -224,21 +198,18 @@ public class DataSeeder implements CommandLineRunner {
                     company.setCreatedAt(savedUser.getCreatedAt());
                     companiesToSave.add(company);
                 }
-                
-                // Guardar empresas en lote
-                companies.addAll(companyRepository.saveAll(companiesToSave));
-                companyRepository.flush();
-                
+
+                allCompanies.addAll(companyRepository.saveAll(companiesToSave));
                 log.info("   - Empresas creadas: {}/{}", i + 1, count);
                 usersToSave.clear();
             }
         }
 
-        return companies;
+        return allCompanies;
     }
 
     private List<Job> createJobs(List<Company> companies, int count) {
-        List<Job> jobs = new ArrayList<>();
+        List<Job> toSave = new ArrayList<>();
         List<Job> allSaved = new ArrayList<>();
         int batchSize = 50;
 
@@ -246,42 +217,38 @@ public class DataSeeder implements CommandLineRunner {
             Company company = companies.get(random.nextInt(companies.size()));
 
             Job job = new Job();
-            job.setCompany(company);
+            job.setCompanyId(company.getId());
             job.setTitle(jobTitles[random.nextInt(jobTitles.length)]);
             job.setDescription(generateJobDescription());
             job.setType(new String[]{"empleo", "práctica", "freelance"}[random.nextInt(3)]);
             job.setExperienceLevel(new String[]{"sin-experiencia", "junior", "semi-senior", "senior"}[random.nextInt(4)]);
-            
+
             double salaryMin = 1000000 + (random.nextInt(4) * 500000);
             job.setSalaryMin(salaryMin);
             job.setSalaryMax(salaryMin + (random.nextInt(3) + 1) * 500000);
-            
+
             job.setLocation(company.getLocation());
             job.setModality(new String[]{"presencial", "remoto", "híbrido"}[random.nextInt(3)]);
-            job.setActive(random.nextInt(10) > 1); // 90% activos
+            job.setActive(random.nextInt(10) > 1);
             job.setPostedDate(LocalDateTime.now().minusDays(random.nextInt(90)));
 
-            // Agregar skills aleatorias como lista de strings
-            int skillCount = random.nextInt(5) + 3; // 3-7 skills
+            int skillCount = random.nextInt(5) + 3;
             List<String> jobSkills = new ArrayList<>();
             for (int j = 0; j < skillCount; j++) {
-                jobSkills.add(skills[random.nextInt(skills.length)]);
+                jobSkills.add(skillNames[random.nextInt(skillNames.length)]);
             }
             job.setSkills(jobSkills);
 
-            // Agregar requirements y responsibilities
             job.setRequirements(Arrays.asList(
                 "Título universitario en Ingeniería de Sistemas o afín",
                 "Experiencia mínima de " + (random.nextInt(3) + 1) + " años",
                 "Excelentes habilidades de comunicación"
             ));
-
             job.setResponsibilities(Arrays.asList(
                 "Desarrollar y mantener aplicaciones",
                 "Colaborar con el equipo de desarrollo",
                 "Participar en reuniones de planificación"
             ));
-
             job.setBenefits(Arrays.asList(
                 "Salario competitivo",
                 "Seguro de salud",
@@ -289,14 +256,12 @@ public class DataSeeder implements CommandLineRunner {
                 "Capacitación continua"
             ));
 
-            jobs.add(job);
+            toSave.add(job);
 
-            // Guardar en lotes
             if ((i + 1) % batchSize == 0 || i == count - 1) {
-                allSaved.addAll(jobRepository.saveAll(jobs));
-                jobRepository.flush();
+                allSaved.addAll(jobRepository.saveAll(toSave));
                 log.info("   - Ofertas creadas: {}/{}", i + 1, count);
-                jobs.clear();
+                toSave.clear();
             }
         }
 
@@ -305,7 +270,7 @@ public class DataSeeder implements CommandLineRunner {
 
     private void createApplications(List<User> users, List<Job> jobs, int count) {
         Set<String> uniqueApplications = new HashSet<>();
-        List<Application> applications = new ArrayList<>();
+        List<Application> toSave = new ArrayList<>();
         int batchSize = 50;
 
         for (int i = 0; i < count; i++) {
@@ -314,31 +279,28 @@ public class DataSeeder implements CommandLineRunner {
 
             String key = user.getId() + "-" + job.getId();
             if (uniqueApplications.contains(key)) {
-                i--; // Reintentar
+                i--;
                 continue;
             }
 
             Application application = new Application();
-            application.setUser(user);
-            application.setJob(job);
+            application.setUserId(user.getId());
+            application.setJobId(job.getId());
             application.setStatus(new ApplicationStatus[]{
                 ApplicationStatus.PENDIENTE, ApplicationStatus.REVISADA,
                 ApplicationStatus.ACEPTADA, ApplicationStatus.RECHAZADA
             }[random.nextInt(4)]);
             application.setAppliedDate(LocalDateTime.now().minusDays(random.nextInt(60)));
-            application.setCoverLetter("Estimado equipo de " + job.getCompany().getName() + 
-                ", me interesa mucho la posición de " + job.getTitle() + 
+            application.setCoverLetter("Me interesa mucho la posición de " + job.getTitle() +
                 " y creo que mi experiencia se alinea perfectamente con los requisitos.");
 
-            applications.add(application);
+            toSave.add(application);
             uniqueApplications.add(key);
 
-            // Guardar en lotes
             if ((i + 1) % batchSize == 0 || i == count - 1) {
-                applicationRepository.saveAll(applications);
-                applicationRepository.flush();
+                applicationRepository.saveAll(toSave);
                 log.info("   - Aplicaciones creadas: {}/{}", i + 1, count);
-                applications.clear();
+                toSave.clear();
             }
         }
     }

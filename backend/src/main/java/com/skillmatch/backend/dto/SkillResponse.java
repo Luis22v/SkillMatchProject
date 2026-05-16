@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SkillResponse {
-    private Long id;
+    private String id;
     private String name;
     private String level;
     private Integer yearsOfExperience;

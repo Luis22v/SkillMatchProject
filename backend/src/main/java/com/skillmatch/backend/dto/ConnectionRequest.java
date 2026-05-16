@@ -1,6 +1,6 @@
 package com.skillmatch.backend.dto;
 
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -9,8 +9,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ConnectionRequest {
-    @NotNull(message = "Connected User ID es requerido")
-    private Long connectedUserId;
-    
+    @NotBlank(message = "Connected User ID es requerido")
+    private String connectedUserId;
+
     private String message;
 }

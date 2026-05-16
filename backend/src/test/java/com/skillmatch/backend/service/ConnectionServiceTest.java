@@ -9,6 +9,7 @@ import com.skillmatch.backend.model.Connection;
 import com.skillmatch.backend.model.ConnectionStatus;
 import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.repository.ConnectionRepository;
+import com.skillmatch.backend.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,6 +19,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.mongodb.core.MongoTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,22 +28,18 @@ import java.util.stream.Stream;
 
 import static com.skillmatch.backend.model.ConnectionStatus.*;
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @SuppressWarnings("null")
 @ExtendWith(MockitoExtension.class)
 class ConnectionServiceTest {
 
-    @Mock
-    private ConnectionRepository connectionRepository;
-
-    @Mock
-    private UserService userService;
-
-    @Mock
-    private NotificationService notificationService;
+    @Mock private ConnectionRepository connectionRepository;
+    @Mock private UserRepository userRepository;
+    @Mock private UserService userService;
+    @Mock private NotificationService notificationService;
+    @Mock private MongoTemplate mongoTemplate;
 
     @InjectMocks
     private ConnectionService connectionService;
@@ -53,33 +51,36 @@ class ConnectionServiceTest {
     @BeforeEach
     void setUp() {
         requester = new User();
-        requester.setId(1L);
+        requester.setId("user-id-1");
         requester.setFirstName("Ana");
         requester.setLastName("García");
         requester.setEmail("ana@test.com");
 
         receiver = new User();
-        receiver.setId(2L);
+        receiver.setId("user-id-2");
         receiver.setFirstName("Luis");
         receiver.setLastName("Martínez");
         receiver.setEmail("luis@test.com");
 
-        pendingConnection = buildPendingConnection(10L);
+        pendingConnection = buildPendingConnection("conn-id-10");
     }
 
     // ─── sendConnectionRequest ────────────────────────────────────────────────
 
     @Test
     void sendConnectionRequest_happyPath_savesAndNotifies() {
-        ConnectionRequest req = new ConnectionRequest(receiver.getId(), "Hola!");
-        when(userService.getUserById(1L)).thenReturn(requester);
-        when(userService.getUserById(2L)).thenReturn(receiver);
-        when(connectionRepository.findConnectionBetweenUsers(1L, 2L)).thenReturn(Optional.empty());
+        ConnectionRequest req = new ConnectionRequest("user-id-2", "Hola!");
+        when(userRepository.findById("user-id-1")).thenReturn(Optional.of(requester));
+        when(userRepository.findById("user-id-2")).thenReturn(Optional.of(receiver));
+        when(connectionRepository.findByUserIdAndConnectedUserId("user-id-1", "user-id-2"))
+                .thenReturn(Optional.empty());
+        when(connectionRepository.findByUserIdAndConnectedUserId("user-id-2", "user-id-1"))
+                .thenReturn(Optional.empty());
 
-        Connection saved = buildPendingConnection(10L);
+        Connection saved = buildPendingConnection("conn-id-10");
         when(connectionRepository.save(any(Connection.class))).thenReturn(saved);
 
-        ConnectionResponse response = connectionService.sendConnectionRequest(1L, req);
+        ConnectionResponse response = connectionService.sendConnectionRequest("user-id-1", req);
 
         ArgumentCaptor<Connection> captor = ArgumentCaptor.forClass(Connection.class);
         verify(connectionRepository).save(captor.capture());
@@ -87,16 +88,16 @@ class ConnectionServiceTest {
         assertThat(captor.getValue().getMessage()).isEqualTo("Hola!");
 
         verify(notificationService).createConnectionRequestNotification(
-                eq(receiver.getId()), eq(requester.getId()), eq(saved.getId()));
+                eq("user-id-2"), eq("user-id-1"), eq("conn-id-10"));
 
         assertThat(response.getStatus()).isEqualTo("pending");
     }
 
     @Test
     void sendConnectionRequest_toSelf_throwsIllegalArgument() {
-        ConnectionRequest req = new ConnectionRequest(1L, null);
+        ConnectionRequest req = new ConnectionRequest("user-id-1", null);
 
-        assertThatThrownBy(() -> connectionService.sendConnectionRequest(1L, req))
+        assertThatThrownBy(() -> connectionService.sendConnectionRequest("user-id-1", req))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("ti mismo");
     }
@@ -104,53 +105,55 @@ class ConnectionServiceTest {
     @Test
     void sendConnectionRequest_nullConnectedUserId_throwsIllegalArgument() {
         ConnectionRequest req = new ConnectionRequest(null, null);
-        when(userService.getUserById(1L)).thenReturn(requester);
 
-        assertThatThrownBy(() -> connectionService.sendConnectionRequest(1L, req))
+        assertThatThrownBy(() -> connectionService.sendConnectionRequest("user-id-1", req))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("nulo");
     }
 
     @Test
     void sendConnectionRequest_requesterNotFound_throwsResourceNotFound() {
-        ConnectionRequest req = new ConnectionRequest(2L, null);
-        when(userService.getUserById(1L)).thenThrow(new ResourceNotFoundException("Usuario no encontrado"));
+        ConnectionRequest req = new ConnectionRequest("user-id-2", null);
+        when(userRepository.findById("user-id-1")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> connectionService.sendConnectionRequest(1L, req))
+        assertThatThrownBy(() -> connectionService.sendConnectionRequest("user-id-1", req))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
     @Test
     void sendConnectionRequest_receiverNotFound_throwsResourceNotFound() {
-        ConnectionRequest req = new ConnectionRequest(2L, null);
-        when(userService.getUserById(1L)).thenReturn(requester);
-        when(userService.getUserById(2L)).thenThrow(new ResourceNotFoundException("Usuario no encontrado"));
+        ConnectionRequest req = new ConnectionRequest("user-id-2", null);
+        when(userRepository.findById("user-id-1")).thenReturn(Optional.of(requester));
+        when(userRepository.findById("user-id-2")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> connectionService.sendConnectionRequest(1L, req))
+        assertThatThrownBy(() -> connectionService.sendConnectionRequest("user-id-1", req))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
     @Test
     void sendConnectionRequest_alreadyExists_throwsDuplicate() {
-        ConnectionRequest req = new ConnectionRequest(2L, null);
-        when(userService.getUserById(1L)).thenReturn(requester);
-        when(userService.getUserById(2L)).thenReturn(receiver);
-        when(connectionRepository.findConnectionBetweenUsers(1L, 2L))
+        ConnectionRequest req = new ConnectionRequest("user-id-2", null);
+        when(userRepository.findById("user-id-1")).thenReturn(Optional.of(requester));
+        when(userRepository.findById("user-id-2")).thenReturn(Optional.of(receiver));
+        when(connectionRepository.findByUserIdAndConnectedUserId("user-id-1", "user-id-2"))
                 .thenReturn(Optional.of(pendingConnection));
 
-        assertThatThrownBy(() -> connectionService.sendConnectionRequest(1L, req))
+        assertThatThrownBy(() -> connectionService.sendConnectionRequest("user-id-1", req))
                 .isInstanceOf(DuplicateResourceException.class);
     }
 
     @Test
     void sendConnectionRequest_noNotificationWhenSaveFails() {
-        ConnectionRequest req = new ConnectionRequest(2L, null);
-        when(userService.getUserById(1L)).thenReturn(requester);
-        when(userService.getUserById(2L)).thenReturn(receiver);
-        when(connectionRepository.findConnectionBetweenUsers(1L, 2L)).thenReturn(Optional.empty());
+        ConnectionRequest req = new ConnectionRequest("user-id-2", null);
+        when(userRepository.findById("user-id-1")).thenReturn(Optional.of(requester));
+        when(userRepository.findById("user-id-2")).thenReturn(Optional.of(receiver));
+        when(connectionRepository.findByUserIdAndConnectedUserId("user-id-1", "user-id-2"))
+                .thenReturn(Optional.empty());
+        when(connectionRepository.findByUserIdAndConnectedUserId("user-id-2", "user-id-1"))
+                .thenReturn(Optional.empty());
         when(connectionRepository.save(any())).thenThrow(new RuntimeException("DB error"));
 
-        assertThatThrownBy(() -> connectionService.sendConnectionRequest(1L, req))
+        assertThatThrownBy(() -> connectionService.sendConnectionRequest("user-id-1", req))
                 .isInstanceOf(RuntimeException.class);
 
         verifyNoInteractions(notificationService);
@@ -160,11 +163,13 @@ class ConnectionServiceTest {
 
     @Test
     void acceptConnection_happyPath_setsAcceptedAndNotifies() {
-        when(connectionRepository.findById(10L)).thenReturn(Optional.of(pendingConnection));
-        Connection saved = buildAcceptedConnection(10L);
+        when(connectionRepository.findById("conn-id-10")).thenReturn(Optional.of(pendingConnection));
+        Connection saved = buildAcceptedConnection("conn-id-10");
         when(connectionRepository.save(any(Connection.class))).thenReturn(saved);
+        when(userRepository.findById("user-id-1")).thenReturn(Optional.of(requester));
+        when(userRepository.findById("user-id-2")).thenReturn(Optional.of(receiver));
 
-        ConnectionResponse response = connectionService.acceptConnection(10L, receiver.getId());
+        ConnectionResponse response = connectionService.acceptConnection("conn-id-10", "user-id-2");
 
         ArgumentCaptor<Connection> captor = ArgumentCaptor.forClass(Connection.class);
         verify(connectionRepository).save(captor.capture());
@@ -172,24 +177,24 @@ class ConnectionServiceTest {
         assertThat(captor.getValue().getRespondedAt()).isNotNull();
 
         verify(notificationService).createConnectionAcceptedNotification(
-                eq(requester.getId()), eq(receiver.getId()), eq(10L));
+                eq("user-id-1"), eq("user-id-2"), eq("conn-id-10"));
 
         assertThat(response.getStatus()).isEqualTo("accepted");
     }
 
     @Test
     void acceptConnection_notFound_throwsResourceNotFound() {
-        when(connectionRepository.findById(99L)).thenReturn(Optional.empty());
+        when(connectionRepository.findById("conn-id-99")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> connectionService.acceptConnection(99L, receiver.getId()))
+        assertThatThrownBy(() -> connectionService.acceptConnection("conn-id-99", "user-id-2"))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
     @Test
     void acceptConnection_wrongUser_throwsUnauthorized() {
-        when(connectionRepository.findById(10L)).thenReturn(Optional.of(pendingConnection));
+        when(connectionRepository.findById("conn-id-10")).thenReturn(Optional.of(pendingConnection));
 
-        assertThatThrownBy(() -> connectionService.acceptConnection(10L, 99L))
+        assertThatThrownBy(() -> connectionService.acceptConnection("conn-id-10", "user-id-99"))
                 .isInstanceOf(UnauthorizedException.class);
     }
 
@@ -197,25 +202,25 @@ class ConnectionServiceTest {
     @MethodSource("alreadyProcessedStatuses")
     void acceptConnection_alreadyProcessed_throwsIllegalArgument(ConnectionStatus status) {
         pendingConnection.setStatus(status);
-        when(connectionRepository.findById(10L)).thenReturn(Optional.of(pendingConnection));
+        when(connectionRepository.findById("conn-id-10")).thenReturn(Optional.of(pendingConnection));
 
-        assertThatThrownBy(() -> connectionService.acceptConnection(10L, receiver.getId()))
+        assertThatThrownBy(() -> connectionService.acceptConnection("conn-id-10", "user-id-2"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("procesada");
     }
 
     @Test
     void acceptConnection_nullConnectionId_throwsIllegalArgument() {
-        assertThatThrownBy(() -> connectionService.acceptConnection(null, receiver.getId()))
+        assertThatThrownBy(() -> connectionService.acceptConnection(null, "user-id-2"))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void acceptConnection_noNotificationWhenSaveFails() {
-        when(connectionRepository.findById(10L)).thenReturn(Optional.of(pendingConnection));
+        when(connectionRepository.findById("conn-id-10")).thenReturn(Optional.of(pendingConnection));
         when(connectionRepository.save(any())).thenThrow(new RuntimeException("DB error"));
 
-        assertThatThrownBy(() -> connectionService.acceptConnection(10L, receiver.getId()))
+        assertThatThrownBy(() -> connectionService.acceptConnection("conn-id-10", "user-id-2"))
                 .isInstanceOf(RuntimeException.class);
 
         verifyNoInteractions(notificationService);
@@ -225,12 +230,14 @@ class ConnectionServiceTest {
 
     @Test
     void rejectConnection_happyPath_setsRejected() {
-        when(connectionRepository.findById(10L)).thenReturn(Optional.of(pendingConnection));
-        Connection saved = buildPendingConnection(10L);
+        when(connectionRepository.findById("conn-id-10")).thenReturn(Optional.of(pendingConnection));
+        Connection saved = buildPendingConnection("conn-id-10");
         saved.setStatus(REJECTED);
         when(connectionRepository.save(any(Connection.class))).thenReturn(saved);
+        when(userRepository.findById("user-id-1")).thenReturn(Optional.of(requester));
+        when(userRepository.findById("user-id-2")).thenReturn(Optional.of(receiver));
 
-        ConnectionResponse response = connectionService.rejectConnection(10L, receiver.getId());
+        ConnectionResponse response = connectionService.rejectConnection("conn-id-10", "user-id-2");
 
         ArgumentCaptor<Connection> captor = ArgumentCaptor.forClass(Connection.class);
         verify(connectionRepository).save(captor.capture());
@@ -243,17 +250,17 @@ class ConnectionServiceTest {
 
     @Test
     void rejectConnection_notFound_throwsResourceNotFound() {
-        when(connectionRepository.findById(99L)).thenReturn(Optional.empty());
+        when(connectionRepository.findById("conn-id-99")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> connectionService.rejectConnection(99L, receiver.getId()))
+        assertThatThrownBy(() -> connectionService.rejectConnection("conn-id-99", "user-id-2"))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
     @Test
     void rejectConnection_wrongUser_throwsUnauthorized() {
-        when(connectionRepository.findById(10L)).thenReturn(Optional.of(pendingConnection));
+        when(connectionRepository.findById("conn-id-10")).thenReturn(Optional.of(pendingConnection));
 
-        assertThatThrownBy(() -> connectionService.rejectConnection(10L, 99L))
+        assertThatThrownBy(() -> connectionService.rejectConnection("conn-id-10", "user-id-99"))
                 .isInstanceOf(UnauthorizedException.class);
     }
 
@@ -261,16 +268,16 @@ class ConnectionServiceTest {
     @MethodSource("alreadyProcessedStatuses")
     void rejectConnection_alreadyProcessed_throwsIllegalArgument(ConnectionStatus status) {
         pendingConnection.setStatus(status);
-        when(connectionRepository.findById(10L)).thenReturn(Optional.of(pendingConnection));
+        when(connectionRepository.findById("conn-id-10")).thenReturn(Optional.of(pendingConnection));
 
-        assertThatThrownBy(() -> connectionService.rejectConnection(10L, receiver.getId()))
+        assertThatThrownBy(() -> connectionService.rejectConnection("conn-id-10", "user-id-2"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("procesada");
     }
 
     @Test
     void rejectConnection_nullConnectionId_throwsIllegalArgument() {
-        assertThatThrownBy(() -> connectionService.rejectConnection(null, receiver.getId()))
+        assertThatThrownBy(() -> connectionService.rejectConnection(null, "user-id-2"))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -278,9 +285,9 @@ class ConnectionServiceTest {
 
     @Test
     void blockConnection_byRequester_setsBlocked() {
-        when(connectionRepository.findById(10L)).thenReturn(Optional.of(pendingConnection));
+        when(connectionRepository.findById("conn-id-10")).thenReturn(Optional.of(pendingConnection));
 
-        connectionService.blockConnection(10L, requester.getId());
+        connectionService.blockConnection("conn-id-10", "user-id-1");
 
         ArgumentCaptor<Connection> captor = ArgumentCaptor.forClass(Connection.class);
         verify(connectionRepository).save(captor.capture());
@@ -289,9 +296,9 @@ class ConnectionServiceTest {
 
     @Test
     void blockConnection_byReceiver_setsBlocked() {
-        when(connectionRepository.findById(10L)).thenReturn(Optional.of(pendingConnection));
+        when(connectionRepository.findById("conn-id-10")).thenReturn(Optional.of(pendingConnection));
 
-        connectionService.blockConnection(10L, receiver.getId());
+        connectionService.blockConnection("conn-id-10", "user-id-2");
 
         ArgumentCaptor<Connection> captor = ArgumentCaptor.forClass(Connection.class);
         verify(connectionRepository).save(captor.capture());
@@ -300,23 +307,23 @@ class ConnectionServiceTest {
 
     @Test
     void blockConnection_notFound_throwsResourceNotFound() {
-        when(connectionRepository.findById(99L)).thenReturn(Optional.empty());
+        when(connectionRepository.findById("conn-id-99")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> connectionService.blockConnection(99L, requester.getId()))
+        assertThatThrownBy(() -> connectionService.blockConnection("conn-id-99", "user-id-1"))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 
     @Test
     void blockConnection_thirdParty_throwsUnauthorized() {
-        when(connectionRepository.findById(10L)).thenReturn(Optional.of(pendingConnection));
+        when(connectionRepository.findById("conn-id-10")).thenReturn(Optional.of(pendingConnection));
 
-        assertThatThrownBy(() -> connectionService.blockConnection(10L, 99L))
+        assertThatThrownBy(() -> connectionService.blockConnection("conn-id-10", "user-id-99"))
                 .isInstanceOf(UnauthorizedException.class);
     }
 
     @Test
     void blockConnection_nullConnectionId_throwsIllegalArgument() {
-        assertThatThrownBy(() -> connectionService.blockConnection(null, requester.getId()))
+        assertThatThrownBy(() -> connectionService.blockConnection(null, "user-id-1"))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -324,11 +331,12 @@ class ConnectionServiceTest {
 
     @Test
     void getMyConnections_returnsMappedList() {
-        Connection c1 = buildAcceptedConnection(11L);
-        Connection c2 = buildAcceptedConnection(12L);
-        when(connectionRepository.findAcceptedConnectionsByUserId(1L)).thenReturn(List.of(c1, c2));
+        Connection c1 = buildAcceptedConnection("conn-id-11");
+        Connection c2 = buildAcceptedConnection("conn-id-12");
+        when(mongoTemplate.find(any(), eq(Connection.class))).thenReturn(List.of(c1, c2));
+        when(userRepository.findAllById(any())).thenReturn(List.of(requester, receiver));
 
-        List<ConnectionResponse> result = connectionService.getMyConnections(1L);
+        List<ConnectionResponse> result = connectionService.getMyConnections("user-id-1");
 
         assertThat(result).hasSize(2);
         assertThat(result).allMatch(r -> "accepted".equals(r.getStatus()));
@@ -336,9 +344,9 @@ class ConnectionServiceTest {
 
     @Test
     void getMyConnections_empty_returnsEmptyList() {
-        when(connectionRepository.findAcceptedConnectionsByUserId(1L)).thenReturn(List.of());
+        when(mongoTemplate.find(any(), eq(Connection.class))).thenReturn(List.of());
 
-        List<ConnectionResponse> result = connectionService.getMyConnections(1L);
+        List<ConnectionResponse> result = connectionService.getMyConnections("user-id-1");
 
         assertThat(result).isEmpty();
     }
@@ -347,10 +355,11 @@ class ConnectionServiceTest {
 
     @Test
     void getPendingRequests_returnsMappedList() {
-        List<Connection> pending = List.of(buildPendingConnection(20L), buildPendingConnection(21L));
-        when(connectionRepository.findPendingRequestsByUserId(1L)).thenReturn(pending);
+        List<Connection> pending = List.of(buildPendingConnection("conn-id-20"), buildPendingConnection("conn-id-21"));
+        when(connectionRepository.findByConnectedUserIdAndStatus("user-id-1", PENDING)).thenReturn(pending);
+        when(userRepository.findAllById(any())).thenReturn(List.of(requester, receiver));
 
-        List<ConnectionResponse> result = connectionService.getPendingRequests(1L);
+        List<ConnectionResponse> result = connectionService.getPendingRequests("user-id-1");
 
         assertThat(result).hasSize(2);
         assertThat(result).allMatch(r -> "pending".equals(r.getStatus()));
@@ -358,17 +367,18 @@ class ConnectionServiceTest {
 
     @Test
     void getPendingRequests_empty_returnsEmptyList() {
-        when(connectionRepository.findPendingRequestsByUserId(1L)).thenReturn(List.of());
+        when(connectionRepository.findByConnectedUserIdAndStatus("user-id-1", PENDING)).thenReturn(List.of());
 
-        assertThat(connectionService.getPendingRequests(1L)).isEmpty();
+        assertThat(connectionService.getPendingRequests("user-id-1")).isEmpty();
     }
 
     @Test
     void getSentRequests_returnsMappedList() {
-        List<Connection> sent = List.of(buildPendingConnection(22L));
-        when(connectionRepository.findSentPendingRequestsByUserId(1L)).thenReturn(sent);
+        List<Connection> sent = List.of(buildPendingConnection("conn-id-22"));
+        when(connectionRepository.findByUserIdAndStatus("user-id-1", PENDING)).thenReturn(sent);
+        when(userRepository.findAllById(any())).thenReturn(List.of(requester, receiver));
 
-        List<ConnectionResponse> result = connectionService.getSentRequests(1L);
+        List<ConnectionResponse> result = connectionService.getSentRequests("user-id-1");
 
         assertThat(result).hasSize(1);
         assertThat(result).allMatch(r -> "pending".equals(r.getStatus()));
@@ -376,43 +386,43 @@ class ConnectionServiceTest {
 
     @Test
     void getSentRequests_empty_returnsEmptyList() {
-        when(connectionRepository.findSentPendingRequestsByUserId(1L)).thenReturn(List.of());
+        when(connectionRepository.findByUserIdAndStatus("user-id-1", PENDING)).thenReturn(List.of());
 
-        assertThat(connectionService.getSentRequests(1L)).isEmpty();
+        assertThat(connectionService.getSentRequests("user-id-1")).isEmpty();
     }
 
     // ─── areUsersConnected ────────────────────────────────────────────────────
 
     @Test
     void areUsersConnected_returnsTrue() {
-        when(connectionRepository.areUsersConnected(1L, 2L)).thenReturn(true);
+        when(mongoTemplate.count(any(), eq(Connection.class))).thenReturn(1L);
 
-        assertThat(connectionService.areUsersConnected(1L, 2L)).isTrue();
+        assertThat(connectionService.areUsersConnected("user-id-1", "user-id-2")).isTrue();
     }
 
     @Test
     void areUsersConnected_returnsFalse() {
-        when(connectionRepository.areUsersConnected(1L, 2L)).thenReturn(false);
+        when(mongoTemplate.count(any(), eq(Connection.class))).thenReturn(0L);
 
-        assertThat(connectionService.areUsersConnected(1L, 2L)).isFalse();
+        assertThat(connectionService.areUsersConnected("user-id-1", "user-id-2")).isFalse();
     }
 
     // ─── getConnectionsCount ─────────────────────────────────────────────────
 
     @Test
     void getConnectionsCount_returnsCount() {
-        when(connectionRepository.countConnectionsByUserId(1L)).thenReturn(7L);
+        when(mongoTemplate.count(any(), eq(Connection.class))).thenReturn(7L);
 
-        assertThat(connectionService.getConnectionsCount(1L)).isEqualTo(7L);
+        assertThat(connectionService.getConnectionsCount("user-id-1")).isEqualTo(7L);
     }
 
     // ─── getSuggestions ───────────────────────────────────────────────────────
 
     @Test
     void getSuggestions_returnsList() {
-        when(userService.findSuggestionsForUser(1L)).thenReturn(List.of(receiver));
+        when(userService.findSuggestionsForUser("user-id-1")).thenReturn(List.of(receiver));
 
-        List<User> result = connectionService.getSuggestions(1L);
+        List<User> result = connectionService.getSuggestions("user-id-1");
 
         assertThat(result).containsExactly(receiver);
     }
@@ -432,17 +442,17 @@ class ConnectionServiceTest {
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
-    private Connection buildPendingConnection(Long id) {
+    private Connection buildPendingConnection(String id) {
         Connection c = new Connection();
         c.setId(id);
-        c.setUser(requester);
-        c.setConnectedUser(receiver);
+        c.setUserId("user-id-1");
+        c.setConnectedUserId("user-id-2");
         c.setStatus(PENDING);
         c.setRequestedAt(LocalDateTime.now());
         return c;
     }
 
-    private Connection buildAcceptedConnection(Long id) {
+    private Connection buildAcceptedConnection(String id) {
         Connection c = buildPendingConnection(id);
         c.setStatus(ACCEPTED);
         c.setRespondedAt(LocalDateTime.now());

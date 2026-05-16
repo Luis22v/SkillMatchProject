@@ -4,14 +4,18 @@ import com.skillmatch.backend.dto.CertificationRequest;
 import com.skillmatch.backend.dto.CertificationResponse;
 import com.skillmatch.backend.model.Certification;
 import com.skillmatch.backend.model.User;
-import com.skillmatch.backend.repository.CertificationRepository;
 import com.skillmatch.backend.repository.UserRepository;
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.bson.types.ObjectId;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,23 +24,25 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CertificationService {
 
-    private final CertificationRepository certificationRepository;
     private final UserRepository userRepository;
+    private final MongoTemplate mongoTemplate;
 
-    @Transactional(readOnly = true)
-    public List<CertificationResponse> getUserCertifications(Long userId) {
-        return certificationRepository.findByUserIdOrderByIssueDateDesc(userId).stream()
+    public List<CertificationResponse> getUserCertifications(String userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+        return user.getCertifications().stream()
+                .sorted(Comparator.comparing(Certification::getIssueDate,
+                        Comparator.nullsLast(Comparator.reverseOrder())))
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
-    @Transactional
-    public CertificationResponse addCertification(@NonNull Long userId, CertificationRequest request) {
-        User user = userRepository.findById(userId)
+    public CertificationResponse addCertification(String userId, CertificationRequest request) {
+        userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
 
         Certification certification = new Certification();
-        certification.setUser(user);
+        certification.setId(new ObjectId().toString());
         certification.setName(request.getName());
         certification.setIssuer(request.getIssuer());
         certification.setIssueDate(request.getIssueDate());
@@ -44,45 +50,69 @@ public class CertificationService {
         certification.setCredentialId(request.getCredentialId());
         certification.setCredentialUrl(request.getCredentialUrl());
         certification.setDescription(request.getDescription());
+        certification.setCreatedAt(LocalDateTime.now());
+        certification.setUpdatedAt(LocalDateTime.now());
 
-        CertificationResponse result = mapToResponse(certificationRepository.save(certification));
+        Query q = new Query(Criteria.where("_id").is(userId));
+        Update u = new Update().push("certifications", certification);
+        mongoTemplate.updateFirst(q, u, User.class);
+
         log.info("Certificación '{}' agregada para usuario {}", request.getName(), userId);
-        return result;
+        return mapToResponse(certification);
     }
 
-    @Transactional
-    public CertificationResponse updateCertification(Long userId, @NonNull Long certificationId,
-                                                      CertificationRequest request) {
-        Certification certification = certificationRepository.findById(certificationId)
+    public CertificationResponse updateCertification(String userId, String certificationId, CertificationRequest request) {
+        if (certificationId == null) {
+            throw new IllegalArgumentException("El ID de certificación no puede ser nulo");
+        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+
+        Certification existing = user.getCertifications().stream()
+                .filter(c -> certificationId.equals(c.getId()))
+                .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Certificación no encontrada"));
 
-        if (!certification.getUser().getId().equals(userId)) {
-            throw new IllegalArgumentException("Esta certificación no pertenece a este usuario");
-        }
+        Query q = new Query(Criteria.where("_id").is(userId).and("certifications.id").is(certificationId));
+        Update u = new Update()
+                .set("certifications.$.name", request.getName())
+                .set("certifications.$.issuer", request.getIssuer())
+                .set("certifications.$.issueDate", request.getIssueDate())
+                .set("certifications.$.expirationDate", request.getExpirationDate())
+                .set("certifications.$.credentialId", request.getCredentialId())
+                .set("certifications.$.credentialUrl", request.getCredentialUrl())
+                .set("certifications.$.description", request.getDescription())
+                .set("certifications.$.updatedAt", LocalDateTime.now());
+        mongoTemplate.updateFirst(q, u, User.class);
 
-        certification.setName(request.getName());
-        certification.setIssuer(request.getIssuer());
-        certification.setIssueDate(request.getIssueDate());
-        certification.setExpirationDate(request.getExpirationDate());
-        certification.setCredentialId(request.getCredentialId());
-        certification.setCredentialUrl(request.getCredentialUrl());
-        certification.setDescription(request.getDescription());
+        existing.setName(request.getName());
+        existing.setIssuer(request.getIssuer());
+        existing.setIssueDate(request.getIssueDate());
+        existing.setExpirationDate(request.getExpirationDate());
+        existing.setCredentialId(request.getCredentialId());
+        existing.setCredentialUrl(request.getCredentialUrl());
+        existing.setDescription(request.getDescription());
 
-        CertificationResponse result = mapToResponse(certificationRepository.save(certification));
         log.info("Certificación {} actualizada para usuario {}", certificationId, userId);
-        return result;
+        return mapToResponse(existing);
     }
 
-    @Transactional
-    public void deleteCertification(Long userId, @NonNull Long certificationId) {
-        Certification certification = certificationRepository.findById(certificationId)
-                .orElseThrow(() -> new IllegalArgumentException("Certificación no encontrada"));
+    public void deleteCertification(String userId, String certificationId) {
+        if (certificationId == null) {
+            throw new IllegalArgumentException("El ID de certificación no puede ser nulo");
+        }
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
 
-        if (!certification.getUser().getId().equals(userId)) {
-            throw new IllegalArgumentException("Esta certificación no pertenece a este usuario");
+        boolean exists = user.getCertifications().stream().anyMatch(c -> certificationId.equals(c.getId()));
+        if (!exists) {
+            throw new IllegalArgumentException("Certificación no encontrada");
         }
 
-        certificationRepository.delete(certification);
+        Query q = new Query(Criteria.where("_id").is(userId));
+        Update u = new Update().pull("certifications", Query.query(Criteria.where("id").is(certificationId)));
+        mongoTemplate.updateFirst(q, u, User.class);
+
         log.info("Certificación {} eliminada para usuario {}", certificationId, userId);
     }
 

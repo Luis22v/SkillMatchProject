@@ -9,15 +9,15 @@ public class AuthResponse {
 
     private String token;
     private String type = "Bearer";
-    private Long id;
-    private Long companyId;
+    private String id;
+    private String companyId;
     private String email;
     private String firstName;
     private String lastName;
     private String role;
     private Long expiresAt;
 
-    public AuthResponse(String token, Long userId, Long companyId, String email,
+    public AuthResponse(String token, String userId, String companyId, String email,
                         String firstName, String lastName, String role) {
         this.token = token;
         this.id = userId;
@@ -28,7 +28,7 @@ public class AuthResponse {
         this.role = role;
     }
 
-    public AuthResponse(String token, Long userId, String email, String firstName, String lastName) {
+    public AuthResponse(String token, String userId, String email, String firstName, String lastName) {
         this(token, userId, null, email, firstName, lastName, null);
     }
 }

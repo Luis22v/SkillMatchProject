@@ -10,24 +10,21 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ApplicationResponse {
-    
-    private Long id;
-    
-    // Información completa del candidato
-    private Long userId;
+
+    private String id;
+
+    private String userId;
     private String userName;
     private String userEmail;
     private String userPhone;
     private String userHeadline;
     private String userLocation;
     private String userProfileImageUrl;
-    
-    // Información del trabajo
-    private Long jobId;
+
+    private String jobId;
     private String jobTitle;
     private String companyName;
-    
-    // Información de la aplicación
+
     private String status;
     private String resume;
     private String coverLetter;

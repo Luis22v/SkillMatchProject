@@ -4,7 +4,6 @@ import com.skillmatch.backend.dto.AuthResponse;
 import com.skillmatch.backend.dto.LoginRequest;
 import com.skillmatch.backend.exception.ResourceNotFoundException;
 import com.skillmatch.backend.model.Company;
-import com.skillmatch.backend.model.Role;
 import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.repository.CompanyRepository;
 import com.skillmatch.backend.repository.UserRepository;
@@ -17,10 +16,9 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 @Slf4j
 @Service
@@ -33,7 +31,6 @@ public class AuthenticationService {
     private final JwtTokenProvider tokenProvider;
     private final TokenBlacklistService tokenBlacklistService;
 
-    @Transactional
     public AuthResponse login(LoginRequest loginRequest) {
         Authentication authentication = authenticationManager.authenticate(
             new UsernamePasswordAuthenticationToken(
@@ -49,7 +46,7 @@ public class AuthenticationService {
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
 
         String primaryRole = resolvePrimaryRole(user);
-        Long companyId = null;
+        String companyId = null;
         if ("EMPRESA".equalsIgnoreCase(primaryRole)) {
             companyId = companyRepository.findByUserId(user.getId())
                 .map(Company::getId)
@@ -75,11 +72,11 @@ public class AuthenticationService {
     }
 
     private String resolvePrimaryRole(User user) {
-        Set<Role> roles = Optional.ofNullable(user.getRoles()).orElse(Set.of());
-        if (roles.stream().anyMatch(r -> "ADMIN".equalsIgnoreCase(r.getName()))) return "ADMIN";
-        if (roles.stream().anyMatch(r -> "EMPRESA".equalsIgnoreCase(r.getName()))) return "EMPRESA";
+        List<String> roles = Optional.ofNullable(user.getRoles()).orElse(List.of());
+        if (roles.stream().anyMatch(r -> "ADMIN".equalsIgnoreCase(r))) return "ADMIN";
+        if (roles.stream().anyMatch(r -> "EMPRESA".equalsIgnoreCase(r))) return "EMPRESA";
         return roles.stream().findFirst()
-                .map(r -> r.getName().toUpperCase())
+                .map(String::toUpperCase)
                 .orElse("USER");
     }
 }

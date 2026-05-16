@@ -13,8 +13,8 @@ import java.util.List;
 @AllArgsConstructor
 public class JobRequest {
     
-    @NotNull(message = "{validation.job.companyId.required}")
-    private Long companyId;
+    @NotBlank(message = "{validation.job.companyId.required}")
+    private String companyId;
 
     @NotBlank(message = "{validation.job.title.required}")
     @Size(max = 200, message = "{validation.job.title.max}")

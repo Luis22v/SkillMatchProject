@@ -10,9 +10,9 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SavedJobResponse {
-    private Long id;
-    private Long userId;
-    private Long jobId;
+    private String id;
+    private String userId;
+    private String jobId;
     private String jobTitle;
     private String companyName;
     private String jobType;

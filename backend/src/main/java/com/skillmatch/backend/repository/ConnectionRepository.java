@@ -1,43 +1,19 @@
 package com.skillmatch.backend.repository;
 
 import com.skillmatch.backend.model.Connection;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import com.skillmatch.backend.model.ConnectionStatus;
+import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ConnectionRepository extends JpaRepository<Connection, Long> {
-    
-    // Buscar conexión entre dos usuarios (bidireccional)
-    @Query("SELECT c FROM Connection c WHERE " +
-           "(c.user.id = ?1 AND c.connectedUser.id = ?2) OR " +
-           "(c.user.id = ?2 AND c.connectedUser.id = ?1)")
-    Optional<Connection> findConnectionBetweenUsers(Long userId1, Long userId2);
-    
-    // Conexiones aceptadas de un usuario
-    @Query("SELECT c FROM Connection c JOIN FETCH c.user JOIN FETCH c.connectedUser WHERE " +
-           "(c.user.id = ?1 OR c.connectedUser.id = ?1) AND c.status = 'ACCEPTED'")
-    List<Connection> findAcceptedConnectionsByUserId(Long userId);
+public interface ConnectionRepository extends MongoRepository<Connection, String> {
 
-    // Solicitudes pendientes recibidas
-    @Query("SELECT c FROM Connection c JOIN FETCH c.user JOIN FETCH c.connectedUser WHERE c.connectedUser.id = ?1 AND c.status = 'PENDING'")
-    List<Connection> findPendingRequestsByUserId(Long userId);
+    List<Connection> findByUserIdAndStatus(String userId, ConnectionStatus status);
 
-    // Solicitudes pendientes enviadas
-    @Query("SELECT c FROM Connection c JOIN FETCH c.user JOIN FETCH c.connectedUser WHERE c.user.id = ?1 AND c.status = 'PENDING'")
-    List<Connection> findSentPendingRequestsByUserId(Long userId);
+    List<Connection> findByConnectedUserIdAndStatus(String connectedUserId, ConnectionStatus status);
 
-    // Verificar si existe conexión
-    @Query("SELECT CASE WHEN COUNT(c) > 0 THEN true ELSE false END FROM Connection c WHERE " +
-           "((c.user.id = ?1 AND c.connectedUser.id = ?2) OR " +
-           "(c.user.id = ?2 AND c.connectedUser.id = ?1)) AND c.status = 'ACCEPTED'")
-    boolean areUsersConnected(Long userId1, Long userId2);
-
-    // Contar conexiones de un usuario
-    @Query("SELECT COUNT(c) FROM Connection c WHERE " +
-           "(c.user.id = ?1 OR c.connectedUser.id = ?1) AND c.status = 'ACCEPTED'")
-    long countConnectionsByUserId(Long userId);
+    Optional<Connection> findByUserIdAndConnectedUserId(String userId, String connectedUserId);
 }

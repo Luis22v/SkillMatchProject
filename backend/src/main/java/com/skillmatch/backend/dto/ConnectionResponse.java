@@ -10,13 +10,13 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ConnectionResponse {
-    private Long id;
-    private Long userId;
+    private String id;
+    private String userId;
     private String userName;
     private String userEmail;
     private String userHeadline;
     private String userProfileImage;
-    private Long connectedUserId;
+    private String connectedUserId;
     private String connectedUserName;
     private String connectedUserEmail;
     private String connectedUserHeadline;

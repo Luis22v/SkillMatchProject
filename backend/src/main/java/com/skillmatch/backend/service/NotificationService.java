@@ -7,11 +7,9 @@ import com.skillmatch.backend.model.Notification;
 import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.repository.NotificationRepository;
 import com.skillmatch.backend.repository.UserRepository;
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -25,125 +23,96 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
 
-    @Transactional
-    public NotificationResponse createNotification(@NonNull Long userId, String type, String content, Long relatedId, String actionUrl) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
-
+    public NotificationResponse createNotification(String userId, String type, String content, String relatedId, String actionUrl) {
         Notification notification = new Notification();
-        notification.setUser(user);
+        notification.setUserId(userId);
         notification.setType(type);
         notification.setContent(content);
         notification.setRelatedId(relatedId);
         notification.setActionUrl(actionUrl);
         notification.setIsRead(false);
+        notification.setCreatedAt(LocalDateTime.now());
 
         notification = notificationRepository.save(notification);
         log.debug("Notificación '{}' creada para usuario {}", type, userId);
         return mapToResponse(notification);
     }
 
-    @Transactional
-    public void createConnectionRequestNotification(@NonNull Long userId, @NonNull Long requesterId, Long connectionId) {
+    public void createConnectionRequestNotification(String userId, String requesterId, String connectionId) {
         User requester = userRepository.findById(requesterId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
-
         String content = requester.getFirstName() + " " + requester.getLastName() + " te ha enviado una solicitud de conexión";
-        String actionUrl = "/pages/conexiones.html?tab=pending";
-
-        createNotification(userId, "connection_request", content, connectionId, actionUrl);
+        createNotification(userId, "connection_request", content, connectionId, "/pages/conexiones.html?tab=pending");
     }
 
-    @Transactional
-    public void createConnectionAcceptedNotification(@NonNull Long userId, @NonNull Long accepterId, Long connectionId) {
+    public void createConnectionAcceptedNotification(String userId, String accepterId, String connectionId) {
         User accepter = userRepository.findById(accepterId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
-
         String content = accepter.getFirstName() + " " + accepter.getLastName() + " ha aceptado tu solicitud de conexión";
-        String actionUrl = "/pages/conexiones.html";
-
-        createNotification(userId, "connection_accepted", content, connectionId, actionUrl);
+        createNotification(userId, "connection_accepted", content, connectionId, "/pages/conexiones.html");
     }
 
-    @Transactional
-    public void createMessageNotification(@NonNull Long userId, @NonNull Long senderId, Long messageId) {
+    public void createMessageNotification(String userId, String senderId, String messageId) {
         User sender = userRepository.findById(senderId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
-
         String content = sender.getFirstName() + " " + sender.getLastName() + " te ha enviado un mensaje";
-        String actionUrl = "/pages/mensajes.html?userId=" + senderId;
-
-        createNotification(userId, "message", content, messageId, actionUrl);
+        createNotification(userId, "message", content, messageId, "/pages/mensajes.html?userId=" + senderId);
     }
 
-    @Transactional
-    public void createApplicationUpdateNotification(@NonNull Long userId, String status, Long applicationId, String jobTitle) {
+    public void createApplicationUpdateNotification(String userId, String status, String applicationId, String jobTitle) {
         String label = switch (status) {
             case "accepted" -> "aceptada";
             case "rejected" -> "rechazada";
             default         -> "actualizada";
         };
-        String content = "Tu aplicación para " + jobTitle + " ha sido " + label;
-        String actionUrl = "/pages/perfil-usuario.html?tab=applications";
-
-        createNotification(userId, "application_update", content, applicationId, actionUrl);
+        createNotification(userId, "application_update",
+                "Tu aplicación para " + jobTitle + " ha sido " + label,
+                applicationId, "/pages/perfil-usuario.html?tab=applications");
     }
 
-    @Transactional
-    public void createNewJobNotification(@NonNull Long userId, String companyName, Long jobId) {
-        String content = companyName + " ha publicado una nueva oferta que podría interesarte";
-        String actionUrl = "/pages/oportunidades.html?jobId=" + jobId;
-
-        createNotification(userId, "new_job", content, jobId, actionUrl);
+    public void createNewJobNotification(String userId, String companyName, String jobId) {
+        createNotification(userId, "new_job",
+                companyName + " ha publicado una nueva oferta que podría interesarte",
+                jobId, "/pages/oportunidades.html?jobId=" + jobId);
     }
 
-    @Transactional
-    public void createApplicationReceivedNotification(@NonNull Long companyUserId, String userName, Long applicationId, String jobTitle) {
-        String content = userName + " ha aplicado a tu oferta: " + jobTitle;
-        String actionUrl = "/pages/perfil-empresa.html?tab=applicants";
-
-        createNotification(companyUserId, "application_received", content, applicationId, actionUrl);
+    public void createApplicationReceivedNotification(String companyUserId, String userName, String applicationId, String jobTitle) {
+        createNotification(companyUserId, "application_received",
+                userName + " ha aplicado a tu oferta: " + jobTitle,
+                applicationId, "/pages/perfil-empresa.html?tab=applicants");
     }
 
-    @Transactional(readOnly = true)
-    public List<NotificationResponse> getUserNotifications(Long userId) {
-        List<Notification> notifications = notificationRepository.findByUserIdOrderByCreatedAtDesc(userId);
-        return notifications.stream()
+    public List<NotificationResponse> getUserNotifications(String userId) {
+        return notificationRepository.findByUserIdOrderByCreatedAtDesc(userId).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
-    @Transactional(readOnly = true)
-    public List<NotificationResponse> getUnreadNotifications(Long userId) {
-        List<Notification> notifications = notificationRepository.findByUserIdAndIsReadFalseOrderByCreatedAtDesc(userId);
-        return notifications.stream()
+    public List<NotificationResponse> getUnreadNotifications(String userId) {
+        return notificationRepository.findByUserIdAndIsReadFalseOrderByCreatedAtDesc(userId).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
-    @Transactional(readOnly = true)
-    public Long getUnreadCount(Long userId) {
+    public long getUnreadCount(String userId) {
         return notificationRepository.countByUserIdAndIsReadFalse(userId);
     }
 
-    @Transactional(readOnly = true)
-    public List<NotificationResponse> getNotificationsByType(Long userId, String type) {
-        List<Notification> notifications = notificationRepository.findByUserIdAndTypeOrderByCreatedAtDesc(userId, type);
-        return notifications.stream()
+    public List<NotificationResponse> getNotificationsByType(String userId, String type) {
+        return notificationRepository.findByUserIdAndTypeOrderByCreatedAtDesc(userId, type).stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
 
-    @Transactional
-    public NotificationResponse markAsRead(@NonNull Long notificationId, Long userId) {
+    public NotificationResponse markAsRead(String notificationId, String userId) {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Notificación no encontrada"));
 
-        if (!notification.getUser().getId().equals(userId)) {
+        if (!notification.getUserId().equals(userId)) {
             throw new UnauthorizedException("No tienes permiso para marcar esta notificación");
         }
 
-        if (!notification.getIsRead()) {
+        if (!Boolean.TRUE.equals(notification.getIsRead())) {
             notification.setIsRead(true);
             notification.setReadAt(LocalDateTime.now());
             notification = notificationRepository.save(notification);
@@ -152,33 +121,25 @@ public class NotificationService {
         return mapToResponse(notification);
     }
 
-    @Transactional
-    public void markAllAsRead(Long userId) {
-        List<Notification> unreadNotifications = notificationRepository.findByUserIdAndIsReadFalseOrderByCreatedAtDesc(userId);
-
-        if (unreadNotifications != null && !unreadNotifications.isEmpty()) {
-            LocalDateTime now = LocalDateTime.now();
-            for (Notification notification : unreadNotifications) {
-                notification.setIsRead(true);
-                notification.setReadAt(now);
-            }
-            notificationRepository.saveAll(unreadNotifications);
-            log.debug("{} notificaciones marcadas como leídas para usuario {}", unreadNotifications.size(), userId);
-        }
+    public void markAllAsRead(String userId) {
+        List<Notification> unread = notificationRepository.findByUserIdAndIsReadFalseOrderByCreatedAtDesc(userId);
+        if (unread.isEmpty()) return;
+        LocalDateTime now = LocalDateTime.now();
+        unread.forEach(n -> { n.setIsRead(true); n.setReadAt(now); });
+        notificationRepository.saveAll(unread);
+        log.debug("{} notificaciones marcadas como leídas para usuario {}", unread.size(), userId);
     }
 
-    @Transactional
-    public void deleteOldNotifications(Long userId, int daysOld) {
+    public void deleteOldNotifications(String userId, int daysOld) {
         notificationRepository.deleteByUserIdAndCreatedAtBefore(userId, LocalDateTime.now().minusDays(daysOld));
         log.info("Notificaciones antiguas eliminadas para usuario {} (más de {} días)", userId, daysOld);
     }
 
-    @Transactional
-    public void deleteNotification(@NonNull Long notificationId, Long userId) {
+    public void deleteNotification(String notificationId, String userId) {
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Notificación no encontrada"));
 
-        if (!notification.getUser().getId().equals(userId)) {
+        if (!notification.getUserId().equals(userId)) {
             throw new UnauthorizedException("No tienes permiso para eliminar esta notificación");
         }
 
@@ -188,7 +149,7 @@ public class NotificationService {
     private NotificationResponse mapToResponse(Notification notification) {
         NotificationResponse response = new NotificationResponse();
         response.setId(notification.getId());
-        response.setUserId(notification.getUser().getId());
+        response.setUserId(notification.getUserId());
         response.setType(notification.getType());
         response.setContent(notification.getContent());
         response.setRelatedId(notification.getRelatedId());

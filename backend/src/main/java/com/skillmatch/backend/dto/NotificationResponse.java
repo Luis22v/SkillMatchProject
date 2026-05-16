@@ -10,11 +10,11 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class NotificationResponse {
-    private Long id;
-    private Long userId;
+    private String id;
+    private String userId;
     private String type;
     private String content;
-    private Long relatedId;
+    private String relatedId;
     private String actionUrl;
     private Boolean isRead;
     private LocalDateTime readAt;

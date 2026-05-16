@@ -9,9 +9,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ApplicationRequest {
-    
-    @NotNull(message = "{validation.application.jobId.required}")
-    private Long jobId;
+
+    @NotBlank(message = "{validation.application.jobId.required}")
+    private String jobId;
 
     @Size(max = 1000, message = "{validation.application.resume.max}")
     private String resume;

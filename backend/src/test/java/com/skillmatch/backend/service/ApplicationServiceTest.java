@@ -20,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.security.access.AccessDeniedException;
 
 import java.util.Optional;
@@ -36,6 +37,7 @@ class ApplicationServiceTest {
     @Mock private CompanyRepository companyRepository;
     @Mock private JobRepository jobRepository;
     @Mock private UserRepository userRepository;
+    @Mock private MongoTemplate mongoTemplate;
 
     @InjectMocks
     private ApplicationService applicationService;
@@ -48,45 +50,47 @@ class ApplicationServiceTest {
     @BeforeEach
     void setUp() {
         applicant = new User();
-        applicant.setId(1L);
+        applicant.setId("user-id-1");
         applicant.setEmail("user@test.com");
         applicant.setFirstName("Ana");
         applicant.setLastName("García");
 
         companyOwner = new User();
-        companyOwner.setId(2L);
+        companyOwner.setId("user-id-2");
 
         company = new Company();
-        company.setId(10L);
+        company.setId("company-id-10");
         company.setName("TechCorp");
-        company.setUser(companyOwner);
+        company.setUserId("user-id-2");
 
         openJob = new Job();
-        openJob.setId(5L);
+        openJob.setId("job-id-5");
         openJob.setTitle("Backend Dev");
         openJob.setActive(true);
         openJob.setStatus(JobStatus.ABIERTA);
-        openJob.setCompany(company);
+        openJob.setCompanyId("company-id-10");
     }
 
     @Test
     void createApplication_validRequest_savesAndReturnsResponse() {
-        ApplicationRequest request = new ApplicationRequest(5L, "mi cv", "carta de presentación");
+        ApplicationRequest request = new ApplicationRequest("job-id-5", "mi cv", "carta de presentación");
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(applicant));
-        when(jobRepository.findById(5L)).thenReturn(Optional.of(openJob));
-        when(applicationRepository.existsByUserIdAndJobId(1L, 5L)).thenReturn(false);
+        when(userRepository.findById("user-id-1")).thenReturn(Optional.of(applicant));
+        when(jobRepository.findById("job-id-5")).thenReturn(Optional.of(openJob));
+        when(applicationRepository.existsByUserIdAndJobId("user-id-1", "job-id-5")).thenReturn(false);
 
         Application saved = new Application();
-        saved.setId(100L);
-        saved.setUser(applicant);
-        saved.setJob(openJob);
+        saved.setId("app-id-100");
+        saved.setUserId("user-id-1");
+        saved.setJobId("job-id-5");
         saved.setStatus(ApplicationStatus.PENDIENTE);
         when(applicationRepository.save(any(Application.class))).thenReturn(saved);
 
-        ApplicationResponse response = applicationService.createApplication(1L, request);
+        when(companyRepository.findById("company-id-10")).thenReturn(Optional.of(company));
 
-        assertThat(response.getId()).isEqualTo(100L);
+        ApplicationResponse response = applicationService.createApplication("user-id-1", request);
+
+        assertThat(response.getId()).isEqualTo("app-id-100");
         assertThat(response.getStatus()).isEqualTo("pendiente");
         verify(applicationRepository).save(any(Application.class));
     }
@@ -95,40 +99,45 @@ class ApplicationServiceTest {
     void createApplication_closedJob_throwsRuntimeException() {
         openJob.setStatus(JobStatus.CERRADA);
         openJob.setActive(false);
-        ApplicationRequest request = new ApplicationRequest(5L, null, null);
+        ApplicationRequest request = new ApplicationRequest("job-id-5", null, null);
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(applicant));
-        when(jobRepository.findById(5L)).thenReturn(Optional.of(openJob));
+        when(userRepository.findById("user-id-1")).thenReturn(Optional.of(applicant));
+        when(jobRepository.findById("job-id-5")).thenReturn(Optional.of(openJob));
 
-        assertThatThrownBy(() -> applicationService.createApplication(1L, request))
+        assertThatThrownBy(() -> applicationService.createApplication("user-id-1", request))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("no está disponible");
     }
 
     @Test
     void createApplication_alreadyApplied_throwsDuplicateResourceException() {
-        ApplicationRequest request = new ApplicationRequest(5L, null, null);
+        ApplicationRequest request = new ApplicationRequest("job-id-5", null, null);
 
-        when(userRepository.findById(1L)).thenReturn(Optional.of(applicant));
-        when(jobRepository.findById(5L)).thenReturn(Optional.of(openJob));
-        when(applicationRepository.existsByUserIdAndJobId(1L, 5L)).thenReturn(true);
+        when(userRepository.findById("user-id-1")).thenReturn(Optional.of(applicant));
+        when(jobRepository.findById("job-id-5")).thenReturn(Optional.of(openJob));
+        when(applicationRepository.existsByUserIdAndJobId("user-id-1", "job-id-5")).thenReturn(true);
 
-        assertThatThrownBy(() -> applicationService.createApplication(1L, request))
+        assertThatThrownBy(() -> applicationService.createApplication("user-id-1", request))
                 .isInstanceOf(DuplicateResourceException.class);
     }
 
     @Test
     void updateStatus_validStatus_changesStatus() {
         Application application = new Application();
-        application.setId(50L);
-        application.setUser(applicant);
-        application.setJob(openJob);
+        application.setId("app-id-50");
+        application.setUserId("user-id-1");
+        application.setJobId("job-id-5");
         application.setStatus(ApplicationStatus.PENDIENTE);
 
-        when(applicationRepository.findById(50L)).thenReturn(Optional.of(application));
+        when(applicationRepository.findById("app-id-50")).thenReturn(Optional.of(application));
+        when(jobRepository.findById("job-id-5")).thenReturn(Optional.of(openJob));
+        when(companyRepository.findById("company-id-10")).thenReturn(Optional.of(company));
         when(applicationRepository.save(any(Application.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        ApplicationResponse result = applicationService.updateStatus(50L, "aceptada", null, companyOwner.getId());
+        // loadAndMapSingle after save
+        when(userRepository.findById("user-id-1")).thenReturn(Optional.of(applicant));
+
+        ApplicationResponse result = applicationService.updateStatus("app-id-50", "aceptada", null, "user-id-2");
 
         assertThat(result.getStatus()).isEqualTo("aceptada");
     }
@@ -136,43 +145,48 @@ class ApplicationServiceTest {
     @Test
     void updateStatus_invalidStatus_throwsIllegalArgumentException() {
         Application application = new Application();
-        application.setId(50L);
-        application.setUser(applicant);
-        application.setJob(openJob);
+        application.setId("app-id-50");
+        application.setUserId("user-id-1");
+        application.setJobId("job-id-5");
         application.setStatus(ApplicationStatus.PENDIENTE);
 
-        when(applicationRepository.findById(50L)).thenReturn(Optional.of(application));
+        when(applicationRepository.findById("app-id-50")).thenReturn(Optional.of(application));
+        when(jobRepository.findById("job-id-5")).thenReturn(Optional.of(openJob));
+        when(companyRepository.findById("company-id-10")).thenReturn(Optional.of(company));
 
-        assertThatThrownBy(() -> applicationService.updateStatus(50L, "invalido", null, companyOwner.getId()))
+        assertThatThrownBy(() -> applicationService.updateStatus("app-id-50", "invalido", null, "user-id-2"))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void updateStatus_wrongOwner_throwsAccessDeniedException() {
-        User differentOwner = new User();
-        differentOwner.setId(99L);
         Company otherCompany = new Company();
-        otherCompany.setUser(differentOwner);
+        otherCompany.setId("other-company-id");
+        otherCompany.setUserId("user-id-99");
+
         Job otherJob = new Job();
-        otherJob.setCompany(otherCompany);
+        otherJob.setId("other-job-id");
+        otherJob.setCompanyId("other-company-id");
 
         Application application = new Application();
-        application.setId(60L);
-        application.setUser(applicant);
-        application.setJob(otherJob);
+        application.setId("app-id-60");
+        application.setUserId("user-id-1");
+        application.setJobId("other-job-id");
         application.setStatus(ApplicationStatus.PENDIENTE);
 
-        when(applicationRepository.findById(60L)).thenReturn(Optional.of(application));
+        when(applicationRepository.findById("app-id-60")).thenReturn(Optional.of(application));
+        when(jobRepository.findById("other-job-id")).thenReturn(Optional.of(otherJob));
+        when(companyRepository.findById("other-company-id")).thenReturn(Optional.of(otherCompany));
 
-        assertThatThrownBy(() -> applicationService.updateStatus(60L, "aceptada", null, companyOwner.getId()))
+        assertThatThrownBy(() -> applicationService.updateStatus("app-id-60", "aceptada", null, "user-id-2"))
                 .isInstanceOf(AccessDeniedException.class);
     }
 
     @Test
     void getApplicationById_notFound_throwsResourceNotFoundException() {
-        when(applicationRepository.findById(999L)).thenReturn(Optional.empty());
+        when(applicationRepository.findById("app-id-999")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> applicationService.getApplicationById(999L))
+        assertThatThrownBy(() -> applicationService.getApplicationById("app-id-999"))
                 .isInstanceOf(ResourceNotFoundException.class);
     }
 }

@@ -1,119 +1,96 @@
 package com.skillmatch.backend.model;
 
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.lang.NonNull;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
+import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.List;
 import java.util.stream.Collectors;
 
-@Entity
-@Table(name = "users")
+@Document(collection = "users")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class User implements UserDetails {
-    
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private @NonNull Long id;
-    
-    @Column(nullable = false, unique = true, length = 100)
+    private String id;
+
+    @Indexed(unique = true)
     private String email;
-    
-    @Column(nullable = false)
+
     private String password;
-    
-    @Column(nullable = false, length = 100)
+
     private String firstName;
-    
-    @Column(nullable = false, length = 100)
+
     private String lastName;
-    
-    @Column(length = 20)
+
     private String phone;
-    
-    @Column(length = 200)
+
     private String headline;
-    
-    @Column(length = 100)
+
     private String location;
-    
-    @Column(length = 500)
+
     private String bio;
-    
-    @Column(name = "profile_image_url", length = 255)
+
     private String profileImageUrl;
-    
-    @Column(name = "cover_image_url", length = 255)
+
     private String coverImageUrl;
-    
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-        name = "user_roles",
-        joinColumns = @JoinColumn(name = "user_id"),
-        inverseJoinColumns = @JoinColumn(name = "role_id")
-    )
-    private Set<Role> roles = new HashSet<>();
-    
-    @Column(nullable = false)
+
+    private List<String> roles = new ArrayList<>();
+
+    private List<Skill> skills = new ArrayList<>();
+
+    private List<Experience> experiences = new ArrayList<>();
+
+    private List<Education> educations = new ArrayList<>();
+
+    private List<Certification> certifications = new ArrayList<>();
+
     private Boolean enabled = true;
-    
-    @Column(name = "created_at", nullable = false, updatable = false, columnDefinition = "DATETIME")
+
     private LocalDateTime createdAt;
-    
-    @Column(name = "updated_at", columnDefinition = "DATETIME")
+
     private LocalDateTime updatedAt;
-    
-    @PrePersist
-    protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
-    }
-    
-    @PreUpdate
-    protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
-    }
-    
-    // UserDetails implementation
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return roles.stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getName()))
+                .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
                 .collect(Collectors.toList());
     }
-    
+
     @Override
     public String getUsername() {
         return email;
     }
-    
+
     @Override
     public boolean isAccountNonExpired() {
         return true;
     }
-    
+
     @Override
     public boolean isAccountNonLocked() {
         return true;
     }
-    
+
     @Override
     public boolean isCredentialsNonExpired() {
         return true;
     }
-    
+
     @Override
     public boolean isEnabled() {
-        return enabled;
+        return Boolean.TRUE.equals(enabled);
     }
 }

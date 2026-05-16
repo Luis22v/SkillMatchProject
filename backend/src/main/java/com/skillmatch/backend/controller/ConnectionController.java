@@ -28,8 +28,7 @@ public class ConnectionController {
     public ResponseEntity<?> sendConnectionRequest(@Valid @RequestBody ConnectionRequest request,
                                                     @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
-            ConnectionResponse response = connectionService.sendConnectionRequest(currentUser.getId(), request);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(connectionService.sendConnectionRequest(currentUser.getId(), request));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
         }
@@ -37,11 +36,10 @@ public class ConnectionController {
 
     @PatchMapping("/{connectionId}/accept")
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
-    public ResponseEntity<?> acceptConnection(@PathVariable Long connectionId,
+    public ResponseEntity<?> acceptConnection(@PathVariable String connectionId,
                                                @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
-            ConnectionResponse response = connectionService.acceptConnection(connectionId, currentUser.getId());
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(connectionService.acceptConnection(connectionId, currentUser.getId()));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
         }
@@ -49,11 +47,10 @@ public class ConnectionController {
 
     @PatchMapping("/{connectionId}/reject")
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
-    public ResponseEntity<?> rejectConnection(@PathVariable Long connectionId,
+    public ResponseEntity<?> rejectConnection(@PathVariable String connectionId,
                                                @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
-            ConnectionResponse response = connectionService.rejectConnection(connectionId, currentUser.getId());
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(connectionService.rejectConnection(connectionId, currentUser.getId()));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
         }
@@ -61,7 +58,7 @@ public class ConnectionController {
 
     @PatchMapping("/{connectionId}/block")
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
-    public ResponseEntity<?> blockConnection(@PathVariable Long connectionId,
+    public ResponseEntity<?> blockConnection(@PathVariable String connectionId,
                                               @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             connectionService.blockConnection(connectionId, currentUser.getId());
@@ -75,8 +72,7 @@ public class ConnectionController {
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
     public ResponseEntity<?> getMyConnections(@AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
-            List<ConnectionResponse> connections = connectionService.getMyConnections(currentUser.getId());
-            return ResponseEntity.ok(connections);
+            return ResponseEntity.ok(connectionService.getMyConnections(currentUser.getId()));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
         }
@@ -86,8 +82,7 @@ public class ConnectionController {
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
     public ResponseEntity<?> getPendingRequests(@AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
-            List<ConnectionResponse> requests = connectionService.getPendingRequests(currentUser.getId());
-            return ResponseEntity.ok(requests);
+            return ResponseEntity.ok(connectionService.getPendingRequests(currentUser.getId()));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
         }
@@ -97,8 +92,7 @@ public class ConnectionController {
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
     public ResponseEntity<?> getSentRequests(@AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
-            List<ConnectionResponse> requests = connectionService.getSentRequests(currentUser.getId());
-            return ResponseEntity.ok(requests);
+            return ResponseEntity.ok(connectionService.getSentRequests(currentUser.getId()));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
         }
@@ -106,7 +100,7 @@ public class ConnectionController {
 
     @GetMapping("/check/{otherUserId}")
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
-    public ResponseEntity<?> checkConnection(@PathVariable Long otherUserId,
+    public ResponseEntity<?> checkConnection(@PathVariable String otherUserId,
                                               @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
             boolean isConnected = connectionService.areUsersConnected(currentUser.getId(), otherUserId);
@@ -120,7 +114,7 @@ public class ConnectionController {
     @PreAuthorize("hasRole('USER') or hasRole('EMPRESA')")
     public ResponseEntity<?> getConnectionsCount(@AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
-            Long count = connectionService.getConnectionsCount(currentUser.getId());
+            long count = connectionService.getConnectionsCount(currentUser.getId());
             return ResponseEntity.ok(new CountResponse(count));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
@@ -139,5 +133,5 @@ public class ConnectionController {
     }
 
     private record ConnectionStatus(boolean isConnected) {}
-    private record CountResponse(Long count) {}
+    private record CountResponse(long count) {}
 }

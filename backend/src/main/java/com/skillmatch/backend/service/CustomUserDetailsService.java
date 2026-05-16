@@ -30,7 +30,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     }
 
     @Transactional
-    public UserDetails loadUserById(@NonNull Long id) {
+    public UserDetails loadUserById(@NonNull String id) {
         log.debug("Cargando usuario por id: {}", id);
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con id: " + id));

@@ -21,8 +21,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Objects;
-import org.springframework.lang.NonNull;
 
 @Tag(name = "Ofertas de trabajo", description = "Creación, consulta y gestión de ofertas laborales")
 @RestController
@@ -33,15 +31,12 @@ public class JobController {
 
     private final JobService jobService;
 
-    // ─── Escritura (empresa/admin) ────────────────────────────────────────────
-
     @Operation(summary = "Crear oferta", description = "Crea una nueva oferta laboral (solo empresas)")
     @PostMapping
     @PreAuthorize("hasRole('EMPRESA') or hasRole('ADMIN')")
     public ResponseEntity<?> createJob(@Valid @RequestBody JobRequest request) {
         try {
-            JobResponse response = jobService.createJob(request);
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+            return ResponseEntity.status(HttpStatus.CREATED).body(jobService.createJob(request));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new MessageResponse("Error al crear oferta: " + e.getMessage()));
@@ -50,15 +45,13 @@ public class JobController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('EMPRESA') or hasRole('ADMIN')")
-    public ResponseEntity<?> updateJob(@PathVariable @NonNull Long id,
+    public ResponseEntity<?> updateJob(@PathVariable String id,
                                        @Valid @RequestBody JobRequest request,
                                        @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
-            JobResponse response = jobService.updateJob(id, request, Objects.requireNonNull(currentUser.getId()));
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(jobService.updateJob(id, request, currentUser.getId()));
         } catch (AccessDeniedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(new MessageResponse(e.getMessage()));
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new MessageResponse("Error al actualizar oferta: " + e.getMessage()));
@@ -67,15 +60,13 @@ public class JobController {
 
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasRole('EMPRESA') or hasRole('ADMIN')")
-    public ResponseEntity<?> changeStatus(@PathVariable @NonNull Long id,
+    public ResponseEntity<?> changeStatus(@PathVariable String id,
                                           @RequestParam String status,
                                           @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
-            JobResponse response = jobService.changeStatus(id, status, Objects.requireNonNull(currentUser.getId()));
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(jobService.changeStatus(id, status, currentUser.getId()));
         } catch (AccessDeniedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(new MessageResponse(e.getMessage()));
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new MessageResponse("Error al cambiar estado: " + e.getMessage()));
@@ -84,24 +75,21 @@ public class JobController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('EMPRESA') or hasRole('ADMIN')")
-    public ResponseEntity<?> deleteJob(@PathVariable @NonNull Long id,
+    public ResponseEntity<?> deleteJob(@PathVariable String id,
                                        @AuthenticationPrincipal UserDetailsImpl currentUser) {
         try {
-            jobService.deleteJob(id, Objects.requireNonNull(currentUser.getId()));
+            jobService.deleteJob(id, currentUser.getId());
             return ResponseEntity.ok(new MessageResponse("Oferta eliminada exitosamente"));
         } catch (AccessDeniedException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(new MessageResponse(e.getMessage()));
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new MessageResponse(e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(new MessageResponse("Error al eliminar oferta: " + e.getMessage()));
         }
     }
 
-    // ─── Lectura pública con paginación ──────────────────────────────────────
-
     @GetMapping("/{id}")
-    public ResponseEntity<?> getJobById(@PathVariable @NonNull Long id) {
+    public ResponseEntity<?> getJobById(@PathVariable String id) {
         try {
             return ResponseEntity.ok(jobService.getJobById(id));
         } catch (Exception e) {
@@ -110,17 +98,6 @@ public class JobController {
         }
     }
 
-    /**
-     * ✅ FIX #4: Lista paginada de ofertas activas.
-     *
-     * Query params:
-     *   page     (default 0)          — número de página, base 0
-     *   size     (default 20, max 50) — resultados por página
-     *   sortBy   (default postedDate) — campo de ordenamiento
-     *   direction(default desc)       — asc | desc
-     *
-     * Respuesta: Page<JobResponse> con metadata (totalElements, totalPages, etc.)
-     */
     @Operation(summary = "Listar ofertas activas", description = "Devuelve página de ofertas activas, ordenadas por fecha (público)")
     @GetMapping
     public ResponseEntity<Page<JobResponse>> getAllActiveJobs(
@@ -128,26 +105,17 @@ public class JobController {
             @RequestParam(defaultValue = "20")         int size,
             @RequestParam(defaultValue = "postedDate") String sortBy,
             @RequestParam(defaultValue = "desc")       String direction) {
-
-        size = Math.min(size, 50); // límite máximo
-        Pageable pageable = buildPageable(page, size, sortBy, direction);
-        return ResponseEntity.ok(jobService.getAllActiveJobs(pageable));
+        size = Math.min(size, 50);
+        return ResponseEntity.ok(jobService.getAllActiveJobs(buildPageable(page, size, sortBy, direction)));
     }
 
-    /**
-     * Últimas 10 ofertas para landing/home.
-     * Sin paginación — siempre retorna los 10 más recientes.
-     */
     @Operation(summary = "Ofertas recientes", description = "Devuelve las 10 ofertas más recientes para la landing page")
     @GetMapping("/recent")
     public ResponseEntity<List<JobResponse>> getRecentJobs() {
         return ResponseEntity.ok(jobService.getRecentJobs());
     }
 
-    /**
-     * Búsqueda por palabra clave con paginación.
-     */
-    @Operation(summary = "Buscar ofertas", description = "Búsqueda por palabra clave en título, descripción y empresa")
+    @Operation(summary = "Buscar ofertas", description = "Búsqueda por palabra clave en título y descripción")
     @GetMapping("/search")
     public ResponseEntity<Page<JobResponse>> searchJobs(
             @RequestParam String keyword,
@@ -155,15 +123,10 @@ public class JobController {
             @RequestParam(defaultValue = "20")         int size,
             @RequestParam(defaultValue = "postedDate") String sortBy,
             @RequestParam(defaultValue = "desc")       String direction) {
-
         size = Math.min(size, 50);
-        Pageable pageable = buildPageable(page, size, sortBy, direction);
-        return ResponseEntity.ok(jobService.searchJobs(keyword, pageable));
+        return ResponseEntity.ok(jobService.searchJobs(keyword, buildPageable(page, size, sortBy, direction)));
     }
 
-    /**
-     * Filtros avanzados con paginación.
-     */
     @GetMapping("/filter")
     public ResponseEntity<Page<JobResponse>> filterJobs(
             @RequestParam(required = false) String type,
@@ -176,31 +139,19 @@ public class JobController {
             @RequestParam(defaultValue = "20")         int size,
             @RequestParam(defaultValue = "postedDate") String sortBy,
             @RequestParam(defaultValue = "desc")       String direction) {
-
         size = Math.min(size, 50);
-        Pageable pageable = buildPageable(page, size, sortBy, direction);
-        return ResponseEntity.ok(
-                jobService.getJobsByFilters(
-                        type, modality, experienceLevel, location,
-                        minSalary, maxSalary, pageable));
+        return ResponseEntity.ok(jobService.getJobsByFilters(
+                type, modality, experienceLevel, location, minSalary, maxSalary,
+                buildPageable(page, size, sortBy, direction)));
     }
 
-    /**
-     * Ofertas de una empresa (para perfil público y dashboard interno).
-     * Sin paginar — el dashboard de empresa muestra todas sus ofertas.
-     */
     @GetMapping("/company/{companyId}")
-    public ResponseEntity<List<JobResponse>> getJobsByCompany(
-            @PathVariable @NonNull Long companyId) {
+    public ResponseEntity<List<JobResponse>> getJobsByCompany(@PathVariable String companyId) {
         return ResponseEntity.ok(jobService.getJobsByCompany(companyId));
     }
 
-    // ─── Helper ──────────────────────────────────────────────────────────────
-
     private Pageable buildPageable(int page, int size, String sortBy, String direction) {
-        Sort sort = "asc".equalsIgnoreCase(direction)
-                ? Sort.by(sortBy).ascending()
-                : Sort.by(sortBy).descending();
+        Sort sort = "asc".equalsIgnoreCase(direction) ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending();
         return PageRequest.of(page, size, sort);
     }
 }

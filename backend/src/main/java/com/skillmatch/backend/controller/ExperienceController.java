@@ -27,8 +27,7 @@ public class ExperienceController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<ExperienceResponse>> getUserExperiences(
             @PathVariable(required = false) String userId) {
-        Long targetUserId = resolveTargetUserId(userId, extractCurrentUserId());
-        return ResponseEntity.ok(experienceService.getUserExperiences(targetUserId));
+        return ResponseEntity.ok(experienceService.getUserExperiences(resolveUserId(userId)));
     }
 
     @PostMapping
@@ -36,18 +35,15 @@ public class ExperienceController {
     public ResponseEntity<?> addExperience(
             @PathVariable(required = false) String userId,
             @Valid @RequestBody ExperienceRequest request) {
-
-        Long currentUserId = extractCurrentUserId();
-        Long targetUserId = resolveTargetUserId(userId, currentUserId);
-
+        String currentUserId = currentUserId();
+        String targetUserId = resolveUserId(userId, currentUserId);
         if (!currentUserId.equals(targetUserId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new MessageResponse("No tienes permiso para agregar experiencia a este perfil"));
         }
-
         try {
-            ExperienceResponse experience = experienceService.addExperience(targetUserId, request);
-            return ResponseEntity.status(HttpStatus.CREATED).body(experience);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(experienceService.addExperience(targetUserId, request));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
         }
@@ -57,20 +53,16 @@ public class ExperienceController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> updateExperience(
             @PathVariable(required = false) String userId,
-            @PathVariable Long experienceId,
+            @PathVariable String experienceId,
             @Valid @RequestBody ExperienceRequest request) {
-
-        Long currentUserId = extractCurrentUserId();
-        Long targetUserId = resolveTargetUserId(userId, currentUserId);
-
+        String currentUserId = currentUserId();
+        String targetUserId = resolveUserId(userId, currentUserId);
         if (!currentUserId.equals(targetUserId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new MessageResponse("No tienes permiso para actualizar esta experiencia"));
         }
-
         try {
-            ExperienceResponse updated = experienceService.updateExperience(targetUserId, experienceId, request);
-            return ResponseEntity.ok(updated);
+            return ResponseEntity.ok(experienceService.updateExperience(targetUserId, experienceId, request));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new MessageResponse(e.getMessage()));
         }
@@ -80,16 +72,13 @@ public class ExperienceController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<?> deleteExperience(
             @PathVariable(required = false) String userId,
-            @PathVariable Long experienceId) {
-
-        Long currentUserId = extractCurrentUserId();
-        Long targetUserId = resolveTargetUserId(userId, currentUserId);
-
+            @PathVariable String experienceId) {
+        String currentUserId = currentUserId();
+        String targetUserId = resolveUserId(userId, currentUserId);
         if (!currentUserId.equals(targetUserId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new MessageResponse("No tienes permiso para eliminar esta experiencia"));
         }
-
         try {
             experienceService.deleteExperience(targetUserId, experienceId);
             return ResponseEntity.ok(new MessageResponse("Experiencia eliminada exitosamente"));
@@ -98,13 +87,15 @@ public class ExperienceController {
         }
     }
 
-    private Long extractCurrentUserId() {
+    private String currentUserId() {
         return ((UserDetailsImpl) SecurityContextHolder.getContext().getAuthentication().getPrincipal()).getId();
     }
 
-    private Long resolveTargetUserId(String pathUserId, Long fallbackId) {
-        return (pathUserId != null && !pathUserId.equals("undefined"))
-                ? Long.parseLong(pathUserId)
-                : fallbackId;
+    private String resolveUserId(String pathUserId) {
+        return resolveUserId(pathUserId, currentUserId());
+    }
+
+    private String resolveUserId(String pathUserId, String fallback) {
+        return (pathUserId != null && !pathUserId.equals("undefined")) ? pathUserId : fallback;
     }
 }

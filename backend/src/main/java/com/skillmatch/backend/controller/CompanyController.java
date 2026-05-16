@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
-import org.springframework.lang.NonNull;
 
 @Tag(name = "Empresas", description = "Consulta y gestión de perfiles de empresa")
 @RestController
@@ -29,14 +28,11 @@ public class CompanyController {
 
     private final CompanyService companyService;
 
-    // ─── Escritura (solo ADMIN) ──────────────────────────────────────────────
-
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> createCompany(@Valid @RequestBody CompanyRequest request) {
         try {
-            CompanyResponse response = companyService.createCompany(request);
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+            return ResponseEntity.status(HttpStatus.CREATED).body(companyService.createCompany(request));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new MessageResponse("Error: " + e.getMessage()));
         }
@@ -44,11 +40,10 @@ public class CompanyController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> updateCompany(@PathVariable @NonNull Long id,
+    public ResponseEntity<?> updateCompany(@PathVariable String id,
                                            @Valid @RequestBody CompanyRequest request) {
         try {
-            CompanyResponse response = companyService.updateCompany(id, request);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(companyService.updateCompany(id, request));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new MessageResponse("Error: " + e.getMessage()));
         }
@@ -56,7 +51,7 @@ public class CompanyController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> deleteCompany(@PathVariable @NonNull Long id) {
+    public ResponseEntity<?> deleteCompany(@PathVariable String id) {
         try {
             companyService.deleteCompany(id);
             return ResponseEntity.ok(new MessageResponse("Empresa eliminada exitosamente"));
@@ -67,7 +62,7 @@ public class CompanyController {
 
     @PostMapping("/{id}/verify")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> verifyCompany(@PathVariable @NonNull Long id) {
+    public ResponseEntity<?> verifyCompany(@PathVariable String id) {
         try {
             companyService.verifyCompany(id);
             return ResponseEntity.ok(new MessageResponse("Empresa verificada exitosamente"));
@@ -76,42 +71,30 @@ public class CompanyController {
         }
     }
 
-    // ─── Descripción (dueño de la empresa o ADMIN) ───────────────────────────
-
-    /**
-     * ✅ FIX #2: Endpoint antes completamente abierto — cualquier usuario
-     * autenticado podía modificar la descripción de cualquier empresa.
-     * Ahora se verifica que el usuario sea el dueño o tenga rol ADMIN.
-     */
     @Operation(summary = "Actualizar descripción", description = "El dueño de la empresa o un ADMIN actualiza la descripción del perfil")
     @PatchMapping("/{id}/description")
     @PreAuthorize("hasRole('ADMIN') or @companyService.isOwner(#id, authentication.principal.id)")
     public ResponseEntity<?> updateCompanyDescription(
-            @PathVariable @NonNull Long id,
+            @PathVariable String id,
             @RequestBody Map<String, String> request) {
         try {
             String description = request.get("description");
             if (description == null || description.trim().isEmpty()) {
-                return ResponseEntity.badRequest()
-                        .body(new MessageResponse("La descripción no puede estar vacía"));
+                return ResponseEntity.badRequest().body(new MessageResponse("La descripción no puede estar vacía"));
             }
-            CompanyResponse response = companyService.updateCompanyDescription(id, description);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(companyService.updateCompanyDescription(id, description));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(new MessageResponse("Error: " + e.getMessage()));
         }
     }
 
-    // ─── Lectura (públicos o autenticados) ───────────────────────────────────
-
     @Operation(summary = "Obtener empresa", description = "Devuelve el perfil público de una empresa por ID")
     @GetMapping("/{id}")
-    public ResponseEntity<?> getCompany(@PathVariable @NonNull Long id) {
+    public ResponseEntity<?> getCompany(@PathVariable String id) {
         try {
             return ResponseEntity.ok(companyService.getCompanyById(id));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(new MessageResponse("Error: " + e.getMessage()));
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new MessageResponse("Error: " + e.getMessage()));
         }
     }
 
@@ -141,14 +124,12 @@ public class CompanyController {
 
     @GetMapping("/{id}/statistics")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<?> getCompanyStatistics(@PathVariable @NonNull Long id) {
+    public ResponseEntity<?> getCompanyStatistics(@PathVariable String id) {
         try {
-            Map<String, Object> statistics = companyService.getCompanyStatistics(id);
-            return ResponseEntity.ok(statistics);
+            return ResponseEntity.ok(companyService.getCompanyStatistics(id));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new MessageResponse("Error al obtener estadísticas: " + e.getMessage()));
         }
     }
-
 }

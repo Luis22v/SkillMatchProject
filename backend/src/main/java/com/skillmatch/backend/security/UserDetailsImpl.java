@@ -2,29 +2,23 @@ package com.skillmatch.backend.security;
 
 import com.skillmatch.backend.model.User;
 import lombok.Getter;
-import org.springframework.lang.NonNull;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
-/**
- * Adapta la entidad User a UserDetails sin mezclar responsabilidades (SRP).
- * Los controladores reciben este objeto como @AuthenticationPrincipal en lugar de la entidad JPA.
- */
 @Getter
 public class UserDetailsImpl implements UserDetails {
 
-    private final @NonNull Long id;
+    private final String id;
     private final String email;
     private final String password;
     private final Boolean enabled;
     private final Collection<? extends GrantedAuthority> authorities;
 
-    private UserDetailsImpl(@NonNull Long id, String email, String password,
+    private UserDetailsImpl(String id, String email, String password,
                             Boolean enabled,
                             Collection<? extends GrantedAuthority> authorities) {
         this.id = id;
@@ -36,11 +30,11 @@ public class UserDetailsImpl implements UserDetails {
 
     public static UserDetailsImpl build(User user) {
         var grantedAuthorities = user.getRoles().stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getName()))
+                .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
                 .collect(Collectors.toList());
 
         return new UserDetailsImpl(
-                Objects.requireNonNull(user.getId()),
+                user.getId(),
                 user.getEmail(),
                 user.getPassword(),
                 user.getEnabled(),

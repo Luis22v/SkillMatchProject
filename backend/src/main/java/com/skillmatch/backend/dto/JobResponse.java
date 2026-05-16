@@ -11,9 +11,9 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class JobResponse {
-    
-    private Long id;
-    private Long companyId;
+
+    private String id;
+    private String companyId;
     private String companyName;
     private String companyLogo;
     private String title;

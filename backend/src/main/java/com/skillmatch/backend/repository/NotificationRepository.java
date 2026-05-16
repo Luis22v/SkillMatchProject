@@ -1,21 +1,22 @@
 package com.skillmatch.backend.repository;
 
 import com.skillmatch.backend.model.Notification;
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
-public interface NotificationRepository extends JpaRepository<Notification, Long> {
-    
-    List<Notification> findByUserIdOrderByCreatedAtDesc(Long userId);
-    
-    List<Notification> findByUserIdAndIsReadFalseOrderByCreatedAtDesc(Long userId);
-    
-    long countByUserIdAndIsReadFalse(Long userId);
-    
-    List<Notification> findByUserIdAndTypeOrderByCreatedAtDesc(Long userId, String type);
-    
-    void deleteByUserIdAndCreatedAtBefore(Long userId, java.time.LocalDateTime date);
+public interface NotificationRepository extends MongoRepository<Notification, String> {
+
+    List<Notification> findByUserIdOrderByCreatedAtDesc(String userId);
+
+    List<Notification> findByUserIdAndIsReadFalseOrderByCreatedAtDesc(String userId);
+
+    long countByUserIdAndIsReadFalse(String userId);
+
+    List<Notification> findByUserIdAndTypeOrderByCreatedAtDesc(String userId, String type);
+
+    void deleteByUserIdAndCreatedAtBefore(String userId, LocalDateTime date);
 }
