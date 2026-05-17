@@ -90,15 +90,44 @@ function hideEditButtons() {
     
 }
 
+const AVATAR_COLORS = ['#0369a1','#0891b2','#0d9488','#059669','#7c3aed','#9333ea','#c026d3','#e11d48','#b45309'];
+
+function setProfileAvatar(profileImageUrl, fullName) {
+    const img = document.getElementById('profileImage');
+    const initialsDiv = document.getElementById('profileInitials');
+    if (!img || !initialsDiv) return;
+
+    if (profileImageUrl) {
+        img.src = profileImageUrl;
+        img.classList.remove('avatar-img-hidden');
+        initialsDiv.style.display = 'none';
+    } else {
+        img.classList.add('avatar-img-hidden');
+        const initials = (fullName || '?')
+            .split(' ')
+            .filter(Boolean)
+            .slice(0, 2)
+            .map(w => w[0].toUpperCase())
+            .join('');
+        const bg = AVATAR_COLORS[(fullName || '').charCodeAt(0) % AVATAR_COLORS.length];
+        initialsDiv.style.display = 'flex';
+        initialsDiv.style.background = bg;
+        initialsDiv.textContent = initials;
+    }
+}
+
 // Mostrar información del perfil
 function displayUserProfile(user) {
-    document.getElementById('userName').textContent = `${user.firstName} ${user.lastName}`;
+    const fullName = `${user.firstName} ${user.lastName}`;
+    document.getElementById('userName').textContent = fullName;
     document.getElementById('userHeadline').textContent = user.headline || 'Usuario de SkillMatch';
     document.getElementById('userLocation').textContent = `📍 ${user.location || 'Cartagena, Colombia'}`;
-    
+
+    setProfileAvatar(user.profileImageUrl, fullName);
+
     // Cargar estadísticas reales del backend
     loadUserStatistics(user.id);
-    
+
     // Calcular progreso del perfil
     calculateProfileProgress(user);
 }
@@ -809,7 +838,8 @@ async function updateProfileImage(imageUrl) {
 
         if (response.ok) {
             const data = await response.json();
-            document.getElementById('profileImage').src = data.profileImageUrl;
+            const user = getUserData();
+            setProfileAvatar(data.profileImageUrl, `${user.firstName} ${user.lastName}`);
             alert('✅ Foto de perfil actualizada exitosamente');
             closePhotoModal();
         } else {
