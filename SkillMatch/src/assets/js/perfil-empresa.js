@@ -344,27 +344,27 @@ function editOffer(offerId) {
 function toggleOfferStatus(offerId) {
     const offerIndex = currentOffers.findIndex((o, i) => (o.id || i) === offerId);
     if (offerIndex === -1) return;
-    
-    const newStatus = currentOffers[offerIndex].status === 'active' ? 'archived' : 'active';
 
-    // Actualizar en backend
-    fetchWithAuth(`${API_BASE_URL}/jobs/${offerId}/status?status=${newStatus.toUpperCase()}`, { method: 'PATCH' })
-    .then(response => {
-        if (!response.ok) throw new Error('Error al cambiar estado');
+    const currentStatus = currentOffers[offerIndex].status;
+    const backendStatus = currentStatus === 'active' ? 'CERRADA' : 'ABIERTA';
+    const newLocalStatus = currentStatus === 'active' ? 'archived' : 'active';
+
+    fetchWithAuth(`${API_BASE_URL}/jobs/${offerId}/status?status=${backendStatus}`, { method: 'PATCH' })
+    .then(async response => {
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.message || `Error ${response.status}`);
+        }
         return response.json();
     })
-    .then(data => {
-        currentOffers[offerIndex].status = newStatus;
+    .then(() => {
+        currentOffers[offerIndex].status = newLocalStatus;
         localStorage.setItem('companyOffers', JSON.stringify(currentOffers));
         renderOffers(currentOffers);
-        showNotification(newStatus === 'active' ? 'Oferta reabierta' : 'Oferta archivada');
+        showNotification(newLocalStatus === 'active' ? 'Oferta reabierta' : 'Oferta archivada');
     })
     .catch(error => {
-        // Fallback: actualizar solo localmente
-        currentOffers[offerIndex].status = newStatus;
-        localStorage.setItem('companyOffers', JSON.stringify(currentOffers));
-        renderOffers(currentOffers);
-        showNotification('Estado actualizado localmente');
+        alert('Error al cambiar el estado de la oferta: ' + error.message);
     });
 }
 
@@ -811,23 +811,24 @@ function contactCandidateByEmail(email, candidateName) {
 
 async function updateCandidateStatus(applicationId, newStatus, offerId) {
     try {
-        const response = await fetchWithAuth(`${API_BASE_URL}/applications/${applicationId}/status`, {
-            method: 'PUT',
-            body: JSON.stringify({ status: newStatus })
-        });
-        
+        const params = new URLSearchParams({ status: newStatus });
+        const response = await fetchWithAuth(
+            `${API_BASE_URL}/applications/${applicationId}/status?${params}`,
+            { method: 'PATCH' }
+        );
+
         if (response.ok) {
             showNotification(`Candidato ${newStatus === 'aceptada' ? 'aceptado' : 'rechazado'} exitosamente`);
-            // Recargar modal con candidatos actualizados
             const offer = currentOffers.find(o => o.id === offerId);
             if (offer) {
                 setTimeout(() => showCandidatesModal(offer), 500);
             }
         } else {
-            throw new Error('Error al actualizar estado');
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.message || `Error ${response.status}`);
         }
     } catch (error) {
-        alert('Error al actualizar el estado del candidato');
+        alert('Error al actualizar el estado del candidato: ' + error.message);
     }
 }
 
@@ -957,11 +958,15 @@ async function loadApplications() {
         const response = await fetchWithAuth(`${API_BASE_URL}/applications/company/${userData.companyId}`);
         
         if (response.ok) {
-            const applications = await response.json();
+            const data = await response.json();
+            const applications = Array.isArray(data) ? data : (data.content || []);
             displayApplications(applications);
         } else {
+            const err = await response.json().catch(() => ({}));
+            console.error('Error al cargar aplicaciones:', response.status, err.message);
         }
     } catch (error) {
+        console.error('Error al cargar aplicaciones:', error);
     }
 }
 
@@ -1103,19 +1108,21 @@ function createApplicationCard(application) {
 // Actualizar estado de aplicación
 async function updateApplicationStatus(applicationId, newStatus) {
     try {
-        const response = await fetchWithAuth(`${API_BASE_URL}/applications/${applicationId}/status`, {
-            method: 'PUT',
-            body: JSON.stringify({ status: newStatus })
-        });
-        
+        const params = new URLSearchParams({ status: newStatus });
+        const response = await fetchWithAuth(
+            `${API_BASE_URL}/applications/${applicationId}/status?${params}`,
+            { method: 'PATCH' }
+        );
+
         if (response.ok) {
-            showNotification(`Aplicación ${newStatus === 'accepted' ? 'aceptada' : 'rechazada'} exitosamente`);
-            loadApplications(); // Recargar aplicaciones
+            showNotification(`Aplicación ${newStatus === 'aceptada' ? 'aceptada' : 'rechazada'} exitosamente`);
+            loadApplications();
         } else {
-            throw new Error('Error al actualizar estado');
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.message || `Error ${response.status}`);
         }
     } catch (error) {
-        alert('Error al actualizar el estado de la aplicación');
+        alert('Error al actualizar el estado de la aplicación: ' + error.message);
     }
 }
 

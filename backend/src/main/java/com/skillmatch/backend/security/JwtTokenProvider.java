@@ -18,6 +18,8 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtTokenProvider {
@@ -42,9 +44,14 @@ public class JwtTokenProvider {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtProperties.getExpiration());
 
+        List<String> roles = user.getAuthorities().stream()
+                .map(a -> a.getAuthority().replace("ROLE_", ""))
+                .collect(Collectors.toList());
+
         return Jwts.builder()
                 .subject(user.getUsername())
                 .claim("userId", user.getId())
+                .claim("roles", roles)
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .signWith(signingKey)
@@ -82,6 +89,20 @@ public class JwtTokenProvider {
                 .parseSignedClaims(token)
                 .getPayload()
                 .getExpiration();
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<String> getRolesFromJwt(String token) {
+        Claims claims = Jwts.parser()
+                .verifyWith(signingKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+        Object rolesObj = claims.get("roles");
+        if (rolesObj instanceof List<?> list) {
+            return list.stream().map(Object::toString).collect(Collectors.toList());
+        }
+        return List.of();
     }
 
     public boolean validateToken(String authToken) {

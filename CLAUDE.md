@@ -19,7 +19,6 @@ cd backend
 
 # Or manually with env vars
 $env:JWT_SECRET = "skillmatch-dev-secret-key-for-local-development-only-do-not-use-in-production-2024"
-$env:DB_PASSWORD = ""
 .\mvnw.cmd spring-boot:run
 
 # Build only (no run)
@@ -29,10 +28,10 @@ $env:DB_PASSWORD = ""
 .\mvnw.cmd test
 
 # Run a single test class
-.\mvnw.cmd test -Dtest=BackendApplicationTests
+.\mvnw.cmd test -Dtest=ConnectionServiceTest
 ```
 
-**Prerequisites:** MySQL running on port 3306 (XAMPP recommended). The schema `skillmatch` is auto-created on first run. `JWT_SECRET` env var is required at startup — the app will fail without it.
+**Prerequisites:** MongoDB running on port 27017 (database: `skillmatch`). `JWT_SECRET` env var is required at startup — the app will fail without it.
 
 ### Frontend
 
@@ -44,15 +43,15 @@ Open any `.html` file in `SkillMatch/src/pages/` using **VS Code Live Server** (
 
 ### Backend — `backend/src/main/java/com/skillmatch/backend/`
 
-Standard Spring Boot layered architecture:
+Standard Spring Boot layered architecture with Spring Data MongoDB:
 
 | Package | Role |
 |---|---|
-| `controller/` | 13 REST controllers — thin, delegate to service layer |
-| `service/` | 14 service classes — all business logic lives here |
-| `repository/` | 13 Spring Data JPA repositories — custom JPQL where needed |
-| `model/` | 13 JPA entities — `User` implements `UserDetails` |
-| `dto/` | 28 request/response objects — validated with Jakarta Bean Validation |
+| `controller/` | REST controllers — thin, delegate to service layer |
+| `service/` | Service classes — all business logic lives here |
+| `repository/` | Spring Data MongoDB repositories |
+| `model/` | 8 MongoDB `@Document` classes + embedded value objects (Skill, Experience, Education, Certification, etc.) |
+| `dto/` | Request/response objects — validated with Jakarta Bean Validation |
 | `config/` | Spring beans: `SecurityConfig`, `JwtProperties`, seeder |
 | `security/` | `JwtTokenProvider`, `JwtAuthenticationFilter`, entry point |
 | `exception/` | Custom exceptions (`ResourceNotFoundException`, `DuplicateResourceException`) |
@@ -68,15 +67,16 @@ Standard Spring Boot layered architecture:
 Vanilla JS, no framework. Each HTML page loads its own JS file. **`api-config.js` must be the first script on every page** — it defines `API_BASE_URL`, `fetchWithAuth()`, `logout()`, `saveToken()`, `saveUserData()`, and `isAuthenticated()`.
 
 ```
-api-config.js   ← always load first; defines shared globals
-notifications.js ← load second on authenticated pages
-auth.js         ← login pages only
-profile.js      ← perfil-usuario.html
-perfil-empresa.js ← perfil-empresa.html
-oportunidades.js ← oportunidades.html
-conexiones.js   ← conexiones.html
-mensajes.js     ← mensajes.html
-search-handler.js ← index.html
+api-config.js        ← always load first; defines shared globals
+notifications.js     ← load second on authenticated pages
+auth.js              ← all login pages (login.html, login-usuario.html, login-empresa.html)
+registro-empresa.js  ← registro-empresa.html (requires api-config.js)
+profile.js           ← perfil-usuario.html
+perfil-empresa.js    ← perfil-empresa.html
+oportunidades.js     ← oportunidades.html
+conexiones.js        ← conexiones.html
+mensajes.js          ← mensajes.html
+search-handler.js    ← index.html
 ```
 
 **Authentication on the frontend:** JWT stored in `localStorage` under key `token`. `userData` (id, email, role, companyId, etc.) stored under key `userData`. `isAuthenticated()` decodes the JWT payload and checks `exp` against `Date.now()`. `fetchWithAuth()` automatically attaches `Authorization: Bearer <token>` and calls `logout()` on 401/403.
@@ -99,9 +99,9 @@ if (!id) {
 - All controllers use `@CrossOrigin(origins = "*")` and delegate immediately to the service layer — no logic in controllers.
 - Services are annotated `@Transactional` (read-only where applicable). Logging uses `@Slf4j` from Lombok.
 - DTOs use Lombok `@Data` + Jakarta validation annotations (`@NotBlank`, `@Size`, `@Email`).
-- `ddl-auto=validate` — schema changes must be applied to MySQL manually; Hibernate will refuse to start if the schema doesn't match entities.
+- MongoDB is schema-flexible; structural changes only require updating the `@Document` model and any affected queries.
 - `User` entity implements Spring Security's `UserDetails`; `getUsername()` returns the email address.
-- The JWT token embeds a `userId` claim (Long) alongside the standard `sub` (email) claim.
+- The JWT token embeds a `userId` claim (String — MongoDB ObjectId) alongside the standard `sub` (email) claim.
 
 ### Frontend
 - All authenticated API calls go through `fetchWithAuth()` — never use raw `fetch()` for authenticated routes.
@@ -113,7 +113,9 @@ if (!id) {
 
 ## Domain Model Summary
 
-13 entities: `User`, `Company`, `Job`, `Application`, `Skill`, `Experience`, `Education`, `Certification`, `Message`, `Notification`, `Connection`, `SavedJob`, `Role`.
+8 MongoDB collections (`@Document`): `User`, `Company`, `Job`, `Application`, `Message`, `Notification`, `Connection`, `SavedJob`.
+
+Embedded (not top-level collections): `Skill`, `Experience`, `Education`, `Certification` — stored inside `User` documents.
 
 - A `User` may have one associated `Company` (role `EMPRESA`) or be a job seeker (role `USER`).
 - `Connection` is bidirectional: `userId` (requester) ↔ `connectedUserId` (receiver), status: `PENDING` / `ACCEPTED` / `REJECTED`.

@@ -314,8 +314,10 @@ class MessageServiceTest {
 
     @Test
     void getUnreadCountFromUser_returnsCount() {
+        // getUnreadCountFromUser(userId="user-id-2", fromUserId="user-id-1")
+        // service calls: countBySenderIdAndReceiverId(fromUserId, userId) = ("user-id-1", "user-id-2")
         when(messageRepository.countBySenderIdAndReceiverIdAndIsReadFalseAndDeletedByReceiverFalse(
-                "user-id-2", "user-id-1")).thenReturn(3L);
+                "user-id-1", "user-id-2")).thenReturn(3L);
 
         assertThat(messageService.getUnreadCountFromUser("user-id-2", "user-id-1")).isEqualTo(3L);
     }
@@ -331,7 +333,8 @@ class MessageServiceTest {
 
         List<ChatMessageResponse> result = messageService.getLastMessages("user-id-1");
 
-        assertThat(result).hasSize(2);
+        // m1 and m2 are between the same two users; service deduplicates to 1 conversation
+        assertThat(result).hasSize(1);
         assertThat(result.get(0).getId()).isEqualTo("msg-id-11");
     }
 
