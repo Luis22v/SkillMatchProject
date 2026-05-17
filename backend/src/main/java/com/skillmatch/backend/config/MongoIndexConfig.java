@@ -23,6 +23,7 @@ public class MongoIndexConfig implements ApplicationRunner {
     private final MongoTemplate mongoTemplate;
 
     @Override
+    @SuppressWarnings("null")
     public void run(ApplicationArguments args) {
         log.info("Creating MongoDB indexes...");
 

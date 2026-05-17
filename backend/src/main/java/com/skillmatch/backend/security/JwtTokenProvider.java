@@ -91,7 +91,6 @@ public class JwtTokenProvider {
                 .getExpiration();
     }
 
-    @SuppressWarnings("unchecked")
     public List<String> getRolesFromJwt(String token) {
         Claims claims = Jwts.parser()
                 .verifyWith(signingKey)

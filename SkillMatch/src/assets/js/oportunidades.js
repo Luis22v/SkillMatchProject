@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadJobs();
     loadSavedJobs();
     setupEventListeners();
+    updateFilterBadges();
 });
 
 // Cargar trabajos desde el backend
@@ -157,6 +158,10 @@ function setupEventListeners() {
     if (clearFilterBtn) {
         clearFilterBtn.addEventListener('click', clearFilters);
     }
+
+    document.querySelectorAll('.filter-card input[type="checkbox"]').forEach(cb => {
+        cb.addEventListener('change', updateFilterBadges);
+    });
 
     // Rango de salario - actualización en tiempo real
     const salaryRange = document.getElementById('salaryRange');
@@ -302,37 +307,32 @@ async function performSearch() {
     }
 }
 
+function normalizeStr(str) {
+    return str ? str.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase() : '';
+}
+
 // Aplicar filtros
-async function applyFilters() {
-    const filters = {
-        type: getCheckedValues('input[name="type"]:checked'),
-        modality: getCheckedValues('input[name="modality"]:checked'),
-        experienceLevel: getCheckedValues('input[name="experience"]:checked'),
-        maxSalary: document.getElementById('salaryRange')?.value
-    };
+function applyFilters() {
+    const types = getCheckedValues('input[name="type"]:checked');
+    const modalities = getCheckedValues('input[name="modality"]:checked');
+    const experienceLevels = getCheckedValues('input[name="experience"]:checked');
+    const maxSalary = parseInt(document.getElementById('salaryRange')?.value || '10000000');
 
+    let filtered = allJobs;
 
-    currentFilters = filters;
-
-    // Construir query params
-    const params = new URLSearchParams();
-    if (filters.type.length > 0) params.append('type', filters.type[0]);
-    if (filters.modality.length > 0) params.append('modality', filters.modality[0]);
-    if (filters.experienceLevel.length > 0) params.append('experienceLevel', filters.experienceLevel[0]);
-    if (filters.maxSalary) params.append('maxSalary', filters.maxSalary);
-
-    try {
-        const url = `${API_BASE_URL}/jobs/filter?${params.toString()}`;
-        const response = await fetchWithAuth(url);
-        
-        if (response.ok) {
-            const jobs = await response.json();
-            displayJobs(jobs);
-        } else {
-            displayJobs([]);
-        }
-    } catch (error) {
+    if (types.length > 0) {
+        filtered = filtered.filter(job => types.some(t => normalizeStr(t) === normalizeStr(job.type)));
     }
+    if (modalities.length > 0) {
+        filtered = filtered.filter(job => modalities.some(m => normalizeStr(m) === normalizeStr(job.modality)));
+    }
+    if (experienceLevels.length > 0) {
+        filtered = filtered.filter(job => experienceLevels.includes(job.experienceLevel));
+    }
+    filtered = filtered.filter(job => !job.salaryMin || job.salaryMin <= maxSalary);
+
+    currentFilters = { types, modalities, experienceLevels, maxSalary };
+    displayJobs(filtered);
 }
 
 // Limpiar filtros
@@ -352,10 +352,12 @@ function clearFilters() {
 
     // Limpiar filtros actuales
     currentFilters = {};
-    
+
+    updateFilterBadges();
+
     // Recargar todas las oportunidades
     loadJobs();
-    
+
 }
 
 // Ordenar trabajos
@@ -376,6 +378,22 @@ function sortJobs() {
     }
 
     displayJobs(sorted);
+}
+
+function updateFilterBadges() {
+    const groups = ['type', 'experience', 'modality'];
+    groups.forEach(group => {
+        const count = document.querySelectorAll(`input[name="${group}"]:checked`).length;
+        const badge = document.querySelector(`.filter-count[data-group="${group}"]`);
+        if (!badge) return;
+        if (count > 0) {
+            badge.textContent = count;
+            badge.classList.add('active');
+        } else {
+            badge.textContent = '';
+            badge.classList.remove('active');
+        }
+    });
 }
 
 // Utilidades

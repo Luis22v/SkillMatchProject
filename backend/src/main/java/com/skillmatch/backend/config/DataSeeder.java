@@ -1,7 +1,15 @@
 package com.skillmatch.backend.config;
 
-import com.skillmatch.backend.model.*;
-import com.skillmatch.backend.repository.*;
+import com.skillmatch.backend.model.Application;
+import com.skillmatch.backend.model.ApplicationStatus;
+import com.skillmatch.backend.model.Company;
+import com.skillmatch.backend.model.Job;
+import com.skillmatch.backend.model.Skill;
+import com.skillmatch.backend.model.User;
+import com.skillmatch.backend.repository.ApplicationRepository;
+import com.skillmatch.backend.repository.CompanyRepository;
+import com.skillmatch.backend.repository.JobRepository;
+import com.skillmatch.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.types.ObjectId;
@@ -12,7 +20,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
 
 @Slf4j
 @Component

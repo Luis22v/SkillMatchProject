@@ -31,6 +31,7 @@ public class UserService {
     private final ApplicationRepository applicationRepository;
     private final MongoTemplate mongoTemplate;
 
+    @SuppressWarnings("null")
     public User getUserById(String id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado con id: " + id));

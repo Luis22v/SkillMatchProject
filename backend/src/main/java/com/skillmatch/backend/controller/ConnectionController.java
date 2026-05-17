@@ -1,7 +1,6 @@
 package com.skillmatch.backend.controller;
 
 import com.skillmatch.backend.dto.ConnectionRequest;
-import com.skillmatch.backend.dto.ConnectionResponse;
 import com.skillmatch.backend.dto.MessageResponse;
 import com.skillmatch.backend.model.User;
 import com.skillmatch.backend.security.UserDetailsImpl;
