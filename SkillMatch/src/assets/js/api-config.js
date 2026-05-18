@@ -18,7 +18,7 @@ const API_CONFIG = {
     }
 };
 
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = API_CONFIG.BASE_URL;
 
 function saveToken(token) {
     if (token) localStorage.setItem('token', token);

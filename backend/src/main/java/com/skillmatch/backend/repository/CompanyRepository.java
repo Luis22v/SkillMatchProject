@@ -25,4 +25,6 @@ public interface CompanyRepository extends MongoRepository<Company, String> {
     List<Company> findByLocation(String location);
 
     List<Company> findByIsVerifiedTrue();
+
+    long countByActiveTrue();
 }

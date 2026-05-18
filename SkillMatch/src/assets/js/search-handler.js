@@ -2,9 +2,7 @@
 // Carga datos mock, filtra oportunidades y renderiza resultados
 
 let allOportunidades = [];
-const API_URL = typeof API_CONFIG !== 'undefined'
-    ? `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.JOBS}`
-    : 'http://localhost:8080/api/jobs';
+const API_URL = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.JOBS}`;
 let savedOpportunityIds = new Set();
 
 async function loadSavedOpportunities() {
@@ -421,5 +419,24 @@ function performSearch(criteria) {
     renderResults(results, criteria);
 }
 
+async function loadStats() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/public/stats`);
+        if (!response.ok) return;
+        const stats = await response.json();
+
+        const fmt = (n) => n >= 1000 ? (n / 1000).toFixed(1).replace('.', ',') + 'K+' : n + '+';
+
+        const el = (id) => document.getElementById(id);
+        if (el('stat-users'))        el('stat-users').textContent        = fmt(stats.users        ?? 0);
+        if (el('stat-companies'))    el('stat-companies').textContent    = fmt(stats.companies    ?? 0);
+        if (el('stat-jobs'))         el('stat-jobs').textContent         = fmt(stats.jobs         ?? 0);
+        if (el('stat-applications')) el('stat-applications').textContent = fmt(stats.applications ?? 0);
+    } catch (_) {}
+}
+
 // Inicializar
-document.addEventListener('DOMContentLoaded', loadOportunidades);
+document.addEventListener('DOMContentLoaded', () => {
+    loadOportunidades();
+    loadStats();
+});

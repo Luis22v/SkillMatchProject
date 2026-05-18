@@ -139,6 +139,6 @@ document.getElementById('form-registro-empresa').addEventListener('submit', asyn
         window.location.href = 'perfil-empresa.html';
 
     } catch (error) {
-        alert('Error al conectar con el servidor. Verifica que el backend esté corriendo en localhost:8080.');
+        alert('Error al conectar con el servidor. Verifica que el backend esté corriendo.');
     }
 });

@@ -20,4 +20,6 @@ public interface JobRepository extends MongoRepository<Job, String> {
     long countByCompanyIdAndActiveTrueAndStatus(String companyId, JobStatus status);
 
     List<Job> findByActiveTrueAndExpirationDateBefore(LocalDateTime date);
+
+    long countByActiveTrue();
 }
