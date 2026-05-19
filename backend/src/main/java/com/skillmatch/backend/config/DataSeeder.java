@@ -1,5 +1,21 @@
 package com.skillmatch.backend.config;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
+
+import org.bson.types.ObjectId;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.core.annotation.Order;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
+
 import com.skillmatch.backend.model.Application;
 import com.skillmatch.backend.model.ApplicationStatus;
 import com.skillmatch.backend.model.Company;
@@ -10,23 +26,9 @@ import com.skillmatch.backend.repository.ApplicationRepository;
 import com.skillmatch.backend.repository.CompanyRepository;
 import com.skillmatch.backend.repository.JobRepository;
 import com.skillmatch.backend.repository.UserRepository;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.bson.types.ObjectId;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.core.annotation.Order;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Component;
-
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Random;
-import java.util.Set;
 
 @Slf4j
 @Component
@@ -106,19 +108,19 @@ public class DataSeeder implements CommandLineRunner {
             log.info("🌱 Iniciando seed de datos...");
 
             log.info("Creando usuarios regulares...");
-            List<User> users = createUsers(100);
+            List<User> users = createUsers(3000);
 
             log.info("Creando empresas...");
-            List<Company> companies = createCompanies(50);
+            List<Company> companies = createCompanies(1000);
 
             log.info("Creando ofertas de trabajo...");
-            List<Job> jobs = createJobs(companies, 100);
+            List<Job> jobs = createJobs(companies, 2000);
 
             log.info("Creando aplicaciones...");
-            createApplications(users, jobs, 100);
+            createApplications(users, jobs, 9000);
 
             log.info("✅ Seed completado exitosamente!");
-            log.info("📊 Datos creados: 150 usuarios, 50 empresas, 100 ofertas, 100 aplicaciones");
+            log.info("📊 Datos creados: 3000 usuarios, 1000 empresas, 2000 ofertas, 9000 aplicaciones");
 
         } catch (Exception e) {
             log.error("❌ Error durante el seed: ", e);
@@ -128,7 +130,7 @@ public class DataSeeder implements CommandLineRunner {
     private List<User> createUsers(int count) {
         List<User> toSave = new ArrayList<>();
         List<User> allSaved = new ArrayList<>();
-        int batchSize = 50;
+        int batchSize = 500;
 
         for (int i = 0; i < count; i++) {
             User user = new User();
