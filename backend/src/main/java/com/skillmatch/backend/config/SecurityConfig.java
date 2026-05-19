@@ -70,8 +70,6 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            // CSRF deshabilitado: API stateless con JWT en header Authorization, no en cookies.
-            // Sin estado de sesión servidor, el vector CSRF no aplica.
             .csrf(csrf -> csrf.disable())
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
@@ -88,7 +86,7 @@ public class SecurityConfig {
                     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
                     "font-src 'self' https://fonts.gstatic.com; " +
                     "img-src 'self' data:; " +
-                    "connect-src 'self'; " +
+                    "connect-src 'self' https://*.railway.app https://*.up.railway.app; " +
                     "frame-ancestors 'none'"
                 ))
             )
@@ -103,7 +101,6 @@ public class SecurityConfig {
             );
 
         http.authenticationProvider(authenticationProvider());
-        // JWT primero (le asigna posición en la cadena), luego RateLimiting antes que JWT
         http.addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
         http.addFilterBefore(rateLimitingFilter(), JwtAuthenticationFilter.class);
 
@@ -113,14 +110,35 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
+
+        // ✅ Orígenes permitidos: local + Railway
         configuration.setAllowedOriginPatterns(List.of(
                 "http://localhost:*",
-                "http://127.0.0.1:*"));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"));
+                "http://127.0.0.1:*",
+                "https://*.railway.app",
+                "https://*.up.railway.app",
+                "https://*.netlify.app"   // Por si usas Netlify para el frontend
+        ));
+
+        configuration.setAllowedMethods(Arrays.asList(
+                "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"
+        ));
+
         configuration.setAllowedHeaders(Arrays.asList(
-            "Authorization", "Content-Type", "Accept", "X-Requested-With", "Cache-Control"));
+                "Authorization",
+                "Content-Type",
+                "Accept",
+                "X-Requested-With",
+                "Cache-Control"
+        ));
+
         configuration.setAllowCredentials(true);
-        configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
+
+        configuration.setExposedHeaders(Arrays.asList(
+                "Authorization",
+                "Content-Type"
+        ));
+
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
