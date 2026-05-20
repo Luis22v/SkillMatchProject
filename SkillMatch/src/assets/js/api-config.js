@@ -1,5 +1,7 @@
 const API_CONFIG = {
-    BASE_URL: 'http://localhost:8080/api',
+    BASE_URL: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:8080/api'
+    : 'https://skillmatchproject-production.up.railway.app/api',
     ENDPOINTS: {
         LOGIN: '/auth/login',
         REGISTRO_USUARIO: '/auth/register',
