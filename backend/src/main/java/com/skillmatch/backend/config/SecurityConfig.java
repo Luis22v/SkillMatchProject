@@ -78,7 +78,7 @@ public class SecurityConfig {
                 .httpStrictTransportSecurity(hsts -> hsts
                     .includeSubDomains(true)
                     .maxAgeInSeconds(31536000))
-                .frameOptions(frame -> frame.deny())
+                .frameOptions(frame -> frame.disable())
                 .contentTypeOptions(Customizer.withDefaults())
                 .contentSecurityPolicy(csp -> csp.policyDirectives(
                     "default-src 'self'; " +
@@ -87,10 +87,19 @@ public class SecurityConfig {
                     "font-src 'self' https://fonts.gstatic.com; " +
                     "img-src 'self' data:; " +
                     "connect-src 'self' https://*.railway.app https://*.up.railway.app; " +
-                    "frame-ancestors 'none'"
+                    "frame-src https://app.powerbi.com; " +
+                    "frame-ancestors 'self'"
                 ))
             )
             .authorizeHttpRequests(auth -> auth
+                // Recursos estáticos del frontend
+                .requestMatchers(
+                    "/", "/index.html",
+                    "/src/**", "/assets/**",
+                    "/*.html", "/*.css", "/*.js",
+                    "/*.png", "/*.ico", "/*.jpg", "/*.svg"
+                ).permitAll()
+                // API pública
                 .requestMatchers(HttpMethod.POST, "/api/auth/logout").authenticated()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/public/**").permitAll()
@@ -111,13 +120,12 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // ✅ Orígenes permitidos: local + Railway
         configuration.setAllowedOriginPatterns(List.of(
                 "http://localhost:*",
                 "http://127.0.0.1:*",
                 "https://*.railway.app",
                 "https://*.up.railway.app",
-                "https://*.netlify.app"   // Por si usas Netlify para el frontend
+                "https://*.netlify.app"
         ));
 
         configuration.setAllowedMethods(Arrays.asList(
