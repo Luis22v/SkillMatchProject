@@ -1,0 +1,3 @@
+# Los scripts de shell deben conservar finales de línea LF también en Windows;
+# con CRLF, bash falla con errores "$'\r': command not found" (hook de sesión, skills).
+*.sh text eol=lf
