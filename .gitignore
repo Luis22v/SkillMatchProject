@@ -1,0 +1,6 @@
+# Bytecode de Python (scripts de las skills en .claude/skills)
+__pycache__/
+*.pyc
+
+# Configuración personal de Claude Code (la compartida es .claude/settings.json)
+.claude/settings.local.json
