@@ -129,6 +129,28 @@
                 </configuration>
             </plugin>
 
+            <!-- Cobertura de tests — reporte en target/site/jacoco/index.html tras: mvn verify -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.15</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
             <!-- OWASP CVE scanner — ejecutar con: mvn dependency-check:check -->
             <plugin>
                 <groupId>org.owasp</groupId>

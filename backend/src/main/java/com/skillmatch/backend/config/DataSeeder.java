@@ -37,6 +37,8 @@ import lombok.extern.slf4j.Slf4j;
 @ConditionalOnProperty(name = "skillmatch.seed.enabled", havingValue = "true", matchIfMissing = true)
 public class DataSeeder implements CommandLineRunner {
 
+    static final String DEFAULT_PASSWORD = "password123";
+
     private final UserRepository userRepository;
     private final CompanyRepository companyRepository;
     private final JobRepository jobRepository;
@@ -108,10 +110,14 @@ public class DataSeeder implements CommandLineRunner {
             log.info("🌱 Iniciando seed de datos...");
 
             log.info("Creando usuarios regulares...");
-            List<User> users = createUsers(3000);
+            // BCrypt es deliberadamente lento (~65 ms por hash) y todas las cuentas de prueba comparten
+            // contraseña: se cifra una sola vez en lugar de una por cada una de las 4000 cuentas.
+            String encodedPassword = passwordEncoder.encode(DEFAULT_PASSWORD);
+
+            List<User> users = createUsers(3000, encodedPassword);
 
             log.info("Creando empresas...");
-            List<Company> companies = createCompanies(1000);
+            List<Company> companies = createCompanies(1000, encodedPassword);
 
             log.info("Creando ofertas de trabajo...");
             List<Job> jobs = createJobs(companies, 2000);
@@ -127,7 +133,7 @@ public class DataSeeder implements CommandLineRunner {
         }
     }
 
-    private List<User> createUsers(int count) {
+    private List<User> createUsers(int count, String encodedPassword) {
         List<User> toSave = new ArrayList<>();
         List<User> allSaved = new ArrayList<>();
         int batchSize = 500;
@@ -135,7 +141,7 @@ public class DataSeeder implements CommandLineRunner {
         for (int i = 0; i < count; i++) {
             User user = new User();
             user.setEmail("usuario" + i + "@skillmatch.com");
-            user.setPassword(passwordEncoder.encode("password123"));
+            user.setPassword(encodedPassword);
             user.setFirstName(firstNames[random.nextInt(firstNames.length)]);
             user.setLastName(lastNames[random.nextInt(lastNames.length)] + " " + lastNames[random.nextInt(lastNames.length)]);
             user.setPhone("+57 3" + String.format("%09d", random.nextInt(1000000000)));
@@ -176,7 +182,7 @@ public class DataSeeder implements CommandLineRunner {
         return embedded;
     }
 
-    private List<Company> createCompanies(int count) {
+    private List<Company> createCompanies(int count, String encodedPassword) {
         List<User> usersToSave = new ArrayList<>();
         List<Company> allCompanies = new ArrayList<>();
         int batchSize = 50;
@@ -184,7 +190,7 @@ public class DataSeeder implements CommandLineRunner {
         for (int i = 0; i < count; i++) {
             User user = new User();
             user.setEmail("empresa" + i + "@skillmatch.com");
-            user.setPassword(passwordEncoder.encode("password123"));
+            user.setPassword(encodedPassword);
             user.setFirstName(companyNames[random.nextInt(companyNames.length)]);
             user.setLastName("Empresa");
             user.setPhone("+57 3" + String.format("%09d", random.nextInt(1000000000)));
