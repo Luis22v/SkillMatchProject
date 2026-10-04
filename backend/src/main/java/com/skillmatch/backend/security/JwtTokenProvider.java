@@ -36,7 +36,21 @@ public class JwtTokenProvider {
 
     @PostConstruct
     private void init() {
-        signingKey = Keys.hmacShaKeyFor(jwtProperties.getSecret().getBytes(StandardCharsets.UTF_8));
+        signingKey = resolveSigningKey(jwtProperties.getSecret());
+    }
+
+    /**
+     * Sin JWT_SECRET configurado se genera una clave aleatoria en memoria en lugar de recurrir a un valor
+     * por defecto público (con el que cualquiera podría firmar tokens válidos). La app sigue arrancando,
+     * pero las sesiones se invalidan en cada reinicio. Un secreto de menos de 32 bytes hace fallar el arranque.
+     */
+    static SecretKey resolveSigningKey(String configuredSecret) {
+        if (configuredSecret == null || configuredSecret.isBlank()) {
+            logger.warn("JWT_SECRET no está definido: se usa una clave aleatoria efímera y las sesiones se "
+                    + "invalidarán en cada reinicio. Define JWT_SECRET (>= 32 bytes) en producción.");
+            return Jwts.SIG.HS256.key().build();
+        }
+        return Keys.hmacShaKeyFor(configuredSecret.getBytes(StandardCharsets.UTF_8));
     }
 
     public String generateToken(Authentication authentication) {

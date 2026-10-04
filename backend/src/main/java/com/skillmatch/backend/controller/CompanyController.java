@@ -22,7 +22,6 @@ import java.util.Map;
 @Tag(name = "Empresas", description = "Consulta y gestión de perfiles de empresa")
 @RestController
 @RequestMapping("/api/companies")
-@CrossOrigin(origins = "*", maxAge = 3600)
 @RequiredArgsConstructor
 public class CompanyController {
 

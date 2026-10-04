@@ -25,7 +25,6 @@ import java.util.List;
 @Tag(name = "Ofertas de trabajo", description = "Creación, consulta y gestión de ofertas laborales")
 @RestController
 @RequestMapping("/api/jobs")
-@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 public class JobController {
 

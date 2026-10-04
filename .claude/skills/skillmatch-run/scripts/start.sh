@@ -37,6 +37,9 @@ if port_in_use "$API_PORT"; then
 else
   (
     cd "$PROJECT_DIR/backend"
+    # Secreto aleatorio por ejecución (solo local): evita la clave efímera, que cambiaría en cada reinicio
+    # de DevTools al recompilar e invalidaría los tokens del frontend.
+    export JWT_SECRET="${JWT_SECRET:-$(head -c 48 /dev/urandom | base64 | tr -d '\n')}"
     setsid nohup mvn -B -ntp -q spring-boot:run >"$RUN_DIR/backend.log" 2>&1 </dev/null &
     echo $! >"$RUN_DIR/backend.pid"
   )

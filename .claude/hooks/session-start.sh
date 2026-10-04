@@ -20,13 +20,31 @@ port_in_use() {
   (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null
 }
 
+# Borra un PID file si el proceso al que apunta no es el esperado. Al reanudar una sesión, el snapshot del
+# contenedor conserva los PID files de la sesión anterior; si ese PID lo reutiliza otro proceso, dockerd cree
+# que containerd sigue vivo, espera a que responda y se apaga a los ~15 s.
+remove_stale_pidfile() {
+  local pidfile=$1 expected=$2 pid
+  [ -f "$pidfile" ] || return 0
+  pid=$(cat "$pidfile" 2>/dev/null)
+  if [ -z "$pid" ] || [ "$(cat "/proc/$pid/comm" 2>/dev/null)" != "$expected" ]; then
+    rm -f "$pidfile"
+  fi
+}
+
 start_dockerd() {
   docker info >/dev/null 2>&1 && return 0
   command -v dockerd >/dev/null 2>&1 || return 1
-  setsid nohup dockerd >"$LOG_DIR/dockerd.log" 2>&1 </dev/null &
-  for _ in $(seq 1 30); do
-    docker info >/dev/null 2>&1 && return 0
-    sleep 1
+  for _attempt in 1 2; do
+    remove_stale_pidfile /var/run/docker.pid dockerd
+    remove_stale_pidfile /var/run/docker/containerd/containerd.pid containerd
+    setsid nohup dockerd >>"$LOG_DIR/dockerd.log" 2>&1 </dev/null &
+    for _ in $(seq 1 30); do
+      docker info >/dev/null 2>&1 && return 0
+      sleep 1
+    done
+    pkill -x dockerd 2>/dev/null
+    sleep 2
   done
   return 1
 }

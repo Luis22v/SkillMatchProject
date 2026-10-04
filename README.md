@@ -44,13 +44,21 @@ Abre una terminal (CMD o PowerShell) y navega a la carpeta `backend`:
 cd backend
 ```
 
-Luego ejecuta:
+Luego ejecuta el script de arranque, que define un `JWT_SECRET` local y levanta la API:
 
 ```
-.\mvnw.cmd spring-boot:run -DskipTests
+.\start.ps1
 ```
 
-> El flag `-DskipTests` es necesario porque los tests de integración requieren configuración adicional.
+> Si prefieres lanzarlo a mano, define antes el secreto en PowerShell (mínimo 32 caracteres) y ejecuta Maven:
+>
+> ```
+> $env:JWT_SECRET = "cualquier-cadena-local-de-al-menos-32-caracteres"
+> .\mvnw.cmd spring-boot:run -DskipTests
+> ```
+>
+> Sin `JWT_SECRET` la API también arranca, pero usa una clave aleatoria temporal: cada reinicio (incluidos los
+> automáticos de DevTools al recompilar) cierra todas las sesiones y tendrás que volver a iniciar sesión.
 
 La primera vez Maven descarga las dependencias, puede tardar unos minutos. Cuando veas esta línea, el backend está listo:
 
@@ -98,6 +106,18 @@ SkillMatchProject/
             ├── js/           # Lógica del frontend
             └── css/          # Estilos
 ```
+
+---
+
+## Despliegue en producción (Railway)
+
+Variables de entorno necesarias:
+
+| Variable | Obligatoria | Descripción |
+|---|---|---|
+| `SPRING_DATA_MONGODB_URI` | Sí | Cadena de conexión de MongoDB |
+| `JWT_SECRET` | Sí | Secreto para firmar los tokens; aleatorio y de al menos 32 caracteres. Si falta, la API arranca con una clave temporal y cada redespliegue cierra todas las sesiones |
+| `SKILLMATCH_SEED_ENABLED` | Recomendada: `false` | Si no se define y la base de datos está vacía, se crean las cuentas de prueba con la contraseña pública `password123` |
 
 ---
 
