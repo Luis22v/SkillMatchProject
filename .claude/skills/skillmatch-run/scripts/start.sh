@@ -47,17 +47,17 @@ else
     exit 1
   fi
   # DataSeeder (CommandLineRunner) corre DESPUÉS de que Tomcat ya responde: hasta que termina no hay
-  # usuarios para hacer login. Con la BD vacía tarda varios minutos; si ya hay datos, se salta al instante.
-  echo "API       -> respondiendo; esperando a que DataSeeder termine (con BD vacía tarda varios minutos)..."
+  # usuarios para hacer login. Con la BD vacía tarda unos segundos; si ya hay datos, se salta al instante.
+  echo "API       -> respondiendo; esperando a que DataSeeder termine..."
   seed_done=false
-  for _ in $(seq 1 180); do
+  for _ in $(seq 1 120); do
     if grep -qE "Seed completado|Saltando seed|Error durante el seed" "$RUN_DIR/backend.log"; then
       seed_done=true
       break
     fi
-    sleep 5
+    sleep 1
   done
-  $seed_done || { echo "ERROR: DataSeeder no terminó en 15 min (ver $RUN_DIR/backend.log)" >&2; exit 1; }
+  $seed_done || { echo "ERROR: DataSeeder no terminó en 2 min (ver $RUN_DIR/backend.log)" >&2; exit 1; }
   grep -q "Error durante el seed" "$RUN_DIR/backend.log" && echo "AVISO: DataSeeder falló (ver $RUN_DIR/backend.log)" >&2
   echo "API       -> lista en http://localhost:$API_PORT (Swagger: /swagger-ui.html)"
 fi
