@@ -24,7 +24,6 @@ import java.util.List;
 @Tag(name = "Postulaciones", description = "Gestión de postulaciones a ofertas laborales")
 @RestController
 @RequestMapping("/api/applications")
-@CrossOrigin(origins = "*")
 @RequiredArgsConstructor
 public class ApplicationController {
 

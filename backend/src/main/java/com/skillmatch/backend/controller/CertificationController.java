@@ -17,7 +17,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/users/{userId}/certifications")
-@CrossOrigin(origins = "*", maxAge = 3600)
 @RequiredArgsConstructor
 public class CertificationController {
 

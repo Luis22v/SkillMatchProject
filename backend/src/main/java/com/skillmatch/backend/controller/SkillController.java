@@ -17,7 +17,6 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users/{userId}/skills")
-@CrossOrigin(origins = "*", maxAge = 3600)
 @RequiredArgsConstructor
 public class SkillController {
 
