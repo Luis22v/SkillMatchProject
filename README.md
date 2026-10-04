@@ -60,11 +60,14 @@ Started BackendApplication in X seconds
 
 El servidor queda corriendo en **http://localhost:8080**
 
-Al iniciar, el sistema crea automáticamente datos de prueba en MongoDB:
-- 100 usuarios
-- 50 empresas
-- 100 ofertas de trabajo
-- 100 aplicaciones
+Al iniciar con la base de datos vacía, el sistema crea automáticamente datos de prueba en MongoDB (tarda unos segundos;
+espera a ver `Seed completado exitosamente!` en la consola antes de iniciar sesión):
+- 3000 usuarios (`usuario0@skillmatch.com` … `usuario2999@skillmatch.com`)
+- 1000 empresas (`empresa0@skillmatch.com` … `empresa999@skillmatch.com`)
+- 2000 ofertas de trabajo
+- 9000 aplicaciones
+
+Todas las cuentas de prueba usan la contraseña `password123`.
 
 ---
 
