@@ -355,7 +355,7 @@ nav {
 
 .impact-stats .container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
     gap: 2rem;
 }
 
@@ -397,7 +397,7 @@ nav {
 
 .features-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
     gap: 2rem;
     margin-top: 2rem;
 }
@@ -459,7 +459,7 @@ nav {
 
 .results-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
     gap: 2rem;
     margin-bottom: 2rem;
 }
@@ -1088,6 +1088,8 @@ nav {
 
 .search-input {
     flex: 1;
+    /* Un input conserva su ancho intrínseco (~20 caracteres) salvo que se le permita encoger. */
+    min-width: 0;
     border: none;
     outline: none;
     padding: 0.6rem 0.9rem;
@@ -1120,7 +1122,7 @@ nav {
 
 .quick-filters {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(130px, 100%), 1fr));
     gap: 0.5rem; /* menos espacio entre filtros */
     justify-items: center; /* centra cada filtro dentro de su columna */
     align-items: center;
@@ -1401,7 +1403,7 @@ nav {
     display: inline-block; margin: 0 .2rem; padding: .12rem .6rem; border-radius: 999px;
     background: #ffffff; color: var(--color-primary); border: 1px solid rgba(0,61,130,.25); font-weight: 700; font-size: .95rem;
 }
-.featured-companies .brand-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; }
+.featured-companies .brand-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr)); gap: 1rem; }
 .featured-companies .brand {
     background: #ffffff; border: 1px solid rgba(15,47,83,.12); border-radius: 12px; padding: .9rem;
     text-align: center; color: #0f2f53; font-weight: 600; transition: all .18s ease;
@@ -1485,7 +1487,7 @@ section.featured-companies {
 
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
     gap: 2rem;
 }
 
@@ -1524,7 +1526,7 @@ section.featured-companies {
 /* ===== Oportunidades: Sidebar y Filtros ===== */
 .opportunities-container { padding: 2rem 0; }
 .opportunities-layout { display: grid; grid-template-columns: 320px 1fr; gap: 1.5rem; }
-@media (max-width: 992px) { .opportunities-layout { grid-template-columns: 1fr; } }
+@media (max-width: 992px) { .opportunities-layout { grid-template-columns: minmax(0, 1fr); } }
 
 .opportunities-sidebar .filter-card {
     background: rgba(255,255,255,0.96);
@@ -1810,7 +1812,7 @@ section.featured-companies {
 
 .certifications-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
     gap: 1.5rem;
 }
 
@@ -1828,7 +1830,7 @@ section.featured-companies {
 
 .projects-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
     gap: 1.5rem;
 }
 
@@ -1952,7 +1954,7 @@ section.featured-companies {
 }
 
 @media (max-width: 900px) {
-    .profile-layout { grid-template-columns: 1fr; }
+    .profile-layout { grid-template-columns: minmax(0, 1fr); }
     .profile-sidebar { order: 1; }
     .profile-main { order: 2; }
     .profile-right-sidebar { order: 3; }
@@ -2154,7 +2156,7 @@ section.featured-companies {
 
 .analytics-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
     gap: 1rem;
 }
 
@@ -2174,7 +2176,7 @@ section.featured-companies {
 
 .stat-desc { margin: 0; font-size: 0.95rem; color: #cbd5f5; }
 
-.testimonials { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
+.testimonials { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 1rem; }
 
 .testimonial-item {
     border: 1px solid rgba(0,0,0,0.05);
@@ -2230,7 +2232,7 @@ section.featured-companies {
 
 .connections-tabs {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
     gap: 0.75rem;
     margin-bottom: 1.5rem;
 }
@@ -2472,9 +2474,9 @@ section.featured-companies {
     align-items: start;
 }
 
-@media (max-width: 992px) { 
-    .opportunities-layout { 
-        grid-template-columns: 1fr; 
+@media (max-width: 992px) {
+    .opportunities-layout {
+        grid-template-columns: minmax(0, 1fr);
     }
     
     .opportunities-sidebar {
@@ -2741,6 +2743,8 @@ details[open] > .filter-section-header::after {
 /* Toolbar de resultados mejorado */
 .opportunities-toolbar {
     display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 2rem;
@@ -3090,7 +3094,8 @@ details[open] > .filter-section-header::after {
 /* Responsive */
 @media (max-width: 992px) {
     .opportunities-layout {
-        grid-template-columns: 1fr;
+        /* minmax(0, 1fr): un `1fr` simple no baja del ancho mínimo de su contenido y desborda en móvil */
+        grid-template-columns: minmax(0, 1fr);
     }
     
     .opportunities-sidebar {
@@ -3667,7 +3672,7 @@ details[open] > .filter-section-header::after {
 /* Responsive perfil */
 @media (max-width: 992px) {
     .profile-layout {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
     }
     
     .profile-header-content {
@@ -4804,7 +4809,7 @@ details[open] > .filter-section-header::after {
 
 .applications-stats {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr));
     gap: 1rem;
     margin-bottom: 2rem;
 }
