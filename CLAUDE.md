@@ -60,15 +60,21 @@ Ejecutar desde `backend/`. En la nube usar `mvn`; en Windows, `.\mvnw.cmd`.
   `DuplicateResourceException` → 409, `UnauthorizedException` / `AccessDeniedException` → 403) y dejar que
   `GlobalExceptionHandler` construya la respuesta. No añadir más `try/catch (Exception)` en controllers ni lanzar
   `RuntimeException` genérica: varios controllers antiguos lo hacen (p. ej. `JobController`), y es deuda técnica, no el patrón a seguir.
-  El orden de los handlers en `GlobalExceptionHandler` importa: de lo más específico a lo más general.
+  Spring elige el handler cuyo tipo de excepción está más cerca de la lanzada (no el orden en el archivo; ver
+  `GlobalExceptionHandlerTest#exceptionResolution_mostSpecificHandlerWins`). Los 500 (incluidos los fallos de BD) y las
+  violaciones de índice único (409) responden con mensajes genéricos y dejan el detalle en el log: nunca devolver `ex.getMessage()` de
+  errores no controlados ni de infraestructura.
 - **Validación**: mensajes en `messages.properties` y referenciados como `message = "{validation.<entidad>.<campo>.<regla>}"`.
   Textos visibles al usuario en español.
 - **Seguridad**:
   - JWT stateless. Roles: `USER`, `EMPRESA`, `ADMIN`; se autorizan con `@PreAuthorize("hasRole('...')")`.
   - Comprobar la **propiedad del recurso** en el service (ver `verifyOwnership` en `JobService`), no solo el rol.
-  - Las rutas públicas se declaran únicamente en `SecurityConfig`, y lo mismo vale para CORS y CSP: no añadir `@CrossOrigin` nuevos.
+  - Las rutas públicas, CORS y CSP se declaran únicamente en `SecurityConfig`. Ningún controller usa `@CrossOrigin`
+    (el filtro global decide; `CorsIntegrationTest` lo fija): no añadirlos.
   - Nunca registrar ni devolver contraseñas o tokens. Los secretos van por variables de entorno (`JWT_SECRET`,
-    `SPRING_DATA_MONGODB_URI`) y nunca se commitean.
+    `SPRING_DATA_MONGODB_URI`) y nunca se commitean ni llevan valor por defecto en `application.properties`.
+    Sin `JWT_SECRET`, `JwtTokenProvider` usa una clave aleatoria efímera (avisa en el log); nunca reintroducir un
+    secreto por defecto, porque permitiría forjar tokens.
 - **Java**: el target es 17 (`<java.version>`). La nube tiene JDK 21, así que no usar APIs posteriores a Java 17.
 - Tareas programadas con `@Scheduled` (habilitado en `BackendApplication`); p. ej. el cierre diario de ofertas vencidas.
 
