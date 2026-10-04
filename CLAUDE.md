@@ -34,6 +34,7 @@ Ejecutar desde `backend/`. En la nube usar `mvn`; en Windows, `.\mvnw.cmd`.
 | Compilar | `mvn -B -ntp compile` |
 | Todos los tests | `mvn -B -ntp test` |
 | Un test / un método | `mvn -B -ntp test -Dtest=JobServiceTest` · `-Dtest=JobControllerTest#updateJob_wrongOwner_returnsForbidden` |
+| Tests + jar + cobertura | `mvn -B -ntp verify` → `target/site/jacoco/index.html` (y `jacoco.csv` para leerlo por script) |
 | Levantar la API | `mvn -B -ntp spring-boot:run` → http://localhost:8080 (Swagger: `/swagger-ui.html`) |
 | Escaneo CVE (OWASP) | `mvn dependency-check:check` (falla con CVSS ≥ 7; lento la primera vez) |
 
@@ -42,9 +43,9 @@ Ejecutar desde `backend/`. En la nube usar `mvn`; en Windows, `.\mvnw.cmd`.
   `skillmatch-mongo`) y precarga Maven. Si Mongo no responde: `docker ps`, y relanzar el hook.
 - Frontend: servir `SkillMatch/src/pages/` en el puerto **5500 o 5501** (Live Server). Cualquier otro origen falla por CORS
   o porque `api-config.js` solo apunta a `localhost:8080` cuando el host es `localhost`/`127.0.0.1`.
-- Si la BD está vacía, `DataSeeder` siembra 3000 usuarios, 1000 empresas, 2000 ofertas y 9000 postulaciones (el README
-  dice otras cifras, desactualizadas). Corre **después** de que Tomcat ya responde y tarda ~6 min: hasta que el log
-  muestra `Seed completado` no hay usuarios para hacer login.
+- Si la BD está vacía, `DataSeeder` siembra 3000 usuarios, 1000 empresas, 2000 ofertas y 9000 postulaciones (~2 s).
+  Corre **después** de que Tomcat ya responde: hasta que el log muestra `Seed completado` no hay usuarios para hacer login.
+  El hash BCrypt de la contraseña de prueba se calcula una sola vez a propósito (ver `DataSeederTest`); no moverlo al bucle.
   Login de prueba: `usuario1@skillmatch.com` / `empresa1@skillmatch.com`, contraseña `password123`.
   Los tests desactivan el seed (`skillmatch.seed.enabled=false`) y usan la BD `skillmatch-test`.
 
@@ -80,6 +81,8 @@ Ejecutar desde `backend/`. En la nube usar `mvn`; en Windows, `.\mvnw.cmd`.
   - **Integración** → `@SpringBootTest(webEnvironment = RANDOM_PORT)` + `TestRestTemplate` (requiere MongoDB).
 - Nombres: `metodo_condicion_resultadoEsperado` (p. ej. `login_invalidCredentials_returnsUnauthorized`).
 - Antes de dar algo por terminado: `mvn -B -ntp test` en verde.
+- Cobertura de líneas actual (JaCoCo): ~34 % total, controllers ~7 %. Al tocar una clase sin tests, añadir los suyos;
+  la cobertura no debe bajar. El CI (`.github/workflows/backend-ci.yml`) ejecuta `mvn verify` en cada push y PR.
 
 ## Frontend
 

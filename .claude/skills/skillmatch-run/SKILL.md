@@ -15,9 +15,8 @@ bash "${CLAUDE_SKILL_DIR}/scripts/start.sh"
 
 - Idempotente: reutiliza lo que ya esté escuchando en :27017, :8080 y :5500.
 - Si MongoDB no responde, ejecuta el hook de sesión (`.claude/hooks/session-start.sh`) para levantarlo en Docker.
-- Espera a que **termine `DataSeeder`**, no solo a que Tomcat responda: el seed corre después del arranque y, con la BD
-  vacía, tarda varios minutos. Ejecútalo con un timeout amplio (p. ej. 900000 ms) o en segundo plano.
-  Si la BD ya tiene datos, el seed se salta y el arranque tarda segundos.
+- Espera a que **termine `DataSeeder`**, no solo a que Tomcat responda: el seed corre después del arranque (unos
+  segundos con la BD vacía; se salta si ya hay datos). Arranque completo típico: ~15 s con la BD vacía, ~6 s con datos.
 - Logs: `${TMPDIR:-/tmp}/skillmatch-run/backend.log` y `frontend.log`.
 
 URLs: API `http://localhost:8080/api`, Swagger `http://localhost:8080/swagger-ui.html`,
