@@ -4781,7 +4781,7 @@ details[open] > .filter-section-header::after {
 /* Responsive */
 @media (max-width: 1200px) {
     .company-grid-layout {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
     }
     
     .company-sidebar-left,
